@@ -34,7 +34,7 @@ DATABASE_URL="file:./dev.db"  # 또는 PostgreSQL URL
 
 ### 2. Vercel Cron Job 활성화
 
-`vercel.json` 파일 수정:
+`vercel.json` 파일을 다음과 같이 수정:
 
 ```json
 {
@@ -47,7 +47,7 @@ DATABASE_URL="file:./dev.db"  # 또는 PostgreSQL URL
 }
 ```
 
-현재 비활성화된 부분(`_crons_disabled`)을 `crons`로 변경하세요.
+현재는 빈 객체 `{}`로 되어있습니다. 위처럼 변경하세요.
 
 ### 3. Database 설정
 
@@ -91,11 +91,9 @@ USE_DATABASE=false
 
 ### 2. Cron Job 비활성화
 
-`vercel.json`:
+`vercel.json`을 빈 객체로 변경:
 ```json
-{
-  "_crons_disabled": [...]
-}
+{}
 ```
 
 ### 3. 재배포
