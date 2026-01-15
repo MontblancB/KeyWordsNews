@@ -8,13 +8,14 @@
 1. **실시간 긴급 속보** - 주요 언론사의 긴급 속보를 실시간으로 수신
 2. **카테고리별 뉴스** - 종합, 정치, 경제, IT/과학, 스포츠 등 카테고리별 뉴스
 3. **키워드 뉴스** - 사용자가 지정한 키워드 기반 맞춤형 뉴스 피드
-4. **뉴스 검색** - 원하는 키워드로 뉴스 검색
-5. **RSS 소스 관리** - 카테고리별 RSS 소스 활성화/비활성화
+4. **뉴스 검색** - 원하는 키워드로 뉴스 검색 (Google News 통합)
+5. **뉴스 소스 관리** - 카테고리별 뉴스 소스 활성화/비활성화 (48개 소스)
+6. **PWA 지원** - 모바일 홈 화면에 추가하여 앱처럼 사용 가능
 
 ### 배포 정보
 - **배포 URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
-- **현재 버전**: 1.0.2
+- **현재 버전**: 2.1.0
 - **마지막 업데이트**: 2026-01-16
 
 ---
@@ -84,8 +85,18 @@ KeyWordsNews/
 │   ├── schema.prisma           # 데이터베이스 스키마
 │   └── migrations/             # 마이그레이션 파일
 │
+├── public/
+│   ├── icon.svg                # PWA 아이콘 (SVG)
+│   ├── icons/                  # PWA 아이콘 (PNG, 8개 사이즈)
+│   ├── manifest.json           # PWA Manifest
+│   └── manifest.webmanifest    # PWA Manifest (상세)
+│
 ├── scripts/
-│   └── collect-rss.ts          # RSS 수집 스크립트
+│   ├── collect-rss.ts          # RSS 수집 스크립트
+│   ├── generate-icons.js       # 아이콘 생성 가이드
+│   └── generate-png-icons.js   # PNG 아이콘 자동 생성
+│
+├── generate-icons.html          # 브라우저 기반 아이콘 생성 도구
 │
 └── .github/workflows/
     └── collect-rss.yml         # RSS 수집 자동화 (10분마다)
@@ -199,77 +210,44 @@ Response: {
 
 ---
 
-## RSS 소스 관리
+## 뉴스 소스 관리
 
-### 현재 등록된 RSS 소스
+### 현재 등록된 뉴스 소스
 
-**속보 (Breaking)**
-- 연합뉴스
-- 뉴시스
+**총 48개 소스** (활성화: 42개, 비활성화: 6개)
 
-**종합 (General)**
-- 동아일보
-- SBS 뉴스
-- YTN
+**속보 (Breaking)** - 4개 (활성화: 2개)
+- 연합뉴스 ✅
+- 뉴시스 ✅
+- 동아일보 ❌
+- 조선일보 ❌
 
-**정치 (Politics)**
-- 동아일보 정치
-- 중앙일보 정치
-- 한국일보 정치
+**종합 (General)** - 8개 (활성화: 6개)
+- 동아일보 ✅
+- 조선일보 ❌
+- SBS 뉴스 ✅
+- YTN ✅
+- KBS ✅
+- JTBC ✅
+- MBC ✅
 
-**경제 (Economy)**
-- 한국경제
-- 매일경제
-- 이데일리
-- 서울경제
-- 헤럴드경제
-- 머니투데이
-- 파이낸셜뉴스
-- 아시아경제
-- 비즈니스워치
-- 한국금융신문
+**정치 (Politics)** - 2개 (100% 활성화)
+**경제 (Economy)** - 9개 (89% 활성화)
+**사회 (Society)** - 3개 (100% 활성화)
+**국제 (World)** - 3개 (100% 활성화)
+**IT/과학 (Tech)** - 6개 (83% 활성화)
+**스포츠 (Sports)** - 6개 (100% 활성화)
+**연예 (Entertainment)** - 5개 (100% 활성화)
+**문화 (Culture)** - 2개 (100% 활성화)
 
-**사회 (Society)**
-- 동아일보 사회
-- 노컷뉴스
-- 오마이뉴스
+### 뉴스 소스 관리 기능
 
-**국제 (World)**
-- 동아일보 국제
-- 중앙일보 국제
-- KBS 국제
-
-**IT/과학 (Tech)**
-- 전자신문
-- ZDNet Korea
-- IT조선
-- 디지털데일리
-- 테크42
-
-**스포츠 (Sports)**
-- SPOTV
-- 스포탈코리아
-- 골닷컴
-- 포포투
-- 스포츠경향
-- 스포츠동아
-- 일간스포츠
-
-**연예 (Entertainment)**
-- OSEN
-- 스포츠조선 연예
-- 스포츠서울 연예
-- 스타뉴스
-- 뉴스엔
-- 마이데일리
-- 엑스포츠뉴스
-- TV리포트
-- 텐아시아
-
-**문화 (Culture)**
-- 씨네21
-- 씨네허브
-- 무비스트
+#### 설정 페이지에서 관리
+- 카테고리별 소스 ON/OFF 토글
+- 전체 소스 일괄 활성화/비활성화
+- 개별 언론사 선택적 활성화
+- 설정 초기화 기능
+- **실시간 반영**: React Query queryKey에 sources 포함하여 즉시 반영
 
 ### RSS 소스 추가 방법
 
@@ -386,6 +364,62 @@ import {
 - **기본 (미선택)**: Outline 스타일 + 회색
 - **선택됨**: Solid 스타일 + 해당 색상
 - **크기**: 24x24 (w-6 h-6)
+
+### PWA 아이콘
+
+프로젝트는 Heroicons Bookmark-square를 기반으로 한 PWA 아이콘을 사용합니다.
+
+#### 아이콘 디자인
+- **SVG 아이콘**: `public/icon.svg`
+  - 흰색 배경 (#ffffff)
+  - 파란색 북마크 아이콘 (#2563eb)
+  - 512x512 크기, 둥근 모서리 (rx=110)
+  - 확장 가능한 벡터 그래픽
+
+- **PNG 아이콘**: `public/icons/`
+  - 8개 사이즈: 72, 96, 128, 144, 152, 192, 384, 512
+  - SVG에서 Sharp 라이브러리로 자동 생성
+  - iOS/Android 호환성 보장
+
+#### PWA 설정
+
+```typescript
+// app/layout.tsx
+export const metadata: Metadata = {
+  manifest: '/manifest.json',
+  themeColor: '#2563eb',
+  icons: {
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/icons/icon-192x192.png', sizes: '192x192' },
+      { url: '/icons/icon-512x512.png', sizes: '512x512' },
+    ],
+    apple: [
+      { url: '/icons/icon-192x192.png', sizes: '192x192' },
+    ],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: '키워드뉴스',
+  },
+}
+```
+
+#### PNG 아이콘 생성 방법
+
+```bash
+# Sharp를 사용한 자동 생성 (권장)
+node scripts/generate-png-icons.js
+
+# 또는 브라우저 도구 사용
+npm run dev
+# http://localhost:3000/generate-icons.html 접속
+
+# 또는 온라인 도구
+# https://realfavicongenerator.net/
+# public/icon.svg 업로드 후 생성
+```
 
 ---
 
@@ -542,8 +576,9 @@ npm install
 
 ## 향후 개선 사항
 
-### 단기 (진행 중)
-- [ ] PWA 기능 추가 (Service Worker, Manifest)
+### 단기
+- [x] PWA 기능 추가 (Manifest, Icons) ✅ v2.1.0
+- [ ] PWA 오프라인 지원 (Service Worker)
 - [ ] 푸시 알림 기능
 - [ ] 다크 모드 지원
 - [ ] 뉴스 북마크 기능
@@ -601,5 +636,43 @@ npm install
 
 ---
 
+## PWA 사용 가이드
+
+### 모바일 홈 화면에 추가하기
+
+#### iOS (Safari)
+1. https://key-words-news.vercel.app 접속
+2. 화면 하단 "공유" 버튼 탭
+3. "홈 화면에 추가" 선택
+4. 이름 확인 후 "추가" 탭
+5. 홈 화면에 북마크 아이콘 생성 완료! 📱
+
+#### Android (Chrome)
+1. https://key-words-news.vercel.app 접속
+2. 우측 상단 메뉴(⋮) 탭
+3. "홈 화면에 추가" 선택
+4. 이름 확인 후 "추가" 탭
+5. 홈 화면에 북마크 아이콘 생성 완료! 📱
+
+### PWA 특징
+- **앱처럼 실행**: 브라우저 UI 없이 전체 화면으로 실행
+- **빠른 접근**: 홈 화면에서 바로 실행
+- **오프라인 준비**: manifest 설정 완료 (Service Worker는 향후 추가 예정)
+
+---
+
+## 최근 업데이트 (v2.1.0)
+
+### 2026-01-16
+- ✨ **PWA 아이콘 추가**: Heroicons Bookmark-square 기반 아이콘
+  - SVG 아이콘 (확장 가능)
+  - PNG 아이콘 8개 사이즈 (72~512px)
+  - Sharp 라이브러리로 자동 생성
+- 🎨 **UI 개선**: "RSS 소스" → "뉴스 소스" 용어 통일
+- 📱 **모바일 최적화**: 홈 화면 추가 완벽 지원
+- 🔧 **설정 개선**: React Query queryKey에 sources 포함하여 즉시 반영
+
+---
+
 **Last Updated**: 2026-01-16
-**Version**: 1.0.2
+**Version**: 2.1.0
