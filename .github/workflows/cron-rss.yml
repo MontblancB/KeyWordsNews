@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Trigger RSS Collection
         run: |
-          curl -X GET ${{ secrets.VERCEL_APP_URL }}/api/cron/collect-rss \
+          curl -X GET https://key-words-news.vercel.app/api/cron/collect-rss \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json" \
             -w "\nHTTP Status: %{http_code}\n"
