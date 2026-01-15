@@ -73,8 +73,8 @@ export async function GET(
       }
     }
 
-    // 캐시에 저장 (1분)
-    cache.set(cacheKey, response, 60)
+    // 캐시에 저장 (30초)
+    cache.set(cacheKey, response, 30)
 
     console.log(`✅ 결과 반환: ${response.data.length}건 (전체: ${response.total}건)`)
 

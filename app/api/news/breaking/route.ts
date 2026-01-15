@@ -39,8 +39,8 @@ export async function GET(request: Request) {
       console.log(`✅ 속보 필터링: ${news.length}건`)
     }
 
-    // 캐시에 저장 (30초)
-    cache.set(cacheKey, news, 30)
+    // 캐시에 저장 (15초)
+    cache.set(cacheKey, news, 15)
 
     return NextResponse.json({
       success: true,

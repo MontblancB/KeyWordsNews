@@ -44,7 +44,7 @@ export class RealtimeRSSCollector {
           summary: item.contentSnippet || '',
           source: source.name,
           category: source.category,
-          publishedAt: item.pubDate,
+          publishedAt: item.pubDate.toISOString(), // ISO 문자열로 명시적 변환
           imageUrl: item.imageUrl,
           isBreaking: source.category === 'breaking'
         }))
@@ -53,8 +53,12 @@ export class RealtimeRSSCollector {
       }
     }
 
-    // 날짜순 정렬 (최신순)
-    allNews.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
+    // 날짜순 정렬 (최신순) - ISO 문자열을 Date로 변환하여 타임스탬프 비교
+    allNews.sort((a, b) => {
+      const timeA = new Date(a.publishedAt).getTime()
+      const timeB = new Date(b.publishedAt).getTime()
+      return timeB - timeA // 최신순 (큰 타임스탬프가 앞으로)
+    })
 
     // 중복 제거 (URL 기준)
     const uniqueNews = this.removeDuplicates(allNews)
@@ -91,7 +95,7 @@ export class RealtimeRSSCollector {
           summary: item.contentSnippet || '',
           source: source.name,
           category: category,
-          publishedAt: item.pubDate,
+          publishedAt: item.pubDate.toISOString(), // ISO 문자열로 명시적 변환
           imageUrl: item.imageUrl,
           isBreaking: category === 'breaking'
         }))
@@ -100,8 +104,12 @@ export class RealtimeRSSCollector {
       }
     }
 
-    // 날짜순 정렬 (최신순)
-    allNews.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
+    // 날짜순 정렬 (최신순) - ISO 문자열을 Date로 변환하여 타임스탬프 비교
+    allNews.sort((a, b) => {
+      const timeA = new Date(a.publishedAt).getTime()
+      const timeB = new Date(b.publishedAt).getTime()
+      return timeB - timeA // 최신순 (큰 타임스탬프가 앞으로)
+    })
 
     // 중복 제거
     const uniqueNews = this.removeDuplicates(allNews)

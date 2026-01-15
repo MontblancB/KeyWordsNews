@@ -50,8 +50,8 @@ export async function GET(request: Request) {
       }
     }
 
-    // 캐시에 저장 (1분)
-    cache.set(cacheKey, response, 60)
+    // 캐시에 저장 (30초)
+    cache.set(cacheKey, response, 30)
 
     return NextResponse.json({
       success: true,

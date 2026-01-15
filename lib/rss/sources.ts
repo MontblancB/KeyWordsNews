@@ -10,7 +10,54 @@ export const RSS_FEED_SOURCES: RSSFeedSource[] = [
     url: 'https://news.google.com/rss/search?q=%EC%86%8D%EB%B3%B4+OR+%EA%B8%B4%EA%B8%89&hl=ko&gl=KR&ceid=KR:ko',
     priority: 10,
     updateInterval: 3,
+    enabled: false // 실시간성 부족으로 비활성화
+  },
+
+  // 실시간 속보 소스 추가
+  {
+    id: 'donga_breaking',
+    name: '동아일보',
+    category: 'breaking',
+    url: 'http://rss.donga.com/total.xml',
+    priority: 10,
+    updateInterval: 3,
     enabled: true
+  },
+  {
+    id: 'chosun_breaking',
+    name: '조선일보',
+    category: 'breaking',
+    url: 'https://www.chosun.com/arc/outboundfeeds/rss/?outputType=xml',
+    priority: 10,
+    updateInterval: 3,
+    enabled: true
+  },
+  {
+    id: 'sbs_breaking',
+    name: 'SBS',
+    category: 'breaking',
+    url: 'https://news.sbs.co.kr/news/SectionRssFeed.do?sectionId=01',
+    priority: 10,
+    updateInterval: 3,
+    enabled: true
+  },
+  {
+    id: 'hani_breaking',
+    name: '한겨레',
+    category: 'breaking',
+    url: 'http://www.hani.co.kr/rss/',
+    priority: 9,
+    updateInterval: 3,
+    enabled: false // 날짜 파싱 이슈
+  },
+  {
+    id: 'khan_breaking',
+    name: '경향신문',
+    category: 'breaking',
+    url: 'http://www.khan.co.kr/rss/rssdata/total_news.xml',
+    priority: 9,
+    updateInterval: 3,
+    enabled: false // 날짜 파싱 이슈
   },
 
   // 정치 키워드 (정치, 국회, 대통령)
