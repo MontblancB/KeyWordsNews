@@ -121,22 +121,66 @@ export class RealtimeRSSCollector {
 
   /**
    * 키워드로 뉴스 검색 (실시간)
+   * 1. 기존 RSS 피드에서 검색
+   * 2. Google News에서 키워드 검색
    */
   async searchRealtime(keyword: string): Promise<NewsItem[]> {
     console.log(`🔍 실시간 검색: "${keyword}"`)
 
-    // 모든 뉴스 수집
+    // 1. 모든 뉴스 수집 후 키워드 필터링
     const allNews = await this.collectAllRealtime()
-
-    // 키워드 필터링
     const filtered = allNews.filter(news =>
       news.title.toLowerCase().includes(keyword.toLowerCase()) ||
       news.summary.toLowerCase().includes(keyword.toLowerCase())
     )
 
-    console.log(`✅ 검색 결과: ${filtered.length}개`)
+    console.log(`✅ 기존 RSS 검색 결과: ${filtered.length}개`)
 
-    return filtered
+    // 2. Google News 검색 추가
+    try {
+      const googleSource = {
+        id: 'google_search',
+        name: 'Google News',
+        category: 'search',
+        url: `https://news.google.com/rss/search?q=${encodeURIComponent(keyword)}&hl=ko&gl=KR&ceid=KR:ko`,
+        priority: 10,
+        updateInterval: 0,
+        enabled: true
+      }
+
+      const googleResults = await this.parser.fetchFeed(googleSource)
+
+      if (googleResults.length > 0) {
+        const googleNews: NewsItem[] = googleResults.map(item => ({
+          id: this.generateId(item.link),
+          title: item.title,
+          url: item.link,
+          summary: item.contentSnippet || '',
+          source: 'Google News',
+          category: 'search',
+          publishedAt: item.pubDate.toISOString(),
+          imageUrl: item.imageUrl,
+          isBreaking: false
+        }))
+
+        filtered.push(...googleNews)
+        console.log(`✅ Google News 추가: ${googleNews.length}개`)
+      }
+    } catch (error: any) {
+      console.error(`⚠️ Google News 검색 실패:`, error.message)
+    }
+
+    // 중복 제거 및 최신순 정렬
+    const unique = this.removeDuplicates(filtered)
+    unique.sort((a, b) => {
+      const timeA = new Date(a.publishedAt).getTime()
+      const timeB = new Date(b.publishedAt).getTime()
+      return timeB - timeA
+    })
+
+    console.log(`✅ 최종 검색 결과: ${unique.length}개`)
+
+    return unique
   }
 
   /**
