@@ -70,7 +70,6 @@ export default function KeywordsPage() {
         {/* 키워드가 없을 때 */}
         {!hasKeywords && (
           <div className="p-8 text-center text-gray-500">
-            <p className="text-4xl mb-4">⭐</p>
             <p className="mb-2">등록된 키워드가 없습니다.</p>
             <p className="text-sm text-gray-400">
               상단에서 관심있는 키워드를 추가해보세요.
