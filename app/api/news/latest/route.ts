@@ -2,30 +2,41 @@ import { NextResponse } from 'next/server'
 import { newsService } from '@/lib/db/news'
 import { cache } from '@/lib/cache'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const cacheKey = 'news:latest'
+    const { searchParams } = new URL(request.url)
+    const limit = parseInt(searchParams.get('limit') || '20')
+    const offset = parseInt(searchParams.get('offset') || '0')
+
+    const cacheKey = `news:latest:${limit}:${offset}`
 
     // 캐시 확인
-    const cached = cache.get<any[]>(cacheKey)
+    const cached = cache.get<any>(cacheKey)
     if (cached) {
       return NextResponse.json({
         success: true,
         source: 'cache',
-        data: cached
+        ...cached
       })
     }
 
     // DB 조회
-    const news = await newsService.getLatestNews(30)
+    const news = await newsService.getLatestNews(limit, offset)
+    const total = await newsService.getLatestNewsCount()
+
+    const response = {
+      data: news,
+      total,
+      hasMore: offset + limit < total
+    }
 
     // 캐시에 저장 (3분)
-    cache.set(cacheKey, news, 180)
+    cache.set(cacheKey, response, 180)
 
     return NextResponse.json({
       success: true,
       source: 'database',
-      data: news
+      ...response
     })
   } catch (error: any) {
     return NextResponse.json(

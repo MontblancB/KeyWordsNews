@@ -104,3 +104,52 @@ export function useInfiniteNewsSearch(keyword: string) {
     refetchInterval: 5 * 60 * 1000, // 5분마다 자동 갱신
   })
 }
+
+// 무한 스크롤용 최신 뉴스 훅
+export function useInfiniteLatestNews() {
+  return useInfiniteQuery({
+    queryKey: ['news', 'latest-infinite'],
+    queryFn: async ({ pageParam = 0 }) => {
+      const res = await fetch(`/api/news/latest?limit=20&offset=${pageParam}`)
+      if (!res.ok) throw new Error('Failed to fetch latest news')
+      const data = await res.json()
+      return data
+    },
+    getNextPageParam: (lastPage, allPages) => {
+      // hasMore가 true이면 다음 offset 반환
+      if (lastPage.hasMore) {
+        return allPages.length * 20
+      }
+      return undefined
+    },
+    initialPageParam: 0,
+    refetchInterval: 5 * 60 * 1000, // 5분마다 자동 갱신
+  })
+}
+
+// 무한 스크롤용 토픽 뉴스 훅
+export function useInfiniteTopicNews(category: string) {
+  return useInfiniteQuery({
+    queryKey: ['news', 'topic-infinite', category],
+    queryFn: async ({ pageParam = 0 }) => {
+      const sources = getEnabledRssSourceNames()
+      const url = sources
+        ? `/api/news/topics/${category}?limit=20&offset=${pageParam}&sources=${encodeURIComponent(sources)}`
+        : `/api/news/topics/${category}?limit=20&offset=${pageParam}`
+      const res = await fetch(url)
+      if (!res.ok) throw new Error(`Failed to fetch ${category} news`)
+      const data = await res.json()
+      return data
+    },
+    getNextPageParam: (lastPage, allPages) => {
+      // hasMore가 true이면 다음 offset 반환
+      if (lastPage.hasMore) {
+        return allPages.length * 20
+      }
+      return undefined
+    },
+    initialPageParam: 0,
+    enabled: !!category,
+    refetchInterval: 10 * 60 * 1000, // 10분마다 자동 갱신
+  })
+}

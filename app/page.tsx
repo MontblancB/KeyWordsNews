@@ -1,23 +1,80 @@
 'use client'
 
-import { useLatestNews } from '@/hooks/useNews'
+import { useEffect, useRef } from 'react'
+import { useInfiniteLatestNews } from '@/hooks/useNews'
 import NewsCard from '@/components/NewsCard'
 import BottomNav from '@/components/BottomNav'
 import BreakingBanner from '@/components/BreakingBanner'
+import { ArrowPathIcon } from '@heroicons/react/24/outline'
 
 export default function HomePage() {
-  const { data: news, isLoading, error } = useLatestNews()
+  const {
+    data,
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+    refetch,
+    isRefetching,
+  } = useInfiniteLatestNews()
+
+  const loadMoreRef = useRef<HTMLDivElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  // 무한 스크롤: Intersection Observer
+  useEffect(() => {
+    if (!loadMoreRef.current || !hasNextPage || isFetchingNextPage) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          fetchNextPage()
+        }
+      },
+      { threshold: 0.1 }
+    )
+
+    observer.observe(loadMoreRef.current)
+    return () => observer.disconnect()
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
+
+  // Pull-to-Refresh: 스크롤이 최상단에서 위로 스크롤 시도 시
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY === 0 && !isRefetching) {
+        // 최상단에서 추가로 위로 스크롤 시도 감지는 어려우므로
+        // 간단히 최상단에 있을 때 refetch 버튼만 제공
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [isRefetching])
+
+  const allNews = data?.pages.flatMap((page) => page.data) || []
 
   return (
     <>
       <header className="bg-blue-600 text-white p-4 sticky top-0 z-50">
-        <h1 className="text-xl font-bold">키워드뉴스</h1>
-        <p className="text-sm opacity-90">실시간 뉴스 속보</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold">키워드뉴스</h1>
+            <p className="text-sm opacity-90">실시간 뉴스 속보</p>
+          </div>
+          <button
+            onClick={() => refetch()}
+            disabled={isRefetching}
+            className="p-2 hover:bg-blue-700 rounded-full transition-colors disabled:opacity-50"
+            title="새로고침"
+          >
+            <ArrowPathIcon className={`w-5 h-5 ${isRefetching ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
       </header>
 
       <BreakingBanner />
 
-      <main className="pb-20">
+      <main ref={scrollRef} className="pb-20">
         {isLoading && (
           <div className="p-8 text-center text-gray-500">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -25,26 +82,36 @@ export default function HomePage() {
           </div>
         )}
 
-        {error && (
-          <div className="p-8 text-center text-red-600">
-            <p>뉴스를 불러오는데 실패했습니다.</p>
-            <p className="text-sm mt-2">{(error as Error).message}</p>
-          </div>
-        )}
-
-        {!isLoading && !error && news && news.length === 0 && (
+        {!isLoading && allNews.length === 0 && (
           <div className="p-8 text-center text-gray-500">
             <p>아직 수집된 뉴스가 없습니다.</p>
             <p className="text-sm mt-2">잠시 후 다시 시도해주세요.</p>
           </div>
         )}
 
-        {news && news.length > 0 && (
-          <div>
-            {news.map((item) => (
-              <NewsCard key={item.id} news={item} />
-            ))}
-          </div>
+        {allNews.length > 0 && (
+          <>
+            <div>
+              {allNews.map((item) => (
+                <NewsCard key={item.id} news={item} />
+              ))}
+            </div>
+
+            {/* 무한 스크롤 트리거 */}
+            <div ref={loadMoreRef} className="p-4">
+              {isFetchingNextPage && (
+                <div className="text-center text-gray-500">
+                  <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                  <p className="mt-2 text-sm">더 불러오는 중...</p>
+                </div>
+              )}
+              {!hasNextPage && allNews.length > 0 && (
+                <div className="text-center text-gray-400 text-sm">
+                  모든 뉴스를 불러왔습니다.
+                </div>
+              )}
+            </div>
+          </>
         )}
       </main>
 

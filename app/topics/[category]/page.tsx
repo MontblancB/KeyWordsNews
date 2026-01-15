@@ -1,15 +1,28 @@
 'use client'
 
-import { useTopicNews } from '@/hooks/useNews'
+import { useEffect, useRef } from 'react'
+import { useInfiniteTopicNews } from '@/hooks/useNews'
 import NewsCard from '@/components/NewsCard'
 import BottomNav from '@/components/BottomNav'
 import CategoryTabs from '@/components/CategoryTabs'
 import { useParams } from 'next/navigation'
+import { ArrowPathIcon } from '@heroicons/react/24/outline'
 
 export default function TopicPage() {
   const params = useParams()
   const category = params.category as string
-  const { data: news, isLoading, error } = useTopicNews(category)
+
+  const {
+    data,
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+    refetch,
+    isRefetching,
+  } = useInfiniteTopicNews(category)
+
+  const loadMoreRef = useRef<HTMLDivElement>(null)
 
   const categoryNames: Record<string, string> = {
     general: '종합',
@@ -23,12 +36,41 @@ export default function TopicPage() {
     culture: '문화',
   }
 
+  // 무한 스크롤
+  useEffect(() => {
+    if (!loadMoreRef.current || !hasNextPage || isFetchingNextPage) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          fetchNextPage()
+        }
+      },
+      { threshold: 0.1 }
+    )
+
+    observer.observe(loadMoreRef.current)
+    return () => observer.disconnect()
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
+
+  const allNews = data?.pages.flatMap((page) => page.data) || []
+
   return (
     <>
       <header className="bg-blue-600 text-white p-4">
-        <h1 className="text-xl font-bold">
-          {categoryNames[category] || category} 뉴스
-        </h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-bold">
+            {categoryNames[category] || category} 뉴스
+          </h1>
+          <button
+            onClick={() => refetch()}
+            disabled={isRefetching}
+            className="p-2 hover:bg-blue-700 rounded-full transition-colors disabled:opacity-50"
+            title="새로고침"
+          >
+            <ArrowPathIcon className={`w-5 h-5 ${isRefetching ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
       </header>
 
       <CategoryTabs />
@@ -41,24 +83,35 @@ export default function TopicPage() {
           </div>
         )}
 
-        {error && (
-          <div className="p-8 text-center text-red-600">
-            <p>뉴스를 불러오는데 실패했습니다.</p>
-          </div>
-        )}
-
-        {!isLoading && !error && news && news.length === 0 && (
+        {!isLoading && allNews.length === 0 && (
           <div className="p-8 text-center text-gray-500">
             <p>아직 수집된 뉴스가 없습니다.</p>
           </div>
         )}
 
-        {news && news.length > 0 && (
-          <div>
-            {news.map((item) => (
-              <NewsCard key={item.id} news={item} />
-            ))}
-          </div>
+        {allNews.length > 0 && (
+          <>
+            <div>
+              {allNews.map((item) => (
+                <NewsCard key={item.id} news={item} />
+              ))}
+            </div>
+
+            {/* 무한 스크롤 트리거 */}
+            <div ref={loadMoreRef} className="p-4">
+              {isFetchingNextPage && (
+                <div className="text-center text-gray-500">
+                  <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                  <p className="mt-2 text-sm">더 불러오는 중...</p>
+                </div>
+              )}
+              {!hasNextPage && allNews.length > 0 && (
+                <div className="text-center text-gray-400 text-sm">
+                  모든 뉴스를 불러왔습니다.
+                </div>
+              )}
+            </div>
+          </>
         )}
       </main>
 

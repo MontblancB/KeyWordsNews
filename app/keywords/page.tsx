@@ -8,6 +8,7 @@ import NewsCard from '@/components/NewsCard'
 import BottomNav from '@/components/BottomNav'
 import KeywordTabs from '@/components/KeywordTabs'
 import KeywordManager from '@/components/KeywordManager'
+import { ArrowPathIcon } from '@heroicons/react/24/outline'
 
 export default function KeywordsPage() {
   const { keywords, addKeyword, deleteKeyword, moveKeywordUp, moveKeywordDown, hasKeywords } = useKeywords()
@@ -28,6 +29,8 @@ export default function KeywordsPage() {
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
+    refetch,
+    isRefetching,
   } = useInfiniteNewsSearch(activeKeyword || '')
 
   // 무한 스크롤
@@ -54,7 +57,19 @@ export default function KeywordsPage() {
     <>
       {/* 헤더 */}
       <header className="bg-blue-600 text-white p-4 sticky top-0 z-50">
-        <h1 className="text-xl font-bold">키워드 뉴스</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-bold">키워드 뉴스</h1>
+          {activeKeyword && (
+            <button
+              onClick={() => refetch()}
+              disabled={isRefetching}
+              className="p-2 hover:bg-blue-700 rounded-full transition-colors disabled:opacity-50"
+              title="새로고침"
+            >
+              <ArrowPathIcon className={`w-5 h-5 ${isRefetching ? 'animate-spin' : ''}`} />
+            </button>
+          )}
+        </div>
       </header>
 
       {/* 키워드 관리 UI */}
