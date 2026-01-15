@@ -5,7 +5,6 @@ import { useInfiniteLatestNews } from '@/hooks/useNews'
 import NewsCard from '@/components/NewsCard'
 import BottomNav from '@/components/BottomNav'
 import BreakingBanner from '@/components/BreakingBanner'
-import { ArrowPathIcon } from '@heroicons/react/24/outline'
 
 export default function HomePage() {
   const {
@@ -14,8 +13,6 @@ export default function HomePage() {
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
-    refetch,
-    isRefetching,
   } = useInfiniteLatestNews()
 
   const loadMoreRef = useRef<HTMLDivElement>(null)
@@ -38,37 +35,15 @@ export default function HomePage() {
     return () => observer.disconnect()
   }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
-  // Pull-to-Refresh: 스크롤이 최상단에서 위로 스크롤 시도 시
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY === 0 && !isRefetching) {
-        // 최상단에서 추가로 위로 스크롤 시도 감지는 어려우므로
-        // 간단히 최상단에 있을 때 refetch 버튼만 제공
-      }
-    }
-
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [isRefetching])
 
   const allNews = data?.pages.flatMap((page) => page.data) || []
 
   return (
     <>
       <header className="bg-blue-600 text-white p-4 sticky top-0 z-50">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold">키워드뉴스</h1>
-            <p className="text-sm opacity-90">실시간 뉴스 속보</p>
-          </div>
-          <button
-            onClick={() => refetch()}
-            disabled={isRefetching}
-            className="p-2 hover:bg-blue-700 rounded-full transition-colors disabled:opacity-50"
-            title="새로고침"
-          >
-            <ArrowPathIcon className={`w-5 h-5 ${isRefetching ? 'animate-spin' : ''}`} />
-          </button>
+        <div>
+          <h1 className="text-xl font-bold">키워드뉴스</h1>
+          <p className="text-sm opacity-90">실시간 뉴스 속보</p>
         </div>
       </header>
 

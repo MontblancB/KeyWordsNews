@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useInfiniteNewsSearch } from '@/hooks/useNews'
 import NewsCard from '@/components/NewsCard'
 import BottomNav from '@/components/BottomNav'
-import { MagnifyingGlassIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
+import { MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 
 export default function SearchPage() {
   const [keyword, setKeyword] = useState('')
@@ -17,8 +17,6 @@ export default function SearchPage() {
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
-    refetch,
-    isRefetching,
   } = useInfiniteNewsSearch(searchQuery)
 
   const handleSearch = (e: React.FormEvent) => {
@@ -53,19 +51,7 @@ export default function SearchPage() {
   return (
     <>
       <header className="bg-blue-600 text-white p-4 sticky top-0 z-50">
-        <div className="flex items-center justify-between mb-3">
-          <h1 className="text-xl font-bold">뉴스 검색</h1>
-          {searchQuery && (
-            <button
-              onClick={() => refetch()}
-              disabled={isRefetching}
-              className="p-2 hover:bg-blue-700 rounded-full transition-colors disabled:opacity-50"
-              title="새로고침"
-            >
-              <ArrowPathIcon className={`w-5 h-5 ${isRefetching ? 'animate-spin' : ''}`} />
-            </button>
-          )}
-        </div>
+        <h1 className="text-xl font-bold mb-3">뉴스 검색</h1>
         <form onSubmit={handleSearch}>
           <div className="relative">
             <input

@@ -6,7 +6,6 @@ import NewsCard from '@/components/NewsCard'
 import BottomNav from '@/components/BottomNav'
 import CategoryTabs from '@/components/CategoryTabs'
 import { useParams } from 'next/navigation'
-import { ArrowPathIcon } from '@heroicons/react/24/outline'
 
 export default function TopicPage() {
   const params = useParams()
@@ -18,8 +17,6 @@ export default function TopicPage() {
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
-    refetch,
-    isRefetching,
   } = useInfiniteTopicNews(category)
 
   const loadMoreRef = useRef<HTMLDivElement>(null)
@@ -58,19 +55,9 @@ export default function TopicPage() {
   return (
     <>
       <header className="bg-blue-600 text-white p-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold">
-            {categoryNames[category] || category} 뉴스
-          </h1>
-          <button
-            onClick={() => refetch()}
-            disabled={isRefetching}
-            className="p-2 hover:bg-blue-700 rounded-full transition-colors disabled:opacity-50"
-            title="새로고침"
-          >
-            <ArrowPathIcon className={`w-5 h-5 ${isRefetching ? 'animate-spin' : ''}`} />
-          </button>
-        </div>
+        <h1 className="text-xl font-bold">
+          {categoryNames[category] || category} 뉴스
+        </h1>
       </header>
 
       <CategoryTabs />
