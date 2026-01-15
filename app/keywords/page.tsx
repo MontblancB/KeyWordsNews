@@ -1,0 +1,151 @@
+// app/keywords/page.tsx
+'use client'
+
+import { useState, useEffect, useRef } from 'react'
+import { useInfiniteNewsSearch } from '@/hooks/useNews'
+import { useKeywords } from '@/hooks/useKeywords'
+import NewsCard from '@/components/NewsCard'
+import BottomNav from '@/components/BottomNav'
+import KeywordTabs from '@/components/KeywordTabs'
+import KeywordManager from '@/components/KeywordManager'
+
+export default function KeywordsPage() {
+  const { keywords, addKeyword, deleteKeyword, moveKeywordUp, moveKeywordDown, hasKeywords } = useKeywords()
+  const [activeKeyword, setActiveKeyword] = useState<string | null>(null)
+  const loadMoreRef = useRef<HTMLDivElement>(null)
+
+  // 첫 번째 키워드를 자동 선택
+  useEffect(() => {
+    if (keywords.length > 0 && !activeKeyword) {
+      setActiveKeyword(keywords[0].keyword)
+    }
+  }, [keywords, activeKeyword])
+
+  // 선택된 키워드로 뉴스 검색
+  const {
+    data,
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+  } = useInfiniteNewsSearch(activeKeyword || '')
+
+  // 무한 스크롤
+  useEffect(() => {
+    if (!loadMoreRef.current || !hasNextPage || isFetchingNextPage) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          fetchNextPage()
+        }
+      },
+      { threshold: 0.1 }
+    )
+
+    observer.observe(loadMoreRef.current)
+    return () => observer.disconnect()
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
+
+  const allNews = data?.pages.flatMap((page) => page.data) || []
+  const totalCount = data?.pages[0]?.total || 0
+
+  return (
+    <>
+      {/* 헤더 */}
+      <header className="bg-blue-600 text-white p-4 sticky top-0 z-50">
+        <h1 className="text-xl font-bold">키워드 뉴스</h1>
+      </header>
+
+      {/* 키워드 관리 UI */}
+      <KeywordManager
+        keywords={keywords}
+        onAdd={addKeyword}
+        onDelete={deleteKeyword}
+        onMoveUp={moveKeywordUp}
+        onMoveDown={moveKeywordDown}
+      />
+
+      <main className="pb-20">
+        {/* 키워드가 없을 때 */}
+        {!hasKeywords && (
+          <div className="p-8 text-center text-gray-500">
+            <p className="text-4xl mb-4">⭐</p>
+            <p className="mb-2">등록된 키워드가 없습니다.</p>
+            <p className="text-sm text-gray-400">
+              상단에서 관심있는 키워드를 추가해보세요.
+            </p>
+          </div>
+        )}
+
+        {/* 키워드 탭 */}
+        {hasKeywords && (
+          <>
+            <KeywordTabs
+              keywords={keywords}
+              activeKeyword={activeKeyword}
+              onSelectKeyword={setActiveKeyword}
+            />
+
+            {/* 로딩 중 */}
+            {isLoading && activeKeyword && (
+              <div className="p-8 text-center text-gray-500">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <p className="mt-2">검색 중...</p>
+              </div>
+            )}
+
+            {/* 뉴스 리스트 */}
+            {activeKeyword && data && (
+              <>
+                <div className="p-4 bg-gray-50 border-b border-gray-200">
+                  <p className="text-sm text-gray-600">
+                    <span className="font-bold text-blue-600">{activeKeyword}</span>
+                    에 대한 검색 결과{' '}
+                    <span className="font-bold">{totalCount}건</span>
+                    {allNews.length > 0 && (
+                      <span className="text-gray-400 ml-2">
+                        (현재 {allNews.length}건 표시)
+                      </span>
+                    )}
+                  </p>
+                </div>
+
+                {allNews.length === 0 ? (
+                  <div className="p-8 text-center text-gray-500">
+                    <p>검색 결과가 없습니다.</p>
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      {allNews.map((item) => (
+                        <NewsCard key={item.id} news={item} />
+                      ))}
+                    </div>
+
+                    {/* 무한 스크롤 트리거 */}
+                    <div ref={loadMoreRef} className="p-4">
+                      {isFetchingNextPage && (
+                        <div className="text-center text-gray-500">
+                          <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                          <p className="mt-2 text-sm">더 불러오는 중...</p>
+                        </div>
+                      )}
+                      {!hasNextPage && allNews.length > 0 && (
+                        <div className="text-center text-gray-400 text-sm">
+                          모든 검색 결과를 불러왔습니다.
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+          </>
+        )}
+      </main>
+
+      <BottomNav />
+    </>
+  )
+}
