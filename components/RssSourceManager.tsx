@@ -41,8 +41,23 @@ export default function RssSourceManager() {
     setExpandedCategories(newExpanded)
   }
 
-  // 카테고리별로 그룹화
-  const categories = Array.from(new Set(allSources.map(s => s.category)))
+  // 카테고리별로 그룹화 (토픽 순서와 동일하게)
+  const categoryOrder = [
+    'breaking',    // 속보
+    'general',     // 종합
+    'politics',    // 정치
+    'economy',     // 경제
+    'society',     // 사회
+    'world',       // 국제
+    'tech',        // IT/과학
+    'sports',      // 스포츠
+    'entertainment', // 연예
+    'culture',     // 문화
+  ]
+
+  // 존재하는 카테고리만 정렬된 순서로 가져오기
+  const uniqueCategories = Array.from(new Set(allSources.map(s => s.category)))
+  const categories = categoryOrder.filter(cat => uniqueCategories.includes(cat))
 
   return (
     <div className="bg-white">

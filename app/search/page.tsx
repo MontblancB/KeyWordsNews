@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useInfiniteNewsSearch } from '@/hooks/useNews'
 import NewsCard from '@/components/NewsCard'
 import BottomNav from '@/components/BottomNav'
+import { MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 
 export default function SearchPage() {
   const [keyword, setKeyword] = useState('')
@@ -62,9 +63,9 @@ export default function SearchPage() {
             />
             <button
               type="submit"
-              className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
             >
-              🔍
+              <MagnifyingGlassIcon className="w-5 h-5" />
             </button>
           </div>
         </form>
@@ -73,7 +74,7 @@ export default function SearchPage() {
       <main className="pb-20">
         {!searchQuery && (
           <div className="p-8 text-center text-gray-500">
-            <p className="text-4xl mb-4">🔍</p>
+            <MagnifyingGlassIcon className="w-16 h-16 mx-auto mb-4 text-gray-300" />
             <p>검색어를 입력하여 뉴스를 찾아보세요</p>
           </div>
         )}

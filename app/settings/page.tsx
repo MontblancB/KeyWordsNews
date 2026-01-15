@@ -20,8 +20,8 @@ export default function SettingsPage() {
         <section className="p-4 bg-white">
           <h3 className="text-lg font-bold text-gray-900 mb-3">앱 정보</h3>
           <div className="space-y-2 text-sm text-gray-600">
-            <p>버전: 1.0.0</p>
-            <p>마지막 업데이트: 2026-01-15</p>
+            <p>버전: 1.0.1</p>
+            <p>마지막 업데이트: 2026-01-16</p>
           </div>
         </section>
       </main>
