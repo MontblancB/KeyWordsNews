@@ -482,15 +482,6 @@ export const RSS_FEED_SOURCES: RSSFeedSource[] = [
     updateInterval: 15,
     enabled: true
   },
-  {
-    id: 'boannews',
-    name: '보안뉴스',
-    category: 'tech',
-    url: 'https://www.boannews.com/media/news_rss.xml',
-    priority: 6,
-    updateInterval: 15,
-    enabled: true
-  },
 
   // ========== 스포츠 전문 ==========
   {
