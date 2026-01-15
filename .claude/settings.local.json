@@ -22,7 +22,15 @@
       "Bash(git restore:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(openssl rand:*)"
+      "Bash(openssl rand:*)",
+      "Bash(gh workflow run:*)",
+      "Bash(pkill:*)",
+      "Bash(find:*)",
+      "Bash(source .env.migration)",
+      "Bash(export POSTGRES_URL=\"postgres://8af2f559e3270636820527e57d46002a450aa769e5cb9e5828bd4db64a2e9c3e:sk_tHDGLPmsjpukrgAfdE7Ij@db.prisma.io:5432/postgres?sslmode=require\")",
+      "Bash(export PRISMA_DATABASE_URL:*)",
+      "Bash(npx tsx:*)",
+      "Bash(export DATABASE_URL=\"postgres://8af2f559e3270636820527e57d46002a450aa769e5cb9e5828bd4db64a2e9c3e:sk_tHDGLPmsjpukrgAfdE7Ij@db.prisma.io:5432/postgres?sslmode=require\":*)"
     ]
   }
 }
