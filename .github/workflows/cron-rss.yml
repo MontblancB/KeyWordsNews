@@ -1,0 +1,17 @@
+name: RSS Collection Cron
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'  # 10분마다 실행
+  workflow_dispatch:  # 수동 실행 가능
+
+jobs:
+  collect-rss:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger RSS Collection
+        run: |
+          curl -X GET ${{ secrets.VERCEL_APP_URL }}/api/cron/collect-rss \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -w "\nHTTP Status: %{http_code}\n"
