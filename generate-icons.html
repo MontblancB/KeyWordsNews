@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Generate PWA Icons</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    canvas {
+      border: 1px solid #ccc;
+      margin: 10px;
+    }
+    .icon-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .icon-item {
+      text-align: center;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 5px;
+    }
+    button:hover {
+      background: #1d4ed8;
+    }
+  </style>
+</head>
+<body>
+  <h1>📰 키워드뉴스 PWA 아이콘 생성</h1>
+  <p>아래 버튼을 클릭하여 각 사이즈의 아이콘을 다운로드하세요.</p>
+
+  <div id="icons"></div>
+
+  <script>
+    const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+    const iconsDiv = document.getElementById('icons');
+
+    // SVG를 로드하고 각 사이즈로 변환
+    fetch('/icon.svg')
+      .then(r => r.text())
+      .then(svgText => {
+        const img = new Image();
+        const blob = new Blob([svgText], { type: 'image/svg+xml' });
+        const url = URL.createObjectURL(blob);
+
+        img.onload = () => {
+          sizes.forEach(size => {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, size, size);
+
+            const div = document.createElement('div');
+            div.className = 'icon-item';
+            div.innerHTML = `
+              <h3>${size}x${size}</h3>
+              <canvas width="${size}" height="${size}"></canvas>
+              <br>
+              <button onclick="downloadIcon(this, ${size})">다운로드</button>
+            `;
+
+            const previewCanvas = div.querySelector('canvas');
+            const previewCtx = previewCanvas.getContext('2d');
+            previewCtx.drawImage(img, 0, 0, size, size);
+
+            iconsDiv.appendChild(div);
+
+            // 자동으로 파일 생성
+            canvas.toBlob(blob => {
+              const a = document.createElement('a');
+              a.href = URL.createObjectURL(blob);
+              a.download = `icon-${size}x${size}.png`;
+              div.querySelector('button').onclick = () => a.click();
+            }, 'image/png');
+          });
+        };
+
+        img.src = url;
+      });
+
+    function downloadIcon(btn, size) {
+      // 버튼 클릭 시 다운로드 실행
+    }
+  </script>
+</body>
+</html>

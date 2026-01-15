@@ -1,0 +1,16 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 흰색 배경 -->
+  <rect width="512" height="512" rx="110" fill="white"/>
+
+  <!-- Heroicons Bookmark-square 아이콘 (파란색) -->
+  <g transform="translate(106, 106)">
+    <path
+      d="M 0 48 C 0 21.49 21.49 0 48 0 L 252 0 C 278.51 0 300 21.49 300 48 L 300 300 L 150 225 L 0 300 L 0 48 Z"
+      fill="#2563eb"
+      stroke="#2563eb"
+      stroke-width="16"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+  </g>
+</svg>
