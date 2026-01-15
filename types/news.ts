@@ -5,7 +5,7 @@ export interface NewsItem {
   summary: string
   source: string
   category: string
-  publishedAt: Date
+  publishedAt: Date | string // Date 객체 또는 ISO 문자열
   imageUrl?: string | null
   isBreaking?: boolean
   createdAt?: Date
