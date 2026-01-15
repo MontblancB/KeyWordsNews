@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { newsService } from '@/lib/db/news'
 import { cache } from '@/lib/cache'
+import { isDatabaseEnabled } from '@/lib/config/database'
+import { realtimeCollector } from '@/lib/rss/realtime-collector'
 
 export async function GET(request: Request) {
   try {
@@ -20,22 +22,39 @@ export async function GET(request: Request) {
       })
     }
 
-    // DB 조회
-    const news = await newsService.getLatestNews(limit, offset)
-    const total = await newsService.getLatestNewsCount()
+    let response: any
 
-    const response = {
-      data: news,
-      total,
-      hasMore: offset + limit < total
+    if (isDatabaseEnabled()) {
+      // ========== DB 모드 ==========
+      const news = await newsService.getLatestNews(limit, offset)
+      const total = await newsService.getLatestNewsCount()
+
+      response = {
+        data: news,
+        total,
+        hasMore: offset + limit < total,
+        source: 'database'
+      }
+    } else {
+      // ========== 실시간 RSS 모드 ==========
+      const allNews = await realtimeCollector.collectAllRealtime()
+
+      // 메모리에서 페이지네이션
+      const paginatedNews = allNews.slice(offset, offset + limit)
+
+      response = {
+        data: paginatedNews,
+        total: allNews.length,
+        hasMore: offset + limit < allNews.length,
+        source: 'realtime-rss'
+      }
     }
 
-    // 캐시에 저장 (1분 - 새로고침 응답성 향상)
+    // 캐시에 저장 (1분)
     cache.set(cacheKey, response, 60)
 
     return NextResponse.json({
       success: true,
-      source: 'database',
       ...response
     })
   } catch (error: any) {

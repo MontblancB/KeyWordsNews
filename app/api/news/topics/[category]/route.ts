@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { newsService } from '@/lib/db/news'
 import { cache } from '@/lib/cache'
 import { hybridCategorySearch } from '@/lib/rss/realtime-search'
+import { isDatabaseEnabled } from '@/lib/config/database'
+import { realtimeCollector } from '@/lib/rss/realtime-collector'
 
 export async function GET(
   request: Request,
@@ -10,15 +12,15 @@ export async function GET(
   try {
     const { category } = await params
     const { searchParams } = new URL(request.url)
-    const sourcesParam = searchParams.get('sources') // 활성화된 소스 이름 목록 (콤마 구분)
+    const sourcesParam = searchParams.get('sources')
     const limit = parseInt(searchParams.get('limit') || '20')
     const offset = parseInt(searchParams.get('offset') || '0')
 
-    const cacheKey = `news:topic:${category}:hybrid${sourcesParam ? ':' + sourcesParam : ''}:${limit}:${offset}`
+    const cacheKey = `news:topic:${category}:${sourcesParam ? sourcesParam : 'all'}:${limit}:${offset}`
 
-    console.log(`🔍 하이브리드 카테고리 조회 시작: "${category}" (limit: ${limit}, offset: ${offset})`)
+    console.log(`🔍 카테고리 조회: "${category}" (limit: ${limit}, offset: ${offset})`)
 
-    // 캐시 확인 (1분 - 새로고침 응답성 향상)
+    // 캐시 확인
     const cached = cache.get<any>(cacheKey)
     if (cached) {
       console.log(`✅ 캐시에서 반환: ${cached.data.length}건`)
@@ -30,39 +32,55 @@ export async function GET(
       })
     }
 
-    // 1. DB에서 해당 카테고리 뉴스 조회
-    let dbNews = await newsService.getNewsByCategory(category, 100)
-    console.log(`📊 DB 조회 결과: ${dbNews.length}건`)
+    let response: any
 
-    // 1.5. 사용자가 활성화한 소스로 필터링
-    if (sourcesParam) {
-      const enabledSourceNames = sourcesParam.split(',')
-      dbNews = dbNews.filter(news => enabledSourceNames.includes(news.source))
-      console.log(`✅ 활성화된 소스로 필터링: ${dbNews.length}건`)
+    if (isDatabaseEnabled()) {
+      // ========== DB 모드 (하이브리드 검색) ==========
+      let dbNews = await newsService.getNewsByCategory(category, 100)
+
+      if (sourcesParam) {
+        const enabledSourceNames = sourcesParam.split(',')
+        dbNews = dbNews.filter(news => enabledSourceNames.includes(news.source))
+      }
+
+      const allResults = await hybridCategorySearch(category, dbNews)
+      const paginatedResults = allResults.slice(offset, offset + limit)
+
+      response = {
+        data: paginatedResults,
+        total: allResults.length,
+        hasMore: offset + limit < allResults.length,
+        source: 'database-hybrid'
+      }
+    } else {
+      // ========== 실시간 RSS 모드 ==========
+      let allNews = await realtimeCollector.collectCategoryRealtime(category)
+
+      // 소스 필터링
+      if (sourcesParam) {
+        const enabledSourceNames = sourcesParam.split(',')
+        allNews = allNews.filter(news => enabledSourceNames.includes(news.source))
+      }
+
+      // 페이지네이션
+      const paginatedNews = allNews.slice(offset, offset + limit)
+
+      response = {
+        data: paginatedNews,
+        total: allNews.length,
+        hasMore: offset + limit < allNews.length,
+        source: 'realtime-rss'
+      }
     }
 
-    // 2. Google News 실시간 검색 + DB 결과 병합
-    const allResults = await hybridCategorySearch(category, dbNews)
-
-    // 3. 페이지네이션 적용
-    const total = allResults.length
-    const paginatedResults = allResults.slice(offset, offset + limit)
-
-    const response = {
-      data: paginatedResults,
-      total,
-      hasMore: offset + limit < total
-    }
-
-    // 캐시에 저장 (1분 - 새로고침 응답성 향상)
+    // 캐시에 저장 (1분)
     cache.set(cacheKey, response, 60)
 
-    console.log(`✅ 최종 결과 반환: ${paginatedResults.length}건 (전체: ${total}건)`)
+    console.log(`✅ 결과 반환: ${response.data.length}건 (전체: ${response.total}건)`)
 
     return NextResponse.json({
       success: true,
       category,
-      source: 'hybrid',
       ...response
     })
   } catch (error: any) {
