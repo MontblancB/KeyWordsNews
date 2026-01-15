@@ -21,12 +21,13 @@ export function useBreakingNews() {
     queryFn: async () => {
       const sources = getEnabledRssSourceNames()
       const url = sources ? `/api/news/breaking?sources=${encodeURIComponent(sources)}` : '/api/news/breaking'
-      const res = await fetch(url)
+      const res = await fetch(url, { cache: 'no-store' }) // 캐시 방지
       if (!res.ok) throw new Error('Failed to fetch breaking news')
       const data: NewsResponse = await res.json()
       return data.data
     },
-    refetchInterval: 3 * 60 * 1000, // 3분마다 자동 갱신
+    refetchInterval: 30 * 1000, // 30초마다 자동 갱신
+    staleTime: 0, // 항상 최신 데이터 가져오기
   })
 }
 
@@ -87,7 +88,7 @@ export function useInfiniteNewsSearch(keyword: string) {
       const url = sources
         ? `/api/news/search?q=${encodeURIComponent(keyword)}&page=${pageParam}&sources=${encodeURIComponent(sources)}`
         : `/api/news/search?q=${encodeURIComponent(keyword)}&page=${pageParam}`
-      const res = await fetch(url)
+      const res = await fetch(url, { cache: 'no-store' })
       if (!res.ok) throw new Error('Failed to search news')
       const data: SearchResponse = await res.json()
       return data
@@ -101,7 +102,8 @@ export function useInfiniteNewsSearch(keyword: string) {
     },
     initialPageParam: 1,
     enabled: keyword.length > 0,
-    refetchInterval: 5 * 60 * 1000, // 5분마다 자동 갱신
+    refetchInterval: 2 * 60 * 1000, // 2분마다 자동 갱신
+    staleTime: 1 * 60 * 1000, // 1분 후 stale로 간주
   })
 }
 
@@ -110,7 +112,7 @@ export function useInfiniteLatestNews() {
   return useInfiniteQuery({
     queryKey: ['news', 'latest-infinite'],
     queryFn: async ({ pageParam = 0 }) => {
-      const res = await fetch(`/api/news/latest?limit=20&offset=${pageParam}`)
+      const res = await fetch(`/api/news/latest?limit=20&offset=${pageParam}`, { cache: 'no-store' })
       if (!res.ok) throw new Error('Failed to fetch latest news')
       const data = await res.json()
       return data
@@ -123,7 +125,8 @@ export function useInfiniteLatestNews() {
       return undefined
     },
     initialPageParam: 0,
-    refetchInterval: 5 * 60 * 1000, // 5분마다 자동 갱신
+    refetchInterval: 2 * 60 * 1000, // 2분마다 자동 갱신
+    staleTime: 1 * 60 * 1000, // 1분 후 stale로 간주
   })
 }
 
@@ -136,7 +139,7 @@ export function useInfiniteTopicNews(category: string) {
       const url = sources
         ? `/api/news/topics/${category}?limit=20&offset=${pageParam}&sources=${encodeURIComponent(sources)}`
         : `/api/news/topics/${category}?limit=20&offset=${pageParam}`
-      const res = await fetch(url)
+      const res = await fetch(url, { cache: 'no-store' })
       if (!res.ok) throw new Error(`Failed to fetch ${category} news`)
       const data = await res.json()
       return data
@@ -150,6 +153,7 @@ export function useInfiniteTopicNews(category: string) {
     },
     initialPageParam: 0,
     enabled: !!category,
-    refetchInterval: 10 * 60 * 1000, // 10분마다 자동 갱신
+    refetchInterval: 3 * 60 * 1000, // 3분마다 자동 갱신
+    staleTime: 1 * 60 * 1000, // 1분 후 stale로 간주
   })
 }

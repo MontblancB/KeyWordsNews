@@ -1,7 +1,7 @@
 'use client'
 
 import { NewsItem } from '@/types/news'
-import { formatDistanceToNow } from 'date-fns'
+import { useState, useEffect } from 'react'
 
 interface NewsCardProps {
   news: NewsItem
@@ -22,7 +22,17 @@ export default function NewsCard({ news }: NewsCardProps) {
     return `${days}일 전`
   }
 
-  const timeAgo = getTimeAgo(new Date(news.publishedAt))
+  // 시간을 상태로 관리하여 자동 업데이트
+  const [timeAgo, setTimeAgo] = useState(getTimeAgo(new Date(news.publishedAt)))
+
+  useEffect(() => {
+    // 1분마다 시간 업데이트
+    const interval = setInterval(() => {
+      setTimeAgo(getTimeAgo(new Date(news.publishedAt)))
+    }, 60000) // 60초마다
+
+    return () => clearInterval(interval)
+  }, [news.publishedAt])
 
   return (
     <article className="border-b border-gray-200 hover:bg-gray-50 transition-colors">

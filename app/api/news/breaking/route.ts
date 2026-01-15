@@ -29,8 +29,8 @@ export async function GET(request: Request) {
       console.log(`✅ 속보 - 활성화된 소스로 필터링: ${news.length}건`)
     }
 
-    // 캐시에 저장 (5분)
-    cache.set(cacheKey, news, 300)
+    // 캐시에 저장 (30초 - 속보는 빠르게 갱신)
+    cache.set(cacheKey, news, 30)
 
     return NextResponse.json({
       success: true,

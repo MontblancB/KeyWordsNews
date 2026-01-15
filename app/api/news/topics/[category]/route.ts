@@ -18,7 +18,7 @@ export async function GET(
 
     console.log(`🔍 하이브리드 카테고리 조회 시작: "${category}" (limit: ${limit}, offset: ${offset})`)
 
-    // 캐시 확인 (5분)
+    // 캐시 확인 (1분 - 새로고침 응답성 향상)
     const cached = cache.get<any>(cacheKey)
     if (cached) {
       console.log(`✅ 캐시에서 반환: ${cached.data.length}건`)
@@ -54,8 +54,8 @@ export async function GET(
       hasMore: offset + limit < total
     }
 
-    // 캐시에 저장 (5분)
-    cache.set(cacheKey, response, 300)
+    // 캐시에 저장 (1분 - 새로고침 응답성 향상)
+    cache.set(cacheKey, response, 60)
 
     console.log(`✅ 최종 결과 반환: ${paginatedResults.length}건 (전체: ${total}건)`)
 

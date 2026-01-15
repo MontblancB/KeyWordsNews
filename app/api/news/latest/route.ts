@@ -30,8 +30,8 @@ export async function GET(request: Request) {
       hasMore: offset + limit < total
     }
 
-    // 캐시에 저장 (3분)
-    cache.set(cacheKey, response, 180)
+    // 캐시에 저장 (1분 - 새로고침 응답성 향상)
+    cache.set(cacheKey, response, 60)
 
     return NextResponse.json({
       success: true,
