@@ -1,4 +1,5 @@
-import { RSS_FEED_SOURCES, RSSFeedSource } from './rss/sources'
+import { RSS_FEED_SOURCES } from './rss/sources'
+import { RSSFeedSource } from '@/types/news'
 
 const RSS_SETTINGS_STORAGE_KEY = 'rss_source_settings'
 

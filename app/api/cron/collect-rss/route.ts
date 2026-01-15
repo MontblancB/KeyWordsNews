@@ -26,7 +26,6 @@ export async function GET(request: Request) {
     console.log('✅ Cron Job: RSS 수집 완료', result)
 
     return NextResponse.json({
-      success: true,
       message: 'RSS collection completed',
       ...result
     })
