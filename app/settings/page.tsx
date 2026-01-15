@@ -11,7 +11,7 @@ export default function SettingsPage() {
       </header>
 
       <main className="pb-20">
-        {/* RSS 소스 관리 섹션 */}
+        {/* 뉴스 소스 관리 섹션 */}
         <section className="bg-white border-b-8 border-gray-100">
           <RssSourceManager />
         </section>
@@ -20,7 +20,7 @@ export default function SettingsPage() {
         <section className="p-4 bg-white">
           <h3 className="text-lg font-bold text-gray-900 mb-3">앱 정보</h3>
           <div className="space-y-2 text-sm text-gray-600">
-            <p>버전: 2.0.0 (실시간 RSS 모드)</p>
+            <p>버전: 2.0.0 (실시간 모드)</p>
             <p>마지막 업데이트: 2026-01-16</p>
           </div>
         </section>

@@ -65,7 +65,7 @@ export default function RssSourceManager() {
       <div className="p-4 border-b border-gray-200 bg-gray-50">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-lg font-bold text-gray-900">
-            RSS 소스 관리
+            뉴스 소스 관리
           </h3>
           <span className="text-sm text-gray-600">
             {enabledCount} / {totalCount} 활성화
@@ -102,7 +102,7 @@ export default function RssSourceManager() {
         </div>
       </div>
 
-      {/* 카테고리별 RSS 소스 리스트 */}
+      {/* 카테고리별 뉴스 소스 리스트 */}
       <div className="max-h-[500px] overflow-y-auto">
         {categories.map((category) => {
           const categoryName = CATEGORY_MAPPING[category] || category
@@ -184,7 +184,7 @@ export default function RssSourceManager() {
       {/* 안내 메시지 */}
       <div className="p-4 bg-blue-50 border-t border-blue-100">
         <p className="text-xs text-blue-800">
-          💡 비활성화한 RSS 소스는 뉴스 수집 및 검색에서 제외됩니다.
+          💡 비활성화한 뉴스 소스는 뉴스 수집 및 검색에서 제외됩니다.
         </p>
       </div>
     </div>
