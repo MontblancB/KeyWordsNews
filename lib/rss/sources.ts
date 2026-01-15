@@ -41,24 +41,6 @@ export const RSS_FEED_SOURCES: RSSFeedSource[] = [
     updateInterval: 3,
     enabled: true
   },
-  {
-    id: 'hani_breaking',
-    name: '한겨레',
-    category: 'breaking',
-    url: 'http://www.hani.co.kr/rss/',
-    priority: 9,
-    updateInterval: 3,
-    enabled: false // 날짜 파싱 이슈
-  },
-  {
-    id: 'khan_breaking',
-    name: '경향신문',
-    category: 'breaking',
-    url: 'http://www.khan.co.kr/rss/rssdata/total_news.xml',
-    priority: 9,
-    updateInterval: 3,
-    enabled: false // 날짜 파싱 이슈
-  },
 
   // 정치 키워드 (정치, 국회, 대통령)
   {
@@ -418,24 +400,6 @@ export const RSS_FEED_SOURCES: RSSFeedSource[] = [
 
   // ========== 추가 종합 일간지 ==========
   {
-    id: 'hani',
-    name: '한겨레',
-    category: 'general',
-    url: 'http://www.hani.co.kr/rss/',
-    priority: 8,
-    updateInterval: 5,
-    enabled: true
-  },
-  {
-    id: 'khan',
-    name: '경향신문',
-    category: 'general',
-    url: 'http://www.khan.co.kr/rss/rssdata/total_news.xml',
-    priority: 8,
-    updateInterval: 5,
-    enabled: true
-  },
-  {
     id: 'seoul',
     name: '서울신문',
     category: 'general',
@@ -603,15 +567,6 @@ export const RSS_FEED_SOURCES: RSSFeedSource[] = [
     name: '부산일보',
     category: 'general',
     url: 'http://www.busan.com/rss/busan_total.xml',
-    priority: 5,
-    updateInterval: 20,
-    enabled: true
-  },
-  {
-    id: 'jejunews',
-    name: '제주일보',
-    category: 'general',
-    url: 'http://www.jejunews.com/rss/allArticle.xml',
     priority: 5,
     updateInterval: 20,
     enabled: true
