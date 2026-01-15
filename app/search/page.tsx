@@ -53,19 +53,19 @@ export default function SearchPage() {
       <header className="bg-blue-600 text-white p-4 sticky top-0 z-50">
         <h1 className="text-xl font-bold mb-3">뉴스 검색</h1>
         <form onSubmit={handleSearch}>
-          <div className="relative">
+          <div className="flex gap-2">
             <input
               type="text"
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
               placeholder="검색어를 입력하세요..."
-              className="w-full px-4 py-2 pr-12 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-white"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <button
               type="submit"
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+              className="px-4 py-2 bg-white text-blue-600 rounded-lg hover:bg-gray-100 transition-colors font-medium"
             >
-              <MagnifyingGlassIcon className="w-5 h-5" />
+              검색
             </button>
           </div>
         </form>
