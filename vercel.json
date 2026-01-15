@@ -1,6 +1,1 @@
-{
-  "env": {
-    "DATABASE_URL": "@database_url",
-    "DIRECT_URL": "@direct_url"
-  }
-}
+{}
