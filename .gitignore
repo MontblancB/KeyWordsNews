@@ -38,8 +38,6 @@ next-env.d.ts
 *.db-journal
 
 # prisma
-/prisma/migrations
-
 /generated/prisma
 
 # claude
