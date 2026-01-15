@@ -4,12 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "prisma migrate deploy && prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "collect": "tsx scripts/collect-rss.ts",
-    "collect:watch": "tsx scripts/collect-rss.ts --watch",
-    "vercel-build": "prisma migrate deploy && prisma generate && next build"
+    "collect:watch": "tsx scripts/collect-rss.ts --watch"
   },
   "dependencies": {
     "@prisma/client": "^6.3.0",
