@@ -16,10 +16,10 @@ interface SearchResponse extends NewsResponse {
 }
 
 export function useBreakingNews() {
+  const sources = getEnabledRssSourceNames()
   return useQuery({
-    queryKey: ['news', 'breaking'],
+    queryKey: ['news', 'breaking', sources], // sources를 키에 포함
     queryFn: async () => {
-      const sources = getEnabledRssSourceNames()
       const url = sources ? `/api/news/breaking?sources=${encodeURIComponent(sources)}` : '/api/news/breaking'
       const res = await fetch(url, { cache: 'no-store' }) // 캐시 방지
       if (!res.ok) throw new Error('Failed to fetch breaking news')
@@ -45,10 +45,10 @@ export function useLatestNews() {
 }
 
 export function useTopicNews(category: string) {
+  const sources = getEnabledRssSourceNames()
   return useQuery({
-    queryKey: ['news', 'topic', category],
+    queryKey: ['news', 'topic', category, sources], // sources를 키에 포함
     queryFn: async () => {
-      const sources = getEnabledRssSourceNames()
       const url = sources
         ? `/api/news/topics/${category}?sources=${encodeURIComponent(sources)}`
         : `/api/news/topics/${category}`
@@ -63,10 +63,10 @@ export function useTopicNews(category: string) {
 }
 
 export function useNewsSearch(keyword: string, page: number = 1) {
+  const sources = getEnabledRssSourceNames()
   return useQuery({
-    queryKey: ['news', 'search', keyword, page],
+    queryKey: ['news', 'search', keyword, page, sources], // sources를 키에 포함
     queryFn: async () => {
-      const sources = getEnabledRssSourceNames()
       const url = sources
         ? `/api/news/search?q=${encodeURIComponent(keyword)}&page=${page}&sources=${encodeURIComponent(sources)}`
         : `/api/news/search?q=${encodeURIComponent(keyword)}&page=${page}`
@@ -81,10 +81,10 @@ export function useNewsSearch(keyword: string, page: number = 1) {
 
 // 무한 스크롤용 검색 훅
 export function useInfiniteNewsSearch(keyword: string) {
+  const sources = getEnabledRssSourceNames()
   return useInfiniteQuery({
-    queryKey: ['news', 'search-infinite', keyword],
+    queryKey: ['news', 'search-infinite', keyword, sources], // sources를 키에 포함
     queryFn: async ({ pageParam = 1 }) => {
-      const sources = getEnabledRssSourceNames()
       const url = sources
         ? `/api/news/search?q=${encodeURIComponent(keyword)}&page=${pageParam}&sources=${encodeURIComponent(sources)}`
         : `/api/news/search?q=${encodeURIComponent(keyword)}&page=${pageParam}`
@@ -132,10 +132,10 @@ export function useInfiniteLatestNews() {
 
 // 무한 스크롤용 토픽 뉴스 훅
 export function useInfiniteTopicNews(category: string) {
+  const sources = getEnabledRssSourceNames()
   return useInfiniteQuery({
-    queryKey: ['news', 'topic-infinite', category],
+    queryKey: ['news', 'topic-infinite', category, sources], // sources를 키에 포함
     queryFn: async ({ pageParam = 0 }) => {
-      const sources = getEnabledRssSourceNames()
       const url = sources
         ? `/api/news/topics/${category}?limit=20&offset=${pageParam}&sources=${encodeURIComponent(sources)}`
         : `/api/news/topics/${category}?limit=20&offset=${pageParam}`
