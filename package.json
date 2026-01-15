@@ -9,7 +9,7 @@
     "lint": "next lint",
     "collect": "tsx scripts/collect-rss.ts",
     "collect:watch": "tsx scripts/collect-rss.ts --watch",
-    "vercel-build": "prisma generate && next build"
+    "vercel-build": "prisma migrate deploy && prisma generate && next build"
   },
   "dependencies": {
     "@prisma/client": "^6.3.0",
