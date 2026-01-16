@@ -44,7 +44,7 @@ export default function NewsCard({ news }: NewsCardProps) {
         href={news.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="block p-4 pb-0"
+        className={`block p-4 ${isEnabled ? 'pb-0' : 'pb-4'}`}
       >
         <div className="flex gap-3">
           <div className="flex-1 min-w-0">
