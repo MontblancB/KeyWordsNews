@@ -16,7 +16,7 @@ export class GroqProvider implements AIProvider {
     this.client = new Groq({
       apiKey: config.apiKey,
     })
-    this.model = config.model || 'llama-3.3-70b-versatile'
+    this.model = config.model || 'llama-3.3-70b-specdec'  // Speculative Decoding: 6배 빠름 (276 → 1,660 tokens/sec)
     this.temperature = config.temperature ?? 0.3
     this.maxTokens = config.maxTokens ?? 1200  // 구체적 요약을 위해 증가 (200-250자 * 4-6개 불릿)
   }
