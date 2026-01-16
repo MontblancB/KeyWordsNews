@@ -7,11 +7,14 @@ import BottomNav from '@/components/BottomNav'
 import CategoryTabs from '@/components/CategoryTabs'
 import { useParams } from 'next/navigation'
 import { useColorTheme } from '@/hooks/useColorTheme'
+import { useQueryClient } from '@tanstack/react-query'
+import { getEnabledRssSourceNames } from '@/lib/rss-settings'
 
 export default function TopicPage() {
   const { headerClasses } = useColorTheme()
   const params = useParams()
   const category = params.category as string
+  const queryClient = useQueryClient()
 
   const {
     data,
@@ -36,7 +39,72 @@ export default function TopicPage() {
     culture: '문화',
   }
 
-  // 첫 5개 로드 후 자동으로 나머지 페이지 로드 (백그라운드)
+  // 카테고리별 이웃 카테고리 정의 (관련성 높은 카테고리)
+  const neighborCategories: Record<string, string[]> = {
+    general: ['politics', 'economy'],
+    politics: ['economy', 'society'],
+    economy: ['politics', 'tech'],
+    society: ['politics', 'world'],
+    world: ['politics', 'society'],
+    tech: ['economy', 'society'],
+    sports: ['entertainment', 'society'],
+    entertainment: ['culture', 'sports'],
+    culture: ['entertainment', 'society'],
+  }
+
+  // 전략적 프리페칭: 속보 + 이웃 카테고리
+  useEffect(() => {
+    if (!isLoading && data) {
+      const sources = getEnabledRssSourceNames()
+
+      // 500ms 후 프리페칭 시작
+      setTimeout(() => {
+        // 1. 속보 프리페칭 (항상)
+        queryClient.prefetchQuery({
+          queryKey: ['news', 'breaking', sources],
+          queryFn: async () => {
+            const url = sources
+              ? `/api/news/breaking?sources=${encodeURIComponent(sources)}`
+              : '/api/news/breaking'
+            const res = await fetch(url)
+            if (!res.ok) throw new Error('Failed to prefetch breaking news')
+            const data = await res.json()
+            return data.data
+          },
+        })
+
+        // 2. 이웃 카테고리 프리페칭
+        const neighbors = neighborCategories[category] || []
+        neighbors.forEach((neighborCategory, index) => {
+          setTimeout(() => {
+            queryClient.prefetchInfiniteQuery({
+              queryKey: ['news', 'topic-infinite', neighborCategory, sources],
+              queryFn: async ({ pageParam = 0 }) => {
+                const limit = pageParam === 0 ? 10 : 15
+                const offset = pageParam === 0 ? 0 : 10 + (pageParam - 1) * 15
+
+                const url = sources
+                  ? `/api/news/topics/${neighborCategory}?limit=${limit}&offset=${offset}&sources=${encodeURIComponent(sources)}`
+                  : `/api/news/topics/${neighborCategory}?limit=${limit}&offset=${offset}`
+                const res = await fetch(url)
+                return res.json()
+              },
+              initialPageParam: 0,
+              getNextPageParam: (lastPage, allPages) => {
+                if (lastPage.hasMore) {
+                  return allPages.length
+                }
+                return undefined
+              },
+              pages: 1,
+            })
+          }, index * 300) // 300ms 간격으로 순차 실행
+        })
+      }, 500)
+    }
+  }, [isLoading, data, category, queryClient])
+
+  // 첫 10개 로드 후 자동으로 나머지 페이지 로드 (백그라운드)
   useEffect(() => {
     if (!isLoading && data && data.pages.length === 1 && hasNextPage && !isFetchingNextPage) {
       const timer = setTimeout(() => {

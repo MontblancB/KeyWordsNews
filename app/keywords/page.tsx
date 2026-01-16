@@ -9,12 +9,15 @@ import BottomNav from '@/components/BottomNav'
 import KeywordTabs from '@/components/KeywordTabs'
 import KeywordManager from '@/components/KeywordManager'
 import { useColorTheme } from '@/hooks/useColorTheme'
+import { useQueryClient } from '@tanstack/react-query'
+import { getEnabledRssSourceNames } from '@/lib/rss-settings'
 
 export default function KeywordsPage() {
   const { headerClasses } = useColorTheme()
   const { keywords, addKeyword, deleteKeyword, moveKeywordUp, moveKeywordDown, hasKeywords } = useKeywords()
   const [activeKeyword, setActiveKeyword] = useState<string | null>(null)
   const loadMoreRef = useRef<HTMLDivElement>(null)
+  const queryClient = useQueryClient()
 
   // 첫 번째 키워드를 자동 선택
   useEffect(() => {
@@ -33,7 +36,30 @@ export default function KeywordsPage() {
     fetchNextPage,
   } = useInfiniteNewsSearch(activeKeyword || '')
 
-  // 첫 5개 로드 후 자동으로 나머지 페이지 로드 (백그라운드)
+  // 전략적 프리페칭: 속보
+  useEffect(() => {
+    if (!isLoading && data && activeKeyword) {
+      const sources = getEnabledRssSourceNames()
+
+      // 500ms 후 속보 프리페칭
+      setTimeout(() => {
+        queryClient.prefetchQuery({
+          queryKey: ['news', 'breaking', sources],
+          queryFn: async () => {
+            const url = sources
+              ? `/api/news/breaking?sources=${encodeURIComponent(sources)}`
+              : '/api/news/breaking'
+            const res = await fetch(url)
+            if (!res.ok) throw new Error('Failed to prefetch breaking news')
+            const data = await res.json()
+            return data.data
+          },
+        })
+      }, 500)
+    }
+  }, [isLoading, data, activeKeyword, queryClient])
+
+  // 첫 10개 로드 후 자동으로 나머지 페이지 로드 (백그라운드)
   useEffect(() => {
     if (!isLoading && data && data.pages.length === 1 && hasNextPage && !isFetchingNextPage) {
       const timer = setTimeout(() => {
