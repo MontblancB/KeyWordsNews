@@ -7,7 +7,7 @@ import BottomNav from '@/components/BottomNav'
 import BreakingBanner from '@/components/BreakingBanner'
 import { useColorTheme } from '@/hooks/useColorTheme'
 import { useQueryClient } from '@tanstack/react-query'
-import { getEnabledRssSourceNames } from '@/lib/rss-settings'
+import { getEnabledRssSourceNames, getTopKeywords } from '@/lib/rss-settings'
 
 export default function HomePage() {
   const { headerClasses } = useColorTheme()
@@ -77,6 +77,53 @@ export default function HomePage() {
         })
       }, index * 500) // 500ms 간격으로 순차 실행
     })
+  }, [queryClient])
+
+  // 전략적 프리페칭: 경제지표 + 키워드
+  useEffect(() => {
+    const sources = getEnabledRssSourceNames()
+
+    // 800ms 후 경제지표 프리페칭
+    setTimeout(() => {
+      queryClient.prefetchQuery({
+        queryKey: ['economy-indicators'],
+        queryFn: async () => {
+          const res = await fetch('/api/economy/indicators')
+          if (!res.ok) throw new Error('Failed to prefetch economy indicators')
+          return res.json()
+        },
+        staleTime: 5 * 60 * 1000,
+      })
+
+      // 1200ms 후 키워드 프리페칭 시작 (400ms 추가 대기)
+      setTimeout(() => {
+        const topKeywords = getTopKeywords(3)
+
+        topKeywords.forEach((keyword, index) => {
+          setTimeout(() => {
+            queryClient.prefetchInfiniteQuery({
+              queryKey: ['news', 'search-infinite', keyword, sources],
+              queryFn: async ({ pageParam = 1 }) => {
+                const url = sources
+                  ? `/api/news/search?q=${encodeURIComponent(keyword)}&page=${pageParam}&sources=${encodeURIComponent(sources)}`
+                  : `/api/news/search?q=${encodeURIComponent(keyword)}&page=${pageParam}`
+                const res = await fetch(url)
+                if (!res.ok) throw new Error('Failed to prefetch keyword search')
+                return res.json()
+              },
+              initialPageParam: 1,
+              getNextPageParam: (lastPage) => {
+                if (lastPage.page < lastPage.totalPages) {
+                  return lastPage.page + 1
+                }
+                return undefined
+              },
+              pages: 1,
+            })
+          }, index * 300)
+        })
+      }, 400)
+    }, 800)
   }, [queryClient])
 
   // 무한 스크롤: Intersection Observer

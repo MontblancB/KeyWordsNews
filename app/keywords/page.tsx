@@ -36,7 +36,7 @@ export default function KeywordsPage() {
     fetchNextPage,
   } = useInfiniteNewsSearch(activeKeyword || '')
 
-  // 전략적 프리페칭: 속보
+  // 전략적 프리페칭: 속보 + 경제지표
   useEffect(() => {
     if (!isLoading && data && activeKeyword) {
       const sources = getEnabledRssSourceNames()
@@ -55,6 +55,19 @@ export default function KeywordsPage() {
             return data.data
           },
         })
+
+        // 800ms 후 경제지표 프리페칭 (500ms + 300ms)
+        setTimeout(() => {
+          queryClient.prefetchQuery({
+            queryKey: ['economy-indicators'],
+            queryFn: async () => {
+              const res = await fetch('/api/economy/indicators')
+              if (!res.ok) throw new Error('Failed to prefetch economy indicators')
+              return res.json()
+            },
+            staleTime: 5 * 60 * 1000,
+          })
+        }, 300)
       }, 500)
     }
   }, [isLoading, data, activeKeyword, queryClient])

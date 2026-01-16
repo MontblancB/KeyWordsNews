@@ -8,7 +8,7 @@ import CategoryTabs from '@/components/CategoryTabs'
 import { useParams } from 'next/navigation'
 import { useColorTheme } from '@/hooks/useColorTheme'
 import { useQueryClient } from '@tanstack/react-query'
-import { getEnabledRssSourceNames } from '@/lib/rss-settings'
+import { getEnabledRssSourceNames, getTopKeywords } from '@/lib/rss-settings'
 
 export default function TopicPage() {
   const { headerClasses } = useColorTheme()
@@ -52,7 +52,7 @@ export default function TopicPage() {
     culture: ['entertainment', 'society'],
   }
 
-  // 전략적 프리페칭: 속보 + 이웃 카테고리
+  // 전략적 프리페칭: 속보 + 이웃 카테고리 + 경제지표 + 키워드
   useEffect(() => {
     if (!isLoading && data) {
       const sources = getEnabledRssSourceNames()
@@ -100,6 +100,48 @@ export default function TopicPage() {
             })
           }, index * 300) // 300ms 간격으로 순차 실행
         })
+
+        // 3. 경제지표 프리페칭 (800ms)
+        setTimeout(() => {
+          queryClient.prefetchQuery({
+            queryKey: ['economy-indicators'],
+            queryFn: async () => {
+              const res = await fetch('/api/economy/indicators')
+              if (!res.ok) throw new Error('Failed to prefetch economy indicators')
+              return res.json()
+            },
+            staleTime: 5 * 60 * 1000,
+          })
+
+          // 4. 키워드 프리페칭 (1200ms = 800ms + 400ms)
+          setTimeout(() => {
+            const topKeywords = getTopKeywords(3)
+
+            topKeywords.forEach((keyword, index) => {
+              setTimeout(() => {
+                queryClient.prefetchInfiniteQuery({
+                  queryKey: ['news', 'search-infinite', keyword, sources],
+                  queryFn: async ({ pageParam = 1 }) => {
+                    const url = sources
+                      ? `/api/news/search?q=${encodeURIComponent(keyword)}&page=${pageParam}&sources=${encodeURIComponent(sources)}`
+                      : `/api/news/search?q=${encodeURIComponent(keyword)}&page=${pageParam}`
+                    const res = await fetch(url)
+                    if (!res.ok) throw new Error('Failed to prefetch keyword search')
+                    return res.json()
+                  },
+                  initialPageParam: 1,
+                  getNextPageParam: (lastPage) => {
+                    if (lastPage.page < lastPage.totalPages) {
+                      return lastPage.page + 1
+                    }
+                    return undefined
+                  },
+                  pages: 1,
+                })
+              }, index * 300)
+            })
+          }, 400)
+        }, 300)
       }, 500)
     }
   }, [isLoading, data, category, queryClient])

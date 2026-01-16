@@ -145,3 +145,20 @@ export function getEnabledRssSourceNames(): string {
   const enabledSources = getEnabledRssSources()
   return enabledSources.map(source => source.name).join(',')
 }
+
+/**
+ * 등록된 키워드 중 상위 N개 가져오기 (프리페칭용)
+ */
+export function getTopKeywords(limit: number = 3): string[] {
+  if (typeof window === 'undefined') return []
+  const stored = localStorage.getItem('keywords')
+  if (!stored) return []
+
+  try {
+    const keywords = JSON.parse(stored)
+    // 최신 순으로 limit개만 반환
+    return keywords.slice(0, limit).map((k: { keyword: string }) => k.keyword)
+  } catch {
+    return []
+  }
+}
