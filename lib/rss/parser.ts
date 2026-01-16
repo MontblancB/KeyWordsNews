@@ -1,5 +1,6 @@
 import Parser from 'rss-parser'
 import { RSSFeedSource, ParsedRSSItem } from '@/types/news'
+import { decode as decodeHtmlEntities } from 'he'
 
 export class RSSParserService {
   private parser: Parser
@@ -15,7 +16,11 @@ export class RSSParserService {
           ['content:encoded', 'contentEncoded']
         ]
       },
-      timeout: 10000
+      timeout: 10000,
+      headers: {
+        'Accept': 'application/rss+xml, application/xml, text/xml, */*',
+        'Accept-Charset': 'utf-8'
+      }
     })
   }
 
@@ -77,16 +82,16 @@ export class RSSParserService {
 
   // HTML 태그 제거 및 텍스트 정리
   private cleanText(text: string): string {
-    return text
-      .replace(/<[^>]*>/g, '') // HTML 태그 제거
-      .replace(/&nbsp;/g, ' ')
-      .replace(/&quot;/g, '"')
-      .replace(/&apos;/g, "'")
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/\s+/g, ' ') // 연속된 공백 하나로
-      .trim()
+    // 1. HTML 태그 제거
+    let cleaned = text.replace(/<[^>]*>/g, '')
+
+    // 2. HTML 엔티티 완전 디코딩 (&#xAC00;, &#44032;, &nbsp; 등 모두 처리)
+    cleaned = decodeHtmlEntities(cleaned)
+
+    // 3. 연속된 공백 정리 및 trim
+    cleaned = cleaned.replace(/\s+/g, ' ').trim()
+
+    return cleaned
   }
 
   // 요약문 추출 (150자 제한)
