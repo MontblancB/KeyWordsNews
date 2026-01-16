@@ -56,16 +56,20 @@ export default function HomePage() {
         queryClient.prefetchInfiniteQuery({
           queryKey: ['news', 'topic-infinite', category, sources],
           queryFn: async ({ pageParam = 0 }) => {
+            // 첫 요청은 10개
+            const limit = pageParam === 0 ? 10 : 15
+            const offset = pageParam === 0 ? 0 : 10 + (pageParam - 1) * 15
+
             const url = sources
-              ? `/api/news/topics/${category}?limit=5&offset=${pageParam}&sources=${encodeURIComponent(sources)}`
-              : `/api/news/topics/${category}?limit=5&offset=${pageParam}`
+              ? `/api/news/topics/${category}?limit=${limit}&offset=${offset}&sources=${encodeURIComponent(sources)}`
+              : `/api/news/topics/${category}?limit=${limit}&offset=${offset}`
             const res = await fetch(url)
             return res.json()
           },
           initialPageParam: 0,
           getNextPageParam: (lastPage, allPages) => {
             if (lastPage.hasMore) {
-              return allPages.length * 5
+              return allPages.length
             }
             return undefined
           },

@@ -118,26 +118,30 @@ export function useInfiniteLatestNews() {
   return useInfiniteQuery({
     queryKey: ['news', 'latest-infinite', sources],
     queryFn: async ({ pageParam = 0 }) => {
+      // 첫 요청은 10개, 이후는 15개씩
+      const limit = pageParam === 0 ? 10 : 15
+      const offset = pageParam === 0 ? 0 : 10 + (pageParam - 1) * 15
+
       const url = sources
-        ? `/api/news/latest?limit=5&offset=${pageParam}&sources=${encodeURIComponent(sources)}`
-        : `/api/news/latest?limit=5&offset=${pageParam}`
-      const res = await fetch(url)  // cache: 'no-store' 제거
+        ? `/api/news/latest?limit=${limit}&offset=${offset}&sources=${encodeURIComponent(sources)}`
+        : `/api/news/latest?limit=${limit}&offset=${offset}`
+      const res = await fetch(url)
       if (!res.ok) throw new Error('Failed to fetch latest news')
       const data = await res.json()
       return data
     },
     getNextPageParam: (lastPage, allPages) => {
       if (lastPage.hasMore) {
-        return allPages.length * 5  // 5개씩 증가
+        return allPages.length  // 페이지 번호 (0, 1, 2, 3...)
       }
       return undefined
     },
     initialPageParam: 0,
-    staleTime: 5 * 60 * 1000,         // 1분 → 5분
-    gcTime: 10 * 60 * 1000,           // 10분 (메모리 캐시 유지)
-    refetchInterval: false,           // 제거 (2분 → false)
-    refetchOnMount: true,             // 마운트 시 백그라운드 갱신
-    refetchOnWindowFocus: false,      // 명시적으로 false
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchInterval: false,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
   })
 }
 
@@ -147,26 +151,30 @@ export function useInfiniteTopicNews(category: string) {
   return useInfiniteQuery({
     queryKey: ['news', 'topic-infinite', category, sources],
     queryFn: async ({ pageParam = 0 }) => {
+      // 첫 요청은 10개, 이후는 15개씩
+      const limit = pageParam === 0 ? 10 : 15
+      const offset = pageParam === 0 ? 0 : 10 + (pageParam - 1) * 15
+
       const url = sources
-        ? `/api/news/topics/${category}?limit=5&offset=${pageParam}&sources=${encodeURIComponent(sources)}`
-        : `/api/news/topics/${category}?limit=5&offset=${pageParam}`
-      const res = await fetch(url)  // cache: 'no-store' 제거
+        ? `/api/news/topics/${category}?limit=${limit}&offset=${offset}&sources=${encodeURIComponent(sources)}`
+        : `/api/news/topics/${category}?limit=${limit}&offset=${offset}`
+      const res = await fetch(url)
       if (!res.ok) throw new Error(`Failed to fetch ${category} news`)
       const data = await res.json()
       return data
     },
     getNextPageParam: (lastPage, allPages) => {
       if (lastPage.hasMore) {
-        return allPages.length * 5  // 5개씩 증가
+        return allPages.length  // 페이지 번호 (0, 1, 2, 3...)
       }
       return undefined
     },
     initialPageParam: 0,
     enabled: !!category,
-    staleTime: 5 * 60 * 1000,         // 1분 → 5분
-    gcTime: 10 * 60 * 1000,           // 10분 (메모리 캐시 유지)
-    refetchInterval: false,           // 제거 (3분 → false)
-    refetchOnMount: true,             // 마운트 시 백그라운드 갱신
-    refetchOnWindowFocus: false,      // 명시적으로 false
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchInterval: false,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
   })
 }
