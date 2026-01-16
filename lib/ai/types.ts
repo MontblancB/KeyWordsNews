@@ -2,8 +2,9 @@
  * AI 요약 결과 타입
  */
 export interface SummaryResult {
-  summary: string      // 요약 텍스트 (150자 이내)
+  summary: string      // 요약 텍스트 (불릿 포인트 형식)
   keywords: string[]   // 핵심 키워드 (3-5개)
+  oneLiner?: string    // 한 줄 정리 (20-30자 이내)
 }
 
 /**

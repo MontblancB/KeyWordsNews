@@ -71,6 +71,7 @@ export async function POST(req: NextRequest) {
           data: {
             summary: result.summary,
             keywords: result.keywords,
+            oneLiner: result.oneLiner,
             provider: result.provider,
             cached: false,
             fallback: true,  // 폴백 모드임을 표시
@@ -92,6 +93,7 @@ export async function POST(req: NextRequest) {
         data: {
           summary: news.aiSummary,
           keywords: news.aiKeywords,
+          oneLiner: news.aiOneLiner,
           provider: news.aiProvider || 'unknown',
           cached: true,
         },
@@ -143,6 +145,7 @@ export async function POST(req: NextRequest) {
       data: {
         aiSummary: result.summary,
         aiKeywords: result.keywords,
+        aiOneLiner: result.oneLiner,
         aiSummarizedAt: new Date(),
         aiProvider: result.provider,
       },
@@ -154,6 +157,7 @@ export async function POST(req: NextRequest) {
       data: {
         summary: result.summary,
         keywords: result.keywords,
+        oneLiner: result.oneLiner,
         provider: result.provider,
         cached: false,
         contentSource, // 스크래핑 or RSS 요약

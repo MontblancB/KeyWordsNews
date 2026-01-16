@@ -19,6 +19,7 @@ interface SummaryData {
   keywords: string[]
   provider: string
   cached?: boolean
+  oneLiner?: string  // 한 줄 정리
 }
 
 export default function AISummary({
@@ -144,6 +145,16 @@ export default function AISummary({
                     {summaryData.summary}
                   </p>
                 )}
+
+                {/* 한 줄 정리 */}
+                {summaryData.oneLiner && (
+                  <div className="mt-3 pt-3 border-t border-purple-200">
+                    <p className="text-sm font-semibold text-purple-700 leading-relaxed">
+                      💡 {summaryData.oneLiner}
+                    </p>
+                  </div>
+                )}
+
                 {/* Provider 정보 (디버그용) */}
                 {process.env.NODE_ENV === 'development' && (
                   <p className="text-xs text-gray-400 mt-1">
