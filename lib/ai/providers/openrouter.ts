@@ -19,7 +19,7 @@ export class OpenRouterProvider implements AIProvider {
   }
 
   async summarize(title: string, content: string): Promise<SummaryResult> {
-    const prompt = `다음 뉴스 기사를 읽고 핵심 내용을 **4-6개의 구체적인 불릿**으로 정리하고, 주요 키워드 3-5개를 추출해주세요.
+    const prompt = `다음 뉴스 기사를 읽고 핵심 내용을 **3-4개의 구체적인 불릿**으로 정리하고, 주요 키워드 3-5개를 추출해주세요.
 
 **중요한 요약 규칙:**
 1. **각 불릿은 20-35단어 내외** - 구체적이고 상세하게
@@ -28,6 +28,7 @@ export class OpenRouterProvider implements AIProvider {
 4. **인과관계 명시** - 원인과 결과, 배경과 영향 포함
 5. **객관적 사실 중심** - 주장이나 의견은 출처 명시
 6. 제목 내용 반복 금지, 새로운 정보 위주
+7. **3-4개로 간결하게** - 본문이 짧으면 3개, 길면 4개
 
 제목: ${title}
 
@@ -36,10 +37,9 @@ ${content}
 
 **좋은 구체적 요약 예시:**
 "• 고용노동부, 2026년 최저임금을 시간당 1만2천원으로 확정 (2025년 대비 7.3% 인상, 월 환산액 251만원)
-• 노동계 반발: 물가상승률(3.2%) 대비 실질임금 증가 미흡, 생활임금 수준 미달 지적
-• 경영계 우려: 중소기업 인건비 부담 가중으로 고용 축소 불가피, 자영업자 폐업 증가 우려
+• 노동계는 물가상승률(3.2%) 대비 실질임금 증가 미흡하다며 반발, 경영계는 중소기업 부담 가중 우려
 • 적용 대상 약 300만명(전체 노동자의 13%), 2026년 1월 1일부터 시행
-• 전문가 분석: 소득주도성장 정책 일환이나, 고용시장 양극화 심화 가능성 제기"
+• 전문가들은 소득주도성장 정책 일환이나 고용시장 양극화 심화 가능성 지적"
 
 반드시 JSON 형식으로만 응답해주세요:
 {
@@ -62,7 +62,7 @@ ${content}
             {
               role: 'system',
               content:
-                '당신은 뉴스를 구체적이고 상세하게 요약하는 전문 AI입니다. 각 불릿은 20-35단어 내외로 작성하며, 5W1H(누가, 언제, 어디서, 무엇을, 왜, 어떻게)를 포함합니다. 숫자/날짜/금액/비율/인명/기관명 등 구체적 정보를 필수로 포함하고, 원인과 결과, 배경과 영향 등 인과관계를 명확히 합니다. 주장이나 의견은 출처를 명시하며, 객관적 사실 중심으로 작성합니다. JSON 형식으로 응답하며, summary는 4-6개의 불릿 포인트로 구성합니다.',
+                '당신은 뉴스를 구체적이고 상세하게 요약하는 전문 AI입니다. 각 불릿은 20-35단어 내외로 작성하며, 5W1H(누가, 언제, 어디서, 무엇을, 왜, 어떻게)를 포함합니다. 숫자/날짜/금액/비율/인명/기관명 등 구체적 정보를 필수로 포함하고, 원인과 결과, 배경과 영향 등 인과관계를 명확히 합니다. 주장이나 의견은 출처를 명시하며, 객관적 사실 중심으로 작성합니다. JSON 형식으로 응답하며, summary는 3-4개의 불릿 포인트로 간결하게 구성합니다. 본문이 짧으면 3개, 길면 4개로 조절합니다.',
             },
             {
               role: 'user',
@@ -111,13 +111,13 @@ ${content}
           .join('\n')
       }
 
-      // 불릿 포인트 개수 확인 (4-6개)
+      // 불릿 포인트 개수 확인 (3-4개)
       const bulletPoints = result.summary.split('\n').filter((line) => line.includes('•'))
-      if (bulletPoints.length < 4) {
+      if (bulletPoints.length < 3) {
         console.warn(`[OpenRouter] Warning: Too few bullet points (${bulletPoints.length})`)
-      } else if (bulletPoints.length > 6) {
-        // 6개로 제한
-        result.summary = bulletPoints.slice(0, 6).join('\n')
+      } else if (bulletPoints.length > 4) {
+        // 4개로 제한
+        result.summary = bulletPoints.slice(0, 4).join('\n')
       }
 
       // 키워드 개수 제한 (3-5개)
