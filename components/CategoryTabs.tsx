@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter, usePathname } from 'next/navigation'
+import { useColorTheme } from '@/hooks/useColorTheme'
 
 const CATEGORIES = [
   { id: 'general', label: '종합' },
@@ -17,6 +18,7 @@ const CATEGORIES = [
 export default function CategoryTabs() {
   const router = useRouter()
   const pathname = usePathname()
+  const { buttonClasses } = useColorTheme()
 
   const currentCategory = pathname.split('/').pop() || 'politics'
 
@@ -29,7 +31,7 @@ export default function CategoryTabs() {
             onClick={() => router.push(`/topics/${category.id}`)}
             className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
               currentCategory === category.id
-                ? 'bg-blue-600 dark:bg-blue-700 text-white'
+                ? buttonClasses
                 : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
             }`}
           >
