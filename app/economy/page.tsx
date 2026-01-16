@@ -3,7 +3,14 @@
 import { useEconomy } from '@/hooks/useEconomy'
 import BottomNav from '@/components/BottomNav'
 import IndicatorCard from '@/components/economy/IndicatorCard'
-import { ArrowPathIcon } from '@heroicons/react/24/outline'
+import {
+  ArrowPathIcon,
+  ChartBarIcon,
+  GlobeAltIcon,
+  CurrencyDollarIcon,
+  SparklesIcon,
+  CircleStackIcon,
+} from '@heroicons/react/24/outline'
 import { useColorTheme } from '@/hooks/useColorTheme'
 
 export default function EconomyPage() {
@@ -45,9 +52,12 @@ export default function EconomyPage() {
           <div className="space-y-6">
             {/* 국내 지수 */}
             <section>
-              <h2 className="text-lg font-bold mb-3 text-gray-800 dark:text-gray-200">
-                📈 국내 지수
-              </h2>
+              <div className="flex items-center gap-2 mb-3">
+                <ChartBarIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200">
+                  국내 지수
+                </h2>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <IndicatorCard indicator={data.domestic.kospi} />
                 <IndicatorCard indicator={data.domestic.kosdaq} />
@@ -56,9 +66,12 @@ export default function EconomyPage() {
 
             {/* 해외 지수 */}
             <section>
-              <h2 className="text-lg font-bold mb-3 text-gray-800 dark:text-gray-200">
-                🌍 해외 지수
-              </h2>
+              <div className="flex items-center gap-2 mb-3">
+                <GlobeAltIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
+                <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200">
+                  해외 지수
+                </h2>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <IndicatorCard indicator={data.international.sp500} />
                 <IndicatorCard indicator={data.international.nasdaq} />
@@ -69,9 +82,12 @@ export default function EconomyPage() {
 
             {/* 환율 */}
             <section>
-              <h2 className="text-lg font-bold mb-3 text-gray-800 dark:text-gray-200">
-                💱 환율
-              </h2>
+              <div className="flex items-center gap-2 mb-3">
+                <CurrencyDollarIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200">
+                  환율
+                </h2>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <IndicatorCard indicator={data.exchange.usdKrw} />
                 <IndicatorCard indicator={data.exchange.jpyKrw} />
@@ -82,9 +98,12 @@ export default function EconomyPage() {
 
             {/* 금시세 */}
             <section>
-              <h2 className="text-lg font-bold mb-3 text-gray-800 dark:text-gray-200">
-                💰 금시세
-              </h2>
+              <div className="flex items-center gap-2 mb-3">
+                <SparklesIcon className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200">
+                  금시세
+                </h2>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <IndicatorCard indicator={data.gold.international} />
               </div>
@@ -92,9 +111,12 @@ export default function EconomyPage() {
 
             {/* 암호화폐 */}
             <section>
-              <h2 className="text-lg font-bold mb-3 text-gray-800 dark:text-gray-200">
-                ₿ 암호화폐
-              </h2>
+              <div className="flex items-center gap-2 mb-3">
+                <CircleStackIcon className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200">
+                  암호화폐
+                </h2>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <IndicatorCard indicator={data.crypto.bitcoin} />
                 <IndicatorCard indicator={data.crypto.ethereum} />
