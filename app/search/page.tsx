@@ -14,6 +14,7 @@ export default function SearchPage() {
   const {
     data,
     isLoading,
+    isFetching,
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
@@ -71,30 +72,38 @@ export default function SearchPage() {
         </form>
       </header>
 
-      <main className="pb-20">
+      <main className="pb-20 bg-white dark:bg-gray-900 relative">
         {!searchQuery && (
-          <div className="p-8 text-center text-gray-500">
-            <MagnifyingGlassIcon className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+          <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+            <MagnifyingGlassIcon className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
             <p>검색어를 입력하여 뉴스를 찾아보세요</p>
           </div>
         )}
 
-        {isLoading && searchQuery && (
-          <div className="p-8 text-center text-gray-500">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        {/* 백그라운드 갱신 인디케이터 (캐시가 있을 때) */}
+        {!isLoading && isFetching && searchQuery && data && (
+          <div className="absolute top-2 right-2 z-10">
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" title="백그라운드 갱신 중"></div>
+          </div>
+        )}
+
+        {/* 캐시가 없을 때만 로딩 스피너 표시 */}
+        {isLoading && !data && searchQuery && (
+          <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
             <p className="mt-2">검색 중...</p>
           </div>
         )}
 
         {searchQuery && data && (
           <>
-            <div className="p-4 bg-gray-50 border-b border-gray-200">
-              <p className="text-sm text-gray-600">
-                <span className="font-bold text-blue-600">{searchQuery}</span>
+            <div className="p-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                <span className="font-bold text-blue-600 dark:text-blue-400">{searchQuery}</span>
                 에 대한 검색 결과{' '}
                 <span className="font-bold">{totalCount}건</span>
                 {allNews.length > 0 && (
-                  <span className="text-gray-400 ml-2">
+                  <span className="text-gray-400 dark:text-gray-500 ml-2">
                     (현재 {allNews.length}건 표시)
                   </span>
                 )}
@@ -102,7 +111,7 @@ export default function SearchPage() {
             </div>
 
             {allNews.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">
+              <div className="p-8 text-center text-gray-500 dark:text-gray-400">
                 <p>검색 결과가 없습니다.</p>
               </div>
             ) : (
@@ -116,13 +125,13 @@ export default function SearchPage() {
                 {/* 무한 스크롤 트리거 영역 */}
                 <div ref={loadMoreRef} className="p-4">
                   {isFetchingNextPage && (
-                    <div className="text-center text-gray-500">
-                      <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                    <div className="text-center text-gray-500 dark:text-gray-400">
+                      <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 dark:border-blue-400"></div>
                       <p className="mt-2 text-sm">더 불러오는 중...</p>
                     </div>
                   )}
                   {!hasNextPage && allNews.length > 0 && (
-                    <div className="text-center text-gray-400 text-sm">
+                    <div className="text-center text-gray-400 dark:text-gray-500 text-sm">
                       모든 검색 결과를 불러왔습니다.
                     </div>
                   )}
