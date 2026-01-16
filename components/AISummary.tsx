@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { SparklesIcon } from '@heroicons/react/24/outline'
+import { SparklesIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline'
 import { SparklesIcon as SparklesIconSolid } from '@heroicons/react/24/solid'
 
 interface AISummaryProps {
@@ -42,6 +42,7 @@ export default function AISummary({
   )
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isExpanded, setIsExpanded] = useState(!!initialSummary) // 초기값이 있으면 펼쳐진 상태
 
   const handleSummarize = async () => {
     setLoading(true)
@@ -68,6 +69,7 @@ export default function AISummary({
       }
 
       setSummaryData(data.data)
+      setIsExpanded(true) // 요약 생성 후 자동으로 펼치기
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.'
@@ -81,37 +83,58 @@ export default function AISummary({
   // 이미 요약이 있으면 표시
   if (summaryData) {
     return (
-      <div className="mt-3 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
-        {/* 키워드 배지 */}
-        {summaryData.keywords.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-2">
-            {summaryData.keywords.map((keyword, index) => (
-              <span
-                key={index}
-                className="px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 rounded-full"
-              >
-                #{keyword}
-              </span>
-            ))}
+      <div className="mt-3">
+        {/* 토글 버튼 */}
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex items-center justify-between w-full px-3 py-1.5 text-sm font-medium text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors"
+        >
+          <div className="flex items-center gap-1.5">
+            <SparklesIconSolid className="w-4 h-4" />
+            <span>AI 요약</span>
+          </div>
+          {isExpanded ? (
+            <ChevronUpIcon className="w-4 h-4" />
+          ) : (
+            <ChevronDownIcon className="w-4 h-4" />
+          )}
+        </button>
+
+        {/* 요약 내용 (토글) */}
+        {isExpanded && (
+          <div className="mt-2 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
+            {/* 키워드 배지 */}
+            {summaryData.keywords.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {summaryData.keywords.map((keyword, index) => (
+                  <span
+                    key={index}
+                    className="px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 rounded-full"
+                  >
+                    #{keyword}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* AI 요약 */}
+            <div className="flex items-start gap-2">
+              <SparklesIconSolid className="w-4 h-4 text-purple-500 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm text-gray-700 leading-relaxed">
+                  {summaryData.summary}
+                </p>
+                {/* Provider 정보 (디버그용) */}
+                {process.env.NODE_ENV === 'development' && (
+                  <p className="text-xs text-gray-400 mt-1">
+                    AI: {summaryData.provider}
+                    {summaryData.cached && ' (cached)'}
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
         )}
-
-        {/* AI 요약 */}
-        <div className="flex items-start gap-2">
-          <SparklesIconSolid className="w-4 h-4 text-purple-500 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <p className="text-sm text-gray-700 leading-relaxed">
-              {summaryData.summary}
-            </p>
-            {/* Provider 정보 (디버그용) */}
-            {process.env.NODE_ENV === 'development' && (
-              <p className="text-xs text-gray-400 mt-1">
-                AI: {summaryData.provider}
-                {summaryData.cached && ' (cached)'}
-              </p>
-            )}
-          </div>
-        </div>
       </div>
     )
   }
