@@ -2,6 +2,7 @@
 
 import { NewsItem } from '@/types/news'
 import { useState, useEffect } from 'react'
+import AISummary from './AISummary'
 
 interface NewsCardProps {
   news: NewsItem
@@ -40,7 +41,7 @@ export default function NewsCard({ news }: NewsCardProps) {
         href={news.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="block p-4"
+        className="block p-4 pb-0"
       >
         <div className="flex gap-3">
           <div className="flex-1 min-w-0">
@@ -73,6 +74,18 @@ export default function NewsCard({ news }: NewsCardProps) {
           )}
         </div>
       </a>
+
+      {/* AI 요약 (링크 밖에 배치) */}
+      {news.id && (
+        <div className="px-4 pb-4">
+          <AISummary
+            newsId={news.id}
+            initialSummary={news.aiSummary}
+            initialKeywords={news.aiKeywords}
+            initialProvider={news.aiProvider}
+          />
+        </div>
+      )}
     </article>
   )
 }

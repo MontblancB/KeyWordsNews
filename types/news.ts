@@ -8,6 +8,13 @@ export interface NewsItem {
   publishedAt: Date | string // Date 객체 또는 ISO 문자열
   imageUrl?: string | null
   isBreaking?: boolean
+
+  // AI 요약 필드
+  aiSummary?: string | null
+  aiKeywords?: string[]
+  aiSummarizedAt?: Date | string | null
+  aiProvider?: string | null
+
   createdAt?: Date
   updatedAt?: Date
 }

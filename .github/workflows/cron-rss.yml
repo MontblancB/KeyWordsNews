@@ -15,3 +15,10 @@ jobs:
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json" \
             -w "\nHTTP Status: %{http_code}\n"
+
+      - name: Trigger AI Summarization for Breaking News
+        run: |
+          curl -X POST https://key-words-news.vercel.app/api/news/batch-summarize \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -w "\nHTTP Status: %{http_code}\n"
