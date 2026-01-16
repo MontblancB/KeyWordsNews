@@ -22,15 +22,18 @@ export class GroqProvider implements AIProvider {
   }
 
   async summarize(title: string, content: string): Promise<SummaryResult> {
-    const prompt = `다음 뉴스를 150자 이내로 요약하고, 핵심 키워드 3-5개를 추출해주세요.
+    const prompt = `다음 뉴스 기사를 읽고 핵심 내용을 150자 이내로 요약하고, 주요 키워드 3-5개를 추출해주세요.
+
+**중요: 제목이 아닌 본문 내용을 중심으로 요약해주세요.**
 
 제목: ${title}
 
-내용: ${content}
+본문:
+${content}
 
 반드시 JSON 형식으로만 응답해주세요:
 {
-  "summary": "핵심 내용을 150자 이내로 요약",
+  "summary": "본문의 핵심 내용을 150자 이내로 요약 (육하원칙 중심)",
   "keywords": ["키워드1", "키워드2", "키워드3"]
 }`
 
@@ -40,7 +43,8 @@ export class GroqProvider implements AIProvider {
         messages: [
           {
             role: 'system',
-            content: '당신은 한국어 뉴스를 요약하는 전문 AI입니다. 항상 JSON 형식으로 응답합니다.',
+            content:
+              '당신은 한국어 뉴스 기사를 분석하고 요약하는 전문 AI입니다. 제목만 보지 말고 본문의 핵심 내용(누가, 언제, 어디서, 무엇을, 왜, 어떻게)을 파악하여 객관적으로 요약합니다. 항상 JSON 형식으로 응답합니다.',
           },
           {
             role: 'user',

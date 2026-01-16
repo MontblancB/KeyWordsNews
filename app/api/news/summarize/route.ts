@@ -33,16 +33,33 @@ export async function POST(req: NextRequest) {
         console.log(`[Fallback] DB에 없는 뉴스, URL로 요약 생성: ${url}`)
 
         let content: string
+        let contentSource: 'scraped' | 'summary' = 'scraped'
+
         try {
-          content = await scrapeNewsContent(url, 2000)
+          content = await scrapeNewsContent(url, 5000)
+          console.log(`[Scraping] 성공: ${content.length}자 확보 - ${url}`)
         } catch (error) {
-          console.error('Scraping failed, using summary:', error)
-          content = summary || ''
+          console.error(`[Scraping] 실패: ${url}`, error)
+
+          // 크롤링 실패 시 RSS summary 사용 (최소 100자 이상일 때만)
+          if (summary && summary.length >= 100) {
+            content = summary
+            contentSource = 'summary'
+            console.log(`[Fallback] RSS 요약 사용: ${content.length}자`)
+          } else {
+            return NextResponse.json(
+              {
+                success: false,
+                error: '기사 내용을 가져올 수 없습니다. 잠시 후 다시 시도해주세요.',
+              },
+              { status: 400 }
+            )
+          }
         }
 
         if (!content || content.length < 50) {
           return NextResponse.json(
-            { success: false, error: 'Failed to fetch article content' },
+            { success: false, error: '기사 내용이 너무 짧습니다.' },
             { status: 400 }
           )
         }
@@ -57,6 +74,7 @@ export async function POST(req: NextRequest) {
             provider: result.provider,
             cached: false,
             fallback: true,  // 폴백 모드임을 표시
+            contentSource,   // 스크래핑 or RSS 요약
           },
         })
       }
@@ -80,21 +98,37 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // 4. 본문 크롤링
+    // 4. 본문 크롤링 (5000자로 증가하여 더 풍부한 내용 확보)
     let content: string
+    let contentSource: 'scraped' | 'summary' = 'scraped'
+
     try {
-      content = await scrapeNewsContent(news.url, 2000)
+      content = await scrapeNewsContent(news.url, 5000)
+      console.log(`[Scraping] 성공: ${content.length}자 확보 - ${news.url}`)
     } catch (error) {
-      console.error('Scraping failed:', error)
-      // 크롤링 실패 시 RSS summary 사용
-      content = news.summary
+      console.error(`[Scraping] 실패: ${news.url}`, error)
+
+      // 크롤링 실패 시 RSS summary 사용 (최소 100자 이상일 때만)
+      if (news.summary && news.summary.length >= 100) {
+        content = news.summary
+        contentSource = 'summary'
+        console.log(`[Fallback] RSS 요약 사용: ${content.length}자`)
+      } else {
+        return NextResponse.json(
+          {
+            success: false,
+            error: '기사 내용을 가져올 수 없습니다. 잠시 후 다시 시도해주세요.',
+          },
+          { status: 400 }
+        )
+      }
     }
 
     if (!content || content.length < 50) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Failed to fetch article content',
+          error: '기사 내용이 너무 짧습니다.',
         },
         { status: 400 }
       )
@@ -122,6 +156,7 @@ export async function POST(req: NextRequest) {
         keywords: result.keywords,
         provider: result.provider,
         cached: false,
+        contentSource, // 스크래핑 or RSS 요약
       },
     })
   } catch (error) {
