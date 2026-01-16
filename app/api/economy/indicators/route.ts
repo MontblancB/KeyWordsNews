@@ -12,17 +12,19 @@ import type { EconomyData } from '@/types/economy'
  * - 암호화폐 (BTC, ETH, XRP, ADA): Finnhub API
  */
 
-// 캐시 설정 (5분)
+// 캐시 설정 (3분)
 let cachedData: EconomyData | null = null
 let lastFetchTime: number = 0
-const CACHE_DURATION = 5 * 60 * 1000 // 5분
+const CACHE_DURATION = 3 * 60 * 1000 // 3분
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const now = Date.now()
+    const { searchParams } = new URL(request.url)
+    const forceRefresh = searchParams.get('force') === 'true'
 
-    // 캐시 확인
-    if (cachedData && now - lastFetchTime < CACHE_DURATION) {
+    // 강제 새로고침이 아니고 캐시가 유효한 경우
+    if (!forceRefresh && cachedData && now - lastFetchTime < CACHE_DURATION) {
       console.log('[Economy API] Returning cached data')
       return NextResponse.json({
         success: true,
@@ -33,7 +35,9 @@ export async function GET() {
 
     // 하이브리드 데이터 수집
     console.log(
-      '[Economy API] Collecting fresh data (Naver Finance + Finnhub API)'
+      forceRefresh
+        ? '[Economy API] Force refresh - Collecting fresh data'
+        : '[Economy API] Collecting fresh data (Naver Finance + Finnhub API)'
     )
     const data = await collectAllEconomyData()
 
@@ -45,6 +49,7 @@ export async function GET() {
       success: true,
       data,
       cached: false,
+      forceRefresh,
     })
   } catch (error) {
     console.error('Economy indicators error:', error)
