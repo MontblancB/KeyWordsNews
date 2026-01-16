@@ -12,7 +12,7 @@ import { NewsSummarizer } from '@/lib/ai/summarizer'
  */
 export async function POST(req: NextRequest) {
   try {
-    const { newsId } = await req.json()
+    const { newsId, url, title, summary } = await req.json()
 
     // 1. 입력 검증
     if (!newsId || typeof newsId !== 'string') {
@@ -28,6 +28,39 @@ export async function POST(req: NextRequest) {
     })
 
     if (!news) {
+      // ⭐️ DB에 없으면 URL 기반 폴백 (RSS 뉴스 대응)
+      if (url && title) {
+        console.log(`[Fallback] DB에 없는 뉴스, URL로 요약 생성: ${url}`)
+
+        let content: string
+        try {
+          content = await scrapeNewsContent(url, 2000)
+        } catch (error) {
+          console.error('Scraping failed, using summary:', error)
+          content = summary || ''
+        }
+
+        if (!content || content.length < 50) {
+          return NextResponse.json(
+            { success: false, error: 'Failed to fetch article content' },
+            { status: 400 }
+          )
+        }
+
+        const result = await NewsSummarizer.summarize(title, content)
+
+        return NextResponse.json({
+          success: true,
+          data: {
+            summary: result.summary,
+            keywords: result.keywords,
+            provider: result.provider,
+            cached: false,
+            fallback: true,  // 폴백 모드임을 표시
+          },
+        })
+      }
+
       return NextResponse.json(
         { success: false, error: 'News not found' },
         { status: 404 }

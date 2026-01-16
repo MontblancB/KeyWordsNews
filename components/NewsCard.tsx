@@ -80,6 +80,9 @@ export default function NewsCard({ news }: NewsCardProps) {
         <div className="px-4 pb-4">
           <AISummary
             newsId={news.id}
+            url={news.url}           // ⭐️ 추가
+            title={news.title}       // ⭐️ 추가
+            summary={news.summary}   // ⭐️ 추가
             initialSummary={news.aiSummary}
             initialKeywords={news.aiKeywords}
             initialProvider={news.aiProvider}

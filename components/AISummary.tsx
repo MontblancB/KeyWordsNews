@@ -6,6 +6,9 @@ import { SparklesIcon as SparklesIconSolid } from '@heroicons/react/24/solid'
 
 interface AISummaryProps {
   newsId: string
+  url: string  // ⭐️ 추가
+  title: string  // ⭐️ 추가
+  summary: string  // ⭐️ 추가
   initialSummary?: string | null
   initialKeywords?: string[]
   initialProvider?: string | null
@@ -20,6 +23,9 @@ interface SummaryData {
 
 export default function AISummary({
   newsId,
+  url,  // ⭐️ 추가
+  title,  // ⭐️ 추가
+  summary,  // ⭐️ 추가
   initialSummary,
   initialKeywords,
   initialProvider,
@@ -47,7 +53,12 @@ export default function AISummary({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ newsId }),
+        body: JSON.stringify({
+          newsId,
+          url,      // ⭐️ 추가
+          title,    // ⭐️ 추가
+          summary   // ⭐️ 추가
+        }),
       })
 
       const data = await response.json()
