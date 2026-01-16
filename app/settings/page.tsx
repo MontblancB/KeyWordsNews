@@ -4,6 +4,7 @@ import BottomNav from '@/components/BottomNav'
 import RssSourceManager from '@/components/RssSourceManager'
 import ThemeToggle from '@/components/ThemeToggle'
 import ColorThemeSelector from '@/components/ColorThemeSelector'
+import AISummaryToggle from '@/components/AISummaryToggle'
 import { useColorTheme } from '@/hooks/useColorTheme'
 import { InformationCircleIcon } from '@heroicons/react/24/outline'
 
@@ -20,6 +21,9 @@ export default function SettingsPage() {
         {/* 다크 모드 설정 */}
         <ThemeToggle />
 
+        {/* AI 요약 설정 */}
+        <AISummaryToggle />
+
         {/* 색상 테마 설정 */}
         <ColorThemeSelector />
 
@@ -35,7 +39,7 @@ export default function SettingsPage() {
             </h3>
           </div>
           <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
-            <p>버전: 2.3.5</p>
+            <p>버전: 2.4.0</p>
             <p>마지막 업데이트: 2026-01-16</p>
           </div>
         </div>

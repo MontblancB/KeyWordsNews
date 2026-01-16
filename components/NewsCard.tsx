@@ -3,12 +3,15 @@
 import { NewsItem } from '@/types/news'
 import { useState, useEffect } from 'react'
 import AISummary from './AISummary'
+import { useAISummarySettings } from '@/hooks/useAISummarySettings'
 
 interface NewsCardProps {
   news: NewsItem
 }
 
 export default function NewsCard({ news }: NewsCardProps) {
+  const { isEnabled } = useAISummarySettings()
+
   // 간단한 시간 표시 함수
   const getTimeAgo = (date: Date) => {
     const now = new Date()
@@ -76,13 +79,13 @@ export default function NewsCard({ news }: NewsCardProps) {
       </a>
 
       {/* AI 요약 (링크 밖에 배치) */}
-      {news.id && (
+      {isEnabled && news.id && (
         <div className="px-4 pb-4">
           <AISummary
             newsId={news.id}
-            url={news.url}           // ⭐️ 추가
-            title={news.title}       // ⭐️ 추가
-            summary={news.summary}   // ⭐️ 추가
+            url={news.url}
+            title={news.title}
+            summary={news.summary}
             initialSummary={news.aiSummary}
             initialKeywords={news.aiKeywords}
             initialProvider={news.aiProvider}
