@@ -55,16 +55,22 @@ export async function scrapeDomesticIndexV2(
 
     // 변동 정보 영역
     const changeArea = $('#change_value_and_rate')
-    const changeText = changeArea.text().trim()
 
-    // 변동값과 변동률 추출
-    const parts = changeText.split('\n').map((s) => s.trim()).filter(Boolean)
-    const change = parts[0] || '0'
-    const changePercent = extractChangePercent(changeText)
+    // 변동값 - 첫 번째 span 요소에서 추출
+    const changeSpan = changeArea.find('span').first()
+    const changeValue = changeSpan.text().trim()
 
     // 변동 타입 - 부모 요소의 class 확인
     const parentClass = changeArea.parent().attr('class') || ''
     const changeType = getChangeTypeFromClass(parentClass)
+
+    // 부호 추가
+    const sign = changeType === 'up' ? '+' : changeType === 'down' ? '-' : ''
+    const change = sign + changeValue
+
+    // 변동률 - 전체 텍스트에서 추출
+    const changeText = changeArea.text().trim()
+    const changePercent = extractChangePercent(changeText)
 
     return {
       name: code,
