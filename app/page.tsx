@@ -24,6 +24,18 @@ export default function HomePage() {
   const loadMoreRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
 
+  // 첫 5개 로드 후 자동으로 나머지 페이지 로드 (백그라운드)
+  useEffect(() => {
+    if (!isLoading && data && data.pages.length === 1 && hasNextPage && !isFetchingNextPage) {
+      // 첫 페이지만 로드된 상태에서 자동으로 다음 3페이지(총 20개)를 백그라운드에서 로드
+      const timer = setTimeout(() => {
+        fetchNextPage()
+      }, 500) // 500ms 후 자동 로드 시작
+
+      return () => clearTimeout(timer)
+    }
+  }, [isLoading, data, hasNextPage, isFetchingNextPage, fetchNextPage])
+
   // 모든 카테고리 순차적으로 프리페칭 (백그라운드에서 실행)
   useEffect(() => {
     const allCategories = [
@@ -45,15 +57,15 @@ export default function HomePage() {
           queryKey: ['news', 'topic-infinite', category, sources],
           queryFn: async ({ pageParam = 0 }) => {
             const url = sources
-              ? `/api/news/topics/${category}?limit=20&offset=${pageParam}&sources=${encodeURIComponent(sources)}`
-              : `/api/news/topics/${category}?limit=20&offset=${pageParam}`
+              ? `/api/news/topics/${category}?limit=5&offset=${pageParam}&sources=${encodeURIComponent(sources)}`
+              : `/api/news/topics/${category}?limit=5&offset=${pageParam}`
             const res = await fetch(url)
             return res.json()
           },
           initialPageParam: 0,
-          getNextPageParam: (lastPage) => {
+          getNextPageParam: (lastPage, allPages) => {
             if (lastPage.hasMore) {
-              return lastPage.offset + 20
+              return allPages.length * 5
             }
             return undefined
           },

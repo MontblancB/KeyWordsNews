@@ -119,8 +119,8 @@ export function useInfiniteLatestNews() {
     queryKey: ['news', 'latest-infinite', sources],
     queryFn: async ({ pageParam = 0 }) => {
       const url = sources
-        ? `/api/news/latest?limit=20&offset=${pageParam}&sources=${encodeURIComponent(sources)}`
-        : `/api/news/latest?limit=20&offset=${pageParam}`
+        ? `/api/news/latest?limit=5&offset=${pageParam}&sources=${encodeURIComponent(sources)}`
+        : `/api/news/latest?limit=5&offset=${pageParam}`
       const res = await fetch(url)  // cache: 'no-store' 제거
       if (!res.ok) throw new Error('Failed to fetch latest news')
       const data = await res.json()
@@ -128,7 +128,7 @@ export function useInfiniteLatestNews() {
     },
     getNextPageParam: (lastPage, allPages) => {
       if (lastPage.hasMore) {
-        return allPages.length * 20
+        return allPages.length * 5  // 5개씩 증가
       }
       return undefined
     },
@@ -148,8 +148,8 @@ export function useInfiniteTopicNews(category: string) {
     queryKey: ['news', 'topic-infinite', category, sources],
     queryFn: async ({ pageParam = 0 }) => {
       const url = sources
-        ? `/api/news/topics/${category}?limit=20&offset=${pageParam}&sources=${encodeURIComponent(sources)}`
-        : `/api/news/topics/${category}?limit=20&offset=${pageParam}`
+        ? `/api/news/topics/${category}?limit=5&offset=${pageParam}&sources=${encodeURIComponent(sources)}`
+        : `/api/news/topics/${category}?limit=5&offset=${pageParam}`
       const res = await fetch(url)  // cache: 'no-store' 제거
       if (!res.ok) throw new Error(`Failed to fetch ${category} news`)
       const data = await res.json()
@@ -157,7 +157,7 @@ export function useInfiniteTopicNews(category: string) {
     },
     getNextPageParam: (lastPage, allPages) => {
       if (lastPage.hasMore) {
-        return allPages.length * 20
+        return allPages.length * 5  // 5개씩 증가
       }
       return undefined
     },
