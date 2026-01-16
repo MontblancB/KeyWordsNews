@@ -1,10 +1,15 @@
 import { NextResponse } from 'next/server'
-import { scrapeAllIndicators } from '@/lib/scraper/naver-finance'
+import { collectAllEconomyData } from '@/lib/scraper/hybrid-economy'
 import type { EconomyData } from '@/types/economy'
 
 /**
- * 경제 지표 API
- * 네이버 금융에서 실시간 경제 지표를 스크래핑하여 반환
+ * 경제 지표 API (하이브리드 방식)
+ *
+ * - 국내 지수 (KOSPI, KOSDAQ): 네이버 금융 스크래핑
+ * - 환율 (USD, JPY, EUR, CNY): 네이버 금융 스크래핑
+ * - 금시세: 네이버 금융 스크래핑
+ * - 해외 지수 (S&P 500, NASDAQ, Dow, Nikkei): Finnhub API
+ * - 암호화폐 (BTC, ETH, XRP, ADA): Finnhub API
  */
 
 // 캐시 설정 (5분)
@@ -26,9 +31,11 @@ export async function GET() {
       })
     }
 
-    // 실시간 스크래핑
-    console.log('[Economy API] Scraping fresh data from Naver Finance')
-    const data = await scrapeAllIndicators()
+    // 하이브리드 데이터 수집
+    console.log(
+      '[Economy API] Collecting fresh data (Naver Finance + Finnhub API)'
+    )
+    const data = await collectAllEconomyData()
 
     // 캐시 업데이트
     cachedData = data

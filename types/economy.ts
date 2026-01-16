@@ -41,11 +41,20 @@ export interface GoldPrice {
   international: Indicator
 }
 
+// 암호화폐
+export interface CryptoPrices {
+  bitcoin: Indicator
+  ethereum: Indicator
+  ripple: Indicator
+  cardano: Indicator
+}
+
 // 전체 경제 지표 데이터
 export interface EconomyData {
   domestic: DomesticIndices
   international: InternationalIndices
   exchange: ExchangeRates
   gold: GoldPrice
+  crypto: CryptoPrices
   lastUpdated: string
 }

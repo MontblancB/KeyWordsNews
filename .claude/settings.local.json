@@ -41,7 +41,8 @@
       "Bash(vercel logs:*)",
       "Bash(xxd:*)",
       "Bash(npx tsc:*)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "WebFetch(domain:finnhub.io)"
     ]
   },
   "hooks": {

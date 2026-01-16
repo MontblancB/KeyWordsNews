@@ -88,6 +88,19 @@ export default function EconomyPage() {
               </div>
             </section>
 
+            {/* 암호화폐 */}
+            <section>
+              <h2 className="text-lg font-bold mb-3 text-gray-800">
+                ₿ 암호화폐
+              </h2>
+              <div className="grid grid-cols-2 gap-3">
+                <IndicatorCard indicator={data.crypto.bitcoin} />
+                <IndicatorCard indicator={data.crypto.ethereum} />
+                <IndicatorCard indicator={data.crypto.ripple} />
+                <IndicatorCard indicator={data.crypto.cardano} />
+              </div>
+            </section>
+
             {/* 마지막 업데이트 */}
             <div className="text-center text-xs text-gray-500 pt-4">
               마지막 업데이트: {data.lastUpdated}
