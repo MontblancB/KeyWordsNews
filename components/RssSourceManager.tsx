@@ -20,6 +20,7 @@ export default function RssSourceManager() {
     allSources
   } = useRssSettings()
 
+  const [isExpanded, setIsExpanded] = useState(false)
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
 
   if (!isLoaded) {
@@ -70,51 +71,71 @@ export default function RssSourceManager() {
 
   return (
     <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
-      {/* 헤더 */}
-      <div className="flex items-center justify-between mb-3">
+      {/* 헤더 (클릭 가능) */}
+      <div
+        className="flex items-center justify-between cursor-pointer"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
         <div className="flex items-center gap-3">
           <NewspaperIcon className="w-5 h-5 text-green-500 dark:text-green-400" />
           <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
             뉴스 소스 관리
           </h3>
         </div>
-        <span className="text-xs text-gray-600 dark:text-gray-400">
-          {enabledCount} / {totalCount}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-600 dark:text-gray-400">
+            {enabledCount} / {totalCount}
+          </span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">
+            {isExpanded ? '▲' : '▼'}
+          </span>
+        </div>
       </div>
 
-      {/* 전체 제어 버튼 */}
-      <div className="flex gap-2 mb-3">
-        <button
-          onClick={enableAll}
-          className={`flex-1 px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
-            enabledCount === totalCount
-              ? 'bg-blue-600 text-white shadow-sm'
-              : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
-          }`}
-        >
-          전체 ON
-        </button>
-        <button
-          onClick={disableAll}
-          className={`flex-1 px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
-            enabledCount === 0
-              ? 'bg-blue-600 text-white shadow-sm'
-              : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
-          }`}
-        >
-          전체 OFF
-        </button>
-        <button
-          onClick={reset}
-          className="flex-1 px-3 py-2 text-xs font-medium bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors shadow-sm"
-        >
-          초기화
-        </button>
-      </div>
+      {/* 본문 (폴딩 가능) */}
+      {isExpanded && (
+        <div className="mt-3 space-y-3">
+          {/* 전체 제어 버튼 */}
+          <div className="flex gap-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                enableAll()
+              }}
+              className={`flex-1 px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
+                enabledCount === totalCount
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
+              }`}
+            >
+              전체 ON
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                disableAll()
+              }}
+              className={`flex-1 px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
+                enabledCount === 0
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
+              }`}
+            >
+              전체 OFF
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                reset()
+              }}
+              className="flex-1 px-3 py-2 text-xs font-medium bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors shadow-sm"
+            >
+              초기화
+            </button>
+          </div>
 
-      {/* 카테고리별 뉴스 소스 리스트 */}
-      <div className="max-h-[400px] overflow-y-auto space-y-2">
+          {/* 카테고리별 뉴스 소스 리스트 */}
+          <div className="max-h-[400px] overflow-y-auto space-y-2">
         {categories.map((category) => {
           const categoryName = CATEGORY_MAPPING[category] || category
           const sources = allSources.filter(s => s.category === category)
@@ -188,11 +209,13 @@ export default function RssSourceManager() {
             </div>
           )
         })}
-      </div>
+          </div>
 
-      <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
-        비활성화한 뉴스 소스는 뉴스 수집 및 검색에서 제외됩니다
-      </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            비활성화한 뉴스 소스는 뉴스 수집 및 검색에서 제외됩니다
+          </p>
+        </div>
+      )}
     </div>
   )
 }
