@@ -15,7 +15,7 @@ export default function KeywordTabs({
   onSelectKeyword
 }: KeywordTabsProps) {
   return (
-    <div className="bg-white border-b border-gray-200 sticky top-16 z-40">
+    <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 sticky top-16 z-40">
       <div className="flex overflow-x-auto scrollbar-hide">
         {keywords.map((item) => (
           <button
@@ -26,8 +26,8 @@ export default function KeywordTabs({
               border-b-2 transition-colors
               ${
                 activeKeyword === item.keyword
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
+                  ? 'border-blue-600 dark:border-blue-400 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
               }
             `}
           >
