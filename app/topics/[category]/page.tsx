@@ -39,27 +39,15 @@ export default function TopicPage() {
     culture: '문화',
   }
 
-  // 카테고리별 이웃 카테고리 정의 (관련성 높은 카테고리)
-  const neighborCategories: Record<string, string[]> = {
-    general: ['politics', 'economy'],
-    politics: ['economy', 'society'],
-    economy: ['politics', 'tech'],
-    society: ['politics', 'world'],
-    world: ['politics', 'society'],
-    tech: ['economy', 'society'],
-    sports: ['entertainment', 'society'],
-    entertainment: ['culture', 'sports'],
-    culture: ['entertainment', 'society'],
-  }
-
-  // 전략적 프리페칭: 속보 + 이웃 카테고리 + 경제지표 + 키워드
+  // 전략적 프리페칭: 속보 + 모든 카테고리 + 경제지표 + 키워드
   useEffect(() => {
     if (!isLoading && data) {
       const sources = getEnabledRssSourceNames()
+      const allCategories = ['politics', 'economy', 'society', 'world', 'tech', 'sports', 'entertainment', 'culture']
 
       // 500ms 후 프리페칭 시작
       setTimeout(() => {
-        // 1. 속보 프리페칭 (항상)
+        // 1. 속보 프리페칭
         queryClient.prefetchQuery({
           queryKey: ['news', 'breaking', sources],
           queryFn: async () => {
@@ -73,35 +61,39 @@ export default function TopicPage() {
           },
         })
 
-        // 2. 이웃 카테고리 프리페칭
-        const neighbors = neighborCategories[category] || []
-        neighbors.forEach((neighborCategory, index) => {
-          setTimeout(() => {
-            queryClient.prefetchInfiniteQuery({
-              queryKey: ['news', 'topic-infinite', neighborCategory, sources],
-              queryFn: async ({ pageParam = 0 }) => {
-                const limit = pageParam === 0 ? 10 : 15
-                const offset = pageParam === 0 ? 0 : 10 + (pageParam - 1) * 15
+        // 2. 모든 카테고리 순차 프리페칭 (1000ms부터 500ms 간격)
+        setTimeout(() => {
+          allCategories.forEach((cat, index) => {
+            // 현재 카테고리는 이미 로드되었으므로 스킵
+            if (cat === category) return
 
-                const url = sources
-                  ? `/api/news/topics/${neighborCategory}?limit=${limit}&offset=${offset}&sources=${encodeURIComponent(sources)}`
-                  : `/api/news/topics/${neighborCategory}?limit=${limit}&offset=${offset}`
-                const res = await fetch(url)
-                return res.json()
-              },
-              initialPageParam: 0,
-              getNextPageParam: (lastPage, allPages) => {
-                if (lastPage.hasMore) {
-                  return allPages.length
-                }
-                return undefined
-              },
-              pages: 1,
-            })
-          }, index * 300) // 300ms 간격으로 순차 실행
-        })
+            setTimeout(() => {
+              queryClient.prefetchInfiniteQuery({
+                queryKey: ['news', 'topic-infinite', cat, sources],
+                queryFn: async ({ pageParam = 0 }) => {
+                  const limit = pageParam === 0 ? 10 : 15
+                  const offset = pageParam === 0 ? 0 : 10 + (pageParam - 1) * 15
 
-        // 3. 경제지표 프리페칭 (800ms)
+                  const url = sources
+                    ? `/api/news/topics/${cat}?limit=${limit}&offset=${offset}&sources=${encodeURIComponent(sources)}`
+                    : `/api/news/topics/${cat}?limit=${limit}&offset=${offset}`
+                  const res = await fetch(url)
+                  return res.json()
+                },
+                initialPageParam: 0,
+                getNextPageParam: (lastPage, allPages) => {
+                  if (lastPage.hasMore) {
+                    return allPages.length
+                  }
+                  return undefined
+                },
+                pages: 1,
+              })
+            }, index * 500) // 500ms 간격으로 순차 실행
+          })
+        }, 500)
+
+        // 3. 경제지표 프리페칭 (5500ms = 500 + 500 + 8개 * 500)
         setTimeout(() => {
           queryClient.prefetchQuery({
             queryKey: ['economy-indicators'],
@@ -113,7 +105,7 @@ export default function TopicPage() {
             staleTime: 5 * 60 * 1000,
           })
 
-          // 4. 키워드 프리페칭 (1200ms = 800ms + 400ms)
+          // 4. 키워드 프리페칭 (6000ms)
           setTimeout(() => {
             const topKeywords = getTopKeywords(3)
 
@@ -140,8 +132,8 @@ export default function TopicPage() {
                 })
               }, index * 300)
             })
-          }, 400)
-        }, 300)
+          }, 500)
+        }, 5000)
       }, 500)
     }
   }, [isLoading, data, category, queryClient])

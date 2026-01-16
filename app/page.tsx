@@ -38,93 +38,101 @@ export default function HomePage() {
 
   // 모든 카테고리 순차적으로 프리페칭 (백그라운드에서 실행)
   useEffect(() => {
-    const allCategories = [
-      'politics',      // 정치
-      'economy',       // 경제
-      'society',       // 사회
-      'world',         // 국제
-      'tech',          // IT
-      'sports',        // 스포츠
-      'entertainment', // 연예
-      'culture',       // 문화
-    ]
-    const sources = getEnabledRssSourceNames()
+    // 현재 페이지 데이터 로드 완료 후 프리페칭 시작
+    if (!isLoading && data) {
+      const allCategories = [
+        'politics',      // 정치
+        'economy',       // 경제
+        'society',       // 사회
+        'world',         // 국제
+        'tech',          // IT
+        'sports',        // 스포츠
+        'entertainment', // 연예
+        'culture',       // 문화
+      ]
+      const sources = getEnabledRssSourceNames()
 
-    // 순차적으로 프리페칭 (500ms 간격)
-    allCategories.forEach((category, index) => {
+      // 500ms 후 순차적으로 프리페칭 시작 (500ms 간격)
       setTimeout(() => {
-        queryClient.prefetchInfiniteQuery({
-          queryKey: ['news', 'topic-infinite', category, sources],
-          queryFn: async ({ pageParam = 0 }) => {
-            // 첫 요청은 10개
-            const limit = pageParam === 0 ? 10 : 15
-            const offset = pageParam === 0 ? 0 : 10 + (pageParam - 1) * 15
-
-            const url = sources
-              ? `/api/news/topics/${category}?limit=${limit}&offset=${offset}&sources=${encodeURIComponent(sources)}`
-              : `/api/news/topics/${category}?limit=${limit}&offset=${offset}`
-            const res = await fetch(url)
-            return res.json()
-          },
-          initialPageParam: 0,
-          getNextPageParam: (lastPage, allPages) => {
-            if (lastPage.hasMore) {
-              return allPages.length
-            }
-            return undefined
-          },
-          pages: 1, // 첫 페이지만 프리페칭
-        })
-      }, index * 500) // 500ms 간격으로 순차 실행
-    })
-  }, [queryClient])
-
-  // 전략적 프리페칭: 경제지표 + 키워드
-  useEffect(() => {
-    const sources = getEnabledRssSourceNames()
-
-    // 800ms 후 경제지표 프리페칭
-    setTimeout(() => {
-      queryClient.prefetchQuery({
-        queryKey: ['economy-indicators'],
-        queryFn: async () => {
-          const res = await fetch('/api/economy/indicators')
-          if (!res.ok) throw new Error('Failed to prefetch economy indicators')
-          return res.json()
-        },
-        staleTime: 5 * 60 * 1000,
-      })
-
-      // 1200ms 후 키워드 프리페칭 시작 (400ms 추가 대기)
-      setTimeout(() => {
-        const topKeywords = getTopKeywords(3)
-
-        topKeywords.forEach((keyword, index) => {
+        allCategories.forEach((category, index) => {
           setTimeout(() => {
             queryClient.prefetchInfiniteQuery({
-              queryKey: ['news', 'search-infinite', keyword, sources],
-              queryFn: async ({ pageParam = 1 }) => {
+              queryKey: ['news', 'topic-infinite', category, sources],
+              queryFn: async ({ pageParam = 0 }) => {
+                // 첫 요청은 10개
+                const limit = pageParam === 0 ? 10 : 15
+                const offset = pageParam === 0 ? 0 : 10 + (pageParam - 1) * 15
+
                 const url = sources
-                  ? `/api/news/search?q=${encodeURIComponent(keyword)}&page=${pageParam}&sources=${encodeURIComponent(sources)}`
-                  : `/api/news/search?q=${encodeURIComponent(keyword)}&page=${pageParam}`
+                  ? `/api/news/topics/${category}?limit=${limit}&offset=${offset}&sources=${encodeURIComponent(sources)}`
+                  : `/api/news/topics/${category}?limit=${limit}&offset=${offset}`
                 const res = await fetch(url)
-                if (!res.ok) throw new Error('Failed to prefetch keyword search')
                 return res.json()
               },
-              initialPageParam: 1,
-              getNextPageParam: (lastPage) => {
-                if (lastPage.page < lastPage.totalPages) {
-                  return lastPage.page + 1
+              initialPageParam: 0,
+              getNextPageParam: (lastPage, allPages) => {
+                if (lastPage.hasMore) {
+                  return allPages.length
                 }
                 return undefined
               },
-              pages: 1,
+              pages: 1, // 첫 페이지만 프리페칭
             })
-          }, index * 300)
+          }, index * 500) // 500ms 간격으로 순차 실행
         })
-      }, 400)
-    }, 800)
-  }, [queryClient])
+      }, 500)
+    }
+  }, [isLoading, data, queryClient])
+
+  // 전략적 프리페칭: 경제지표 + 키워드
+  useEffect(() => {
+    // 현재 페이지 데이터 로드 완료 후 프리페칭 시작
+    if (!isLoading && data) {
+      const sources = getEnabledRssSourceNames()
+
+      // 4500ms 후 경제지표 프리페칭 (카테고리 8개 완료 후)
+      setTimeout(() => {
+        queryClient.prefetchQuery({
+          queryKey: ['economy-indicators'],
+          queryFn: async () => {
+            const res = await fetch('/api/economy/indicators')
+            if (!res.ok) throw new Error('Failed to prefetch economy indicators')
+            return res.json()
+          },
+          staleTime: 5 * 60 * 1000,
+        })
+
+        // 5000ms 후 키워드 프리페칭 시작
+        setTimeout(() => {
+          const topKeywords = getTopKeywords(3)
+
+          topKeywords.forEach((keyword, index) => {
+            setTimeout(() => {
+              queryClient.prefetchInfiniteQuery({
+                queryKey: ['news', 'search-infinite', keyword, sources],
+                queryFn: async ({ pageParam = 1 }) => {
+                  const url = sources
+                    ? `/api/news/search?q=${encodeURIComponent(keyword)}&page=${pageParam}&sources=${encodeURIComponent(sources)}`
+                    : `/api/news/search?q=${encodeURIComponent(keyword)}&page=${pageParam}`
+                  const res = await fetch(url)
+                  if (!res.ok) throw new Error('Failed to prefetch keyword search')
+                  return res.json()
+                },
+                initialPageParam: 1,
+                getNextPageParam: (lastPage) => {
+                  if (lastPage.page < lastPage.totalPages) {
+                    return lastPage.page + 1
+                  }
+                  return undefined
+                },
+                pages: 1,
+              })
+            }, index * 300)
+          })
+        }, 500)
+      }, 4500)
+    }
+  }, [isLoading, data, queryClient])
 
   // 무한 스크롤: Intersection Observer
   useEffect(() => {

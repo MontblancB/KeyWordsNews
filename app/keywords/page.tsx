@@ -36,13 +36,15 @@ export default function KeywordsPage() {
     fetchNextPage,
   } = useInfiniteNewsSearch(activeKeyword || '')
 
-  // 전략적 프리페칭: 속보 + 경제지표
+  // 전략적 프리페칭: 속보 + 모든 카테고리 + 경제지표
   useEffect(() => {
     if (!isLoading && data && activeKeyword) {
       const sources = getEnabledRssSourceNames()
+      const allCategories = ['politics', 'economy', 'society', 'world', 'tech', 'sports', 'entertainment', 'culture']
 
-      // 500ms 후 속보 프리페칭
+      // 500ms 후 프리페칭 시작
       setTimeout(() => {
+        // 1. 속보 프리페칭
         queryClient.prefetchQuery({
           queryKey: ['news', 'breaking', sources],
           queryFn: async () => {
@@ -56,7 +58,36 @@ export default function KeywordsPage() {
           },
         })
 
-        // 800ms 후 경제지표 프리페칭 (500ms + 300ms)
+        // 2. 모든 카테고리 순차 프리페칭 (1000ms부터 500ms 간격)
+        setTimeout(() => {
+          allCategories.forEach((cat, index) => {
+            setTimeout(() => {
+              queryClient.prefetchInfiniteQuery({
+                queryKey: ['news', 'topic-infinite', cat, sources],
+                queryFn: async ({ pageParam = 0 }) => {
+                  const limit = pageParam === 0 ? 10 : 15
+                  const offset = pageParam === 0 ? 0 : 10 + (pageParam - 1) * 15
+
+                  const url = sources
+                    ? `/api/news/topics/${cat}?limit=${limit}&offset=${offset}&sources=${encodeURIComponent(sources)}`
+                    : `/api/news/topics/${cat}?limit=${limit}&offset=${offset}`
+                  const res = await fetch(url)
+                  return res.json()
+                },
+                initialPageParam: 0,
+                getNextPageParam: (lastPage, allPages) => {
+                  if (lastPage.hasMore) {
+                    return allPages.length
+                  }
+                  return undefined
+                },
+                pages: 1,
+              })
+            }, index * 500) // 500ms 간격으로 순차 실행
+          })
+        }, 500)
+
+        // 3. 경제지표 프리페칭 (5500ms)
         setTimeout(() => {
           queryClient.prefetchQuery({
             queryKey: ['economy-indicators'],
@@ -67,7 +98,7 @@ export default function KeywordsPage() {
             },
             staleTime: 5 * 60 * 1000,
           })
-        }, 300)
+        }, 5000)
       }, 500)
     }
   }, [isLoading, data, activeKeyword, queryClient])
