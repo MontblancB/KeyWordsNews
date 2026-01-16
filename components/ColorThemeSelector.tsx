@@ -99,8 +99,8 @@ export default function ColorThemeSelector() {
       {/* 색상 선택 (폴딩 가능) */}
       {isExpanded && (
         <div className="mt-3 space-y-3">
-          {/* 4x4 그리드 */}
-          <div className="grid grid-cols-4 gap-2">
+          {/* 8x2 그리드 */}
+          <div className="grid grid-cols-8 gap-2">
             {themeOptions.map((theme) => {
               const isSelected = colorTheme === theme
               const themeConfig = COLOR_THEMES[theme]
