@@ -7,8 +7,8 @@
     "build": "prisma migrate deploy && prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
-    "collect": "tsx scripts/collect-rss.ts",
-    "collect:watch": "tsx scripts/collect-rss.ts --watch"
+    "collect": "tsx --env-file=.env.local scripts/collect-rss.ts",
+    "collect:watch": "tsx --env-file=.env.local scripts/collect-rss.ts --watch"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
