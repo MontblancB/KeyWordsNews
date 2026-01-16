@@ -10,12 +10,14 @@
 3. **키워드 뉴스** - 사용자가 지정한 키워드 기반 맞춤형 뉴스 피드
 4. **뉴스 검색** - 원하는 키워드로 뉴스 검색 (Google News 통합)
 5. **뉴스 소스 관리** - 카테고리별 뉴스 소스 활성화/비활성화 (48개 소스)
-6. **PWA 지원** - 모바일 홈 화면에 추가하여 앱처럼 사용 가능
+6. **AI 뉴스 요약** - Groq API를 활용한 초압축 불릿 포인트 요약 (온디맨드)
+7. **경제 지표** - 국내외 주식, 환율, 금시세, 암호화폐 실시간 확인
+8. **PWA 지원** - 모바일 홈 화면에 추가하여 앱처럼 사용 가능
 
 ### 배포 정보
 - **배포 URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
-- **현재 버전**: 2.1.0
+- **현재 버전**: 2.2.0
 - **마지막 업데이트**: 2026-01-16
 
 ---
@@ -34,6 +36,8 @@
 - **Prisma 6.3.0** - ORM (TypeScript-first)
 - **Vercel Postgres** - PostgreSQL 데이터베이스 (프로덕션)
 - **rss-parser** - RSS 피드 파싱
+- **Groq SDK** - AI 뉴스 요약 (Llama 3.3 70B)
+- **Cheerio** - 웹 스크래핑 (뉴스 본문, 경제 지표)
 
 ### 인프라 & 배포
 - **Vercel** - 프론트엔드 및 API 호스팅
@@ -52,12 +56,16 @@ KeyWordsNews/
 │   ├── keywords/                # 키워드 뉴스
 │   ├── search/                  # 검색 페이지
 │   ├── settings/                # 설정 페이지
+│   ├── economy/                 # 경제 지표 페이지
 │   └── api/                     # API Routes
 │       ├── news/
 │       │   ├── breaking/        # 속보 API
 │       │   ├── latest/          # 최신 뉴스
 │       │   ├── category/        # 카테고리별 뉴스
-│       │   └── search/          # 뉴스 검색
+│       │   ├── search/          # 뉴스 검색
+│       │   └── summarize/       # AI 요약 API
+│       ├── economy/
+│       │   └── indicators/      # 경제 지표 API
 │       └── rss/
 │           └── collect/         # RSS 수집 API
 │
@@ -67,7 +75,9 @@ KeyWordsNews/
 │   ├── KeywordTabs.tsx         # 키워드 탭
 │   ├── NewsCard.tsx            # 뉴스 카드
 │   ├── KeywordManager.tsx      # 키워드 관리
-│   └── RssSourceManager.tsx    # RSS 소스 관리
+│   ├── RssSourceManager.tsx    # RSS 소스 관리
+│   ├── AISummary.tsx           # AI 요약 컴포넌트
+│   └── EconomyIndicators.tsx   # 경제 지표 컴포넌트
 │
 ├── hooks/                        # Custom React Hooks
 │   ├── useNews.ts              # 뉴스 데이터 훅
@@ -76,6 +86,19 @@ KeyWordsNews/
 │
 ├── lib/
 │   ├── prisma.ts               # Prisma 클라이언트
+│   ├── ai/                     # AI 요약 시스템
+│   │   ├── summarizer.ts       # AI 요약 메인 클래스
+│   │   ├── types.ts            # AI 관련 타입 정의
+│   │   └── providers/          # AI 프로바이더
+│   │       ├── groq.ts         # Groq AI (Llama 3.3 70B)
+│   │       └── openrouter.ts   # OpenRouter (폴백)
+│   ├── api/                    # 외부 API 클라이언트
+│   │   ├── yahoo-finance.ts    # Yahoo Finance (해외 지수)
+│   │   └── finnhub.ts          # Finnhub (암호화폐)
+│   ├── scraper/                # 웹 스크래핑
+│   │   ├── naver-finance-v2.ts # 네이버 금융 (국내 지수, 환율, 금)
+│   │   ├── hybrid-economy.ts   # 하이브리드 경제 데이터 수집
+│   │   └── newsContent.ts      # 뉴스 본문 스크래핑
 │   └── rss/
 │       ├── sources.ts          # RSS 소스 설정
 │       ├── parser.ts           # RSS 파서
@@ -125,6 +148,13 @@ model News {
   publishedAt  DateTime
   imageUrl     String?
   isBreaking   Boolean  @default(false)
+
+  // AI 요약 필드
+  aiSummary       String?   @db.Text
+  aiKeywords      String[]  @default([])
+  aiSummarizedAt  DateTime?
+  aiProvider      String?   // 사용된 AI 프로바이더 (groq, openrouter)
+
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -132,6 +162,7 @@ model News {
   @@index([publishedAt])
   @@index([isBreaking])
   @@index([source])
+  @@index([aiSummarizedAt])
 }
 ```
 
@@ -197,7 +228,38 @@ Response: {
 }
 ```
 
-### 5. RSS 수집 트리거
+### 5. AI 뉴스 요약
+```
+POST /api/news/summarize
+Body: { newsId: string, url?: string, title?: string, summary?: string }
+Response: {
+  success: true,
+  data: {
+    summary: string,      // 불릿 포인트 요약
+    keywords: string[],   // 핵심 키워드
+    provider: string,     // AI 프로바이더
+    cached: boolean       // 캐시 여부
+  }
+}
+```
+
+### 6. 경제 지표
+```
+GET /api/economy/indicators
+Response: {
+  success: true,
+  data: {
+    domestic: { kospi, kosdaq },
+    international: { sp500, nasdaq, dow, nikkei },
+    exchange: { usd, jpy, eur, cny },
+    gold: { international },
+    crypto: { btc, eth, xrp, ada },
+    lastUpdated: string
+  }
+}
+```
+
+### 7. RSS 수집 트리거
 ```
 POST /api/rss/collect
 Headers: { "x-cron-secret": "your-secret" }
@@ -277,6 +339,14 @@ export const RSS_FEED_SOURCES: RSSFeedSource[] = [
 # Database (Vercel Postgres)
 PRISMA_DATABASE_URL="postgres://..."  # Pooled connection
 POSTGRES_URL="postgres://..."          # Direct connection
+USE_DATABASE=true                      # DB 사용 여부
+
+# AI 요약 기능
+AI_PROVIDER="groq"                     # groq 또는 openrouter
+GROQ_API_KEY="gsk_..."                 # Groq API 키
+
+# 경제 지표 API
+FINNHUB_API_KEY="..."                  # Finnhub API 키 (암호화폐)
 
 # GitHub Actions Cron Secret
 CRON_SECRET="your-random-secret-key"
@@ -469,6 +539,157 @@ git push origin main
 
 ---
 
+## AI 뉴스 요약
+
+### 개요
+
+Groq AI (Llama 3.3 70B)를 활용한 온디맨드 뉴스 요약 시스템입니다.
+
+### 주요 특징
+
+1. **초압축 불릿 포인트**
+   - 3-5개 불릿으로 핵심 내용 정리
+   - 각 불릿은 15-20단어 이내로 초압축
+   - 숫자, 날짜, 금액 등 구체적 정보 우선
+   - 제목 내용 반복 금지
+
+2. **핵심 키워드 추출**
+   - 3-5개 키워드 자동 추출
+   - 배지 형태로 시각화
+
+3. **캐싱 시스템**
+   - DB에 요약 저장하여 재조회 시 즉시 표시
+   - API 비용 절감 및 빠른 응답 속도
+
+4. **폴백 메커니즘**
+   - Primary: Groq AI (Llama 3.3 70B)
+   - Fallback: OpenRouter (Llama 3.1 70B)
+   - URL 기반 폴백: DB에 없는 RSS 뉴스도 지원
+
+### 사용 방법
+
+```typescript
+// components/AISummary.tsx
+<AISummary
+  newsId={news.id}
+  url={news.url}
+  title={news.title}
+  summary={news.summary}
+  initialSummary={news.aiSummary}
+  initialKeywords={news.aiKeywords}
+  initialProvider={news.aiProvider}
+/>
+```
+
+### API 엔드포인트
+
+```typescript
+POST /api/news/summarize
+Body: {
+  newsId: string,
+  url?: string,      // 폴백용
+  title?: string,    // 폴백용
+  summary?: string   // 폴백용
+}
+```
+
+### 요약 예시
+
+**불릿 포인트:**
+- • 2026년 최저임금 시간당 1만2천원 확정 (7.3%↑)
+- • 노동계 '물가 대비 불충분' 반발, 경영계 '중소기업 부담' 우려
+- • 적용 대상 약 300만명, 2026.1.1 시행
+
+**키워드:** #최저임금 #1만2천원 #노사갈등
+
+---
+
+## 경제 지표
+
+### 개요
+
+국내외 주식, 환율, 금시세, 암호화폐를 실시간으로 확인할 수 있는 하이브리드 데이터 수집 시스템입니다.
+
+### 데이터 소스
+
+| 지표 | 소스 | 수집 방식 |
+|------|------|----------|
+| KOSPI, KOSDAQ | 네이버 금융 | 스크래핑 (Cheerio) |
+| S&P 500, NASDAQ, Dow, Nikkei | Yahoo Finance | API |
+| 환율 (USD, JPY, EUR, CNY) | 네이버 금융 | 스크래핑 (Cheerio) |
+| 금시세 | 네이버 금융 | 스크래핑 (Cheerio) |
+| 암호화폐 (BTC, ETH, XRP, ADA) | Finnhub | API |
+
+### 주요 특징
+
+1. **하이브리드 방식**
+   - 스크래핑: 국내 지수, 환율, 금시세 (네이버 금융)
+   - API: 해외 지수 (Yahoo Finance), 암호화폐 (Finnhub)
+   - 각 소스의 장점을 활용한 최적의 조합
+
+2. **실시간 업데이트**
+   - 페이지 접속 시 최신 데이터 자동 조회
+   - React Query 캐싱으로 중복 요청 방지
+
+3. **시각화**
+   - 상승: 빨간색 (▲)
+   - 하락: 파란색 (▼)
+   - 보합: 회색 (-)
+   - 변동폭과 변동률 동시 표시
+
+### API 엔드포인트
+
+```typescript
+GET /api/economy/indicators
+Response: {
+  success: true,
+  data: {
+    domestic: {
+      kospi: { name, value, change, changePercent, changeType },
+      kosdaq: { name, value, change, changePercent, changeType }
+    },
+    international: {
+      sp500: { name, value, change, changePercent, changeType },
+      nasdaq: { name, value, change, changePercent, changeType },
+      dow: { name, value, change, changePercent, changeType },
+      nikkei: { name, value, change, changePercent, changeType }
+    },
+    exchange: {
+      usd: { name, value, change, changePercent, changeType },
+      jpy: { name, value, change, changePercent, changeType },
+      eur: { name, value, change, changePercent, changeType },
+      cny: { name, value, change, changePercent, changeType }
+    },
+    gold: {
+      international: { name, value, change, changePercent, changeType }
+    },
+    crypto: {
+      btc: { name, value, change, changePercent, changeType },
+      eth: { name, value, change, changePercent, changeType },
+      xrp: { name, value, change, changePercent, changeType },
+      ada: { name, value, change, changePercent, changeType }
+    },
+    lastUpdated: "2026-01-16 18:30"
+  }
+}
+```
+
+### 사용 예시
+
+```typescript
+// app/economy/page.tsx
+const { data, isLoading } = useQuery({
+  queryKey: ['economy-indicators'],
+  queryFn: async () => {
+    const res = await fetch('/api/economy/indicators')
+    return res.json()
+  },
+  staleTime: 5 * 60 * 1000,  // 5분
+})
+```
+
+---
+
 ## 데이터베이스 마이그레이션
 
 ### 새로운 마이그레이션 생성
@@ -578,6 +799,8 @@ npm install
 
 ### 단기
 - [x] PWA 기능 추가 (Manifest, Icons) ✅ v2.1.0
+- [x] AI 기반 뉴스 요약 ✅ v2.2.0
+- [x] 경제 지표 실시간 확인 ✅ v2.2.0
 - [ ] PWA 오프라인 지원 (Service Worker)
 - [ ] 푸시 알림 기능
 - [ ] 다크 모드 지원
@@ -590,7 +813,6 @@ npm install
 - [ ] 댓글 시스템
 
 ### 장기
-- [ ] AI 기반 뉴스 요약
 - [ ] 음성으로 뉴스 듣기 (TTS)
 - [ ] 멀티 언어 지원
 - [ ] 네이티브 모바일 앱
@@ -661,9 +883,46 @@ npm install
 
 ---
 
-## 최근 업데이트 (v2.1.0)
+## 최근 업데이트
 
-### 2026-01-16
+### v2.2.0 (2026-01-16)
+**AI 요약 & 경제 지표 추가**
+
+#### AI 뉴스 요약 기능
+- 🤖 **Groq AI 통합**: Llama 3.3 70B 모델 활용
+- 📝 **초압축 불릿 포인트**: 3-5개 불릿으로 핵심 내용 정리 (15-20단어)
+- 🔑 **핵심 키워드 추출**: 3-5개 키워드 자동 추출
+- 💾 **캐싱 시스템**: DB에 요약 저장하여 빠른 재조회
+- 🎨 **폴백 지원**: OpenRouter 폴백으로 안정성 확보
+- 📱 **온디맨드 방식**: 사용자가 "AI 요약 보기" 클릭 시 생성
+- 🔄 **URL 기반 폴백**: DB에 없는 RSS 뉴스도 URL로 요약 생성 가능
+
+#### 경제 지표 실시간 확인
+- 📊 **하이브리드 데이터 수집**: 스크래핑 + API 조합
+- 🇰🇷 **국내 지수**: KOSPI, KOSDAQ (네이버 금융 스크래핑)
+- 🌍 **해외 지수**: S&P 500, NASDAQ, Dow Jones, Nikkei 225 (Yahoo Finance API)
+- 💱 **환율**: USD, JPY, EUR, CNY (네이버 금융)
+- 🏆 **금시세**: 국제 금 시세 (네이버 금융)
+- ₿ **암호화폐**: BTC, ETH, XRP, ADA (Finnhub API)
+- 🎨 **시각화**: 변동률에 따른 색상 표시 (상승/하락/보합)
+
+#### 데이터베이스 개선
+- 🗄️ **AI 요약 필드 추가**:
+  - `aiSummary`: 불릿 포인트 요약
+  - `aiKeywords`: 키워드 배열
+  - `aiSummarizedAt`: 요약 생성 시간
+  - `aiProvider`: 사용된 AI 프로바이더
+- 📇 **인덱스 추가**: `aiSummarizedAt` 인덱스로 검색 성능 향상
+
+#### 기술적 개선
+- ⚡ **성능 최적화**: React Query로 데이터 캐싱
+- 🔧 **에러 핸들링**: 스크래핑 실패 시 RSS 요약 폴백
+- 📝 **TypeScript**: 완전한 타입 안정성
+- 🧪 **테스트**: 빌드 테스트 통과
+
+### v2.1.0 (2026-01-16)
+**PWA 기능 추가**
+
 - ✨ **PWA 아이콘 추가**: Heroicons Bookmark-square 기반 아이콘
   - SVG 아이콘 (확장 가능)
   - PNG 아이콘 8개 사이즈 (72~512px)
@@ -675,4 +934,4 @@ npm install
 ---
 
 **Last Updated**: 2026-01-16
-**Version**: 2.1.0
+**Version**: 2.2.0
