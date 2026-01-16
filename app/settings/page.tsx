@@ -5,6 +5,7 @@ import RssSourceManager from '@/components/RssSourceManager'
 import ThemeToggle from '@/components/ThemeToggle'
 import ColorThemeSelector from '@/components/ColorThemeSelector'
 import { useColorTheme } from '@/hooks/useColorTheme'
+import { InformationCircleIcon } from '@heroicons/react/24/outline'
 
 export default function SettingsPage() {
   const { headerClasses } = useColorTheme()
@@ -15,30 +16,29 @@ export default function SettingsPage() {
         <h1 className="text-xl font-bold">설정</h1>
       </header>
 
-      <main className="pb-20 bg-gray-50 dark:bg-gray-900">
-        {/* 다크 모드 설정 섹션 */}
-        <section className="p-4 bg-white dark:bg-gray-800 border-b-8 border-gray-100 dark:border-gray-700">
-          <ThemeToggle />
-        </section>
+      <main className="pb-20 p-4 bg-gray-50 dark:bg-gray-900 space-y-4">
+        {/* 다크 모드 설정 */}
+        <ThemeToggle />
 
-        {/* 색상 테마 설정 섹션 */}
-        <section className="p-4 bg-white dark:bg-gray-800 border-b-8 border-gray-100 dark:border-gray-700">
-          <ColorThemeSelector />
-        </section>
+        {/* 색상 테마 설정 */}
+        <ColorThemeSelector />
 
-        {/* 뉴스 소스 관리 섹션 */}
-        <section className="bg-white dark:bg-gray-800 border-b-8 border-gray-100 dark:border-gray-700">
-          <RssSourceManager />
-        </section>
+        {/* 뉴스 소스 관리 */}
+        <RssSourceManager />
 
-        {/* 앱 정보 섹션 */}
-        <section className="p-4 bg-white dark:bg-gray-800">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">앱 정보</h3>
-          <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-            <p>버전: 2.2.0</p>
+        {/* 앱 정보 */}
+        <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
+          <div className="flex items-center gap-3 mb-3">
+            <InformationCircleIcon className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+            <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+              앱 정보
+            </h3>
+          </div>
+          <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
+            <p>버전: 2.2.1</p>
             <p>마지막 업데이트: 2026-01-16</p>
           </div>
-        </section>
+        </div>
       </main>
 
       <BottomNav />

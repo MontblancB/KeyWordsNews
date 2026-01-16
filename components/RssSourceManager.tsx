@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRssSettings } from '@/hooks/useRssSettings'
 import { CATEGORY_MAPPING } from '@/lib/rss/sources'
+import { NewspaperIcon } from '@heroicons/react/24/outline'
 
 export default function RssSourceManager() {
   const {
@@ -20,13 +21,20 @@ export default function RssSourceManager() {
   } = useRssSettings()
 
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
-  const [isExpanded, setIsExpanded] = useState(false) // 전체 폴딩 상태
 
   if (!isLoaded) {
     return (
-      <div className="p-8 text-center text-gray-500">
-        <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-        <p className="mt-2 text-sm">설정 불러오는 중...</p>
+      <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
+        <div className="flex items-center gap-3 mb-3">
+          <NewspaperIcon className="w-5 h-5 text-gray-400" />
+          <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            뉴스 소스 관리
+          </h3>
+        </div>
+        <div className="text-center py-4">
+          <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 dark:border-blue-400"></div>
+          <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">설정 불러오는 중...</p>
+        </div>
       </div>
     )
   }
@@ -61,148 +69,130 @@ export default function RssSourceManager() {
   const categories = categoryOrder.filter(cat => uniqueCategories.includes(cat))
 
   return (
-    <div className="bg-white dark:bg-gray-800">
-      {/* 헤더 - 폴딩 가능 */}
-      <div
-        className="p-4 bg-gray-50 dark:bg-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-lg">{isExpanded ? '▼' : '▶'}</span>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-              뉴스 소스 관리
-            </h3>
-            <span className="text-sm text-gray-600 dark:text-gray-400">
-              ({enabledCount} / {totalCount})
-            </span>
-          </div>
+    <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
+      {/* 헤더 */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-3">
+          <NewspaperIcon className="w-5 h-5 text-green-500 dark:text-green-400" />
+          <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            뉴스 소스 관리
+          </h3>
         </div>
+        <span className="text-xs text-gray-600 dark:text-gray-400">
+          {enabledCount} / {totalCount}
+        </span>
       </div>
 
-      {/* 폴딩 컨텐츠 */}
-      {isExpanded && (
-        <>
-          {/* 전체 제어 버튼 */}
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+      {/* 전체 제어 버튼 */}
+      <div className="flex gap-2 mb-3">
+        <button
+          onClick={enableAll}
+          className={`flex-1 px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
+            enabledCount === totalCount
+              ? 'bg-blue-600 text-white shadow-sm'
+              : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
+          }`}
+        >
+          전체 ON
+        </button>
+        <button
+          onClick={disableAll}
+          className={`flex-1 px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
+            enabledCount === 0
+              ? 'bg-blue-600 text-white shadow-sm'
+              : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
+          }`}
+        >
+          전체 OFF
+        </button>
+        <button
+          onClick={reset}
+          className="flex-1 px-3 py-2 text-xs font-medium bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors shadow-sm"
+        >
+          초기화
+        </button>
+      </div>
 
-            <div className="flex gap-2">
-              <button
-                onClick={enableAll}
-                className={`flex-1 px-3 py-2 text-sm rounded transition-colors ${
-                  enabledCount === totalCount
-                    ? 'bg-blue-600 text-white hover:bg-blue-700'
-                    : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
-                }`}
+      {/* 카테고리별 뉴스 소스 리스트 */}
+      <div className="max-h-[400px] overflow-y-auto space-y-2">
+        {categories.map((category) => {
+          const categoryName = CATEGORY_MAPPING[category] || category
+          const sources = allSources.filter(s => s.category === category)
+          const stats = getCategoryStats(category)
+          const isCategoryExpanded = expandedCategories.has(category)
+
+          return (
+            <div key={category} className="bg-white dark:bg-gray-700 rounded-lg overflow-hidden">
+              {/* 카테고리 헤더 */}
+              <div
+                className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                onClick={() => toggleCategoryExpand(category)}
               >
-                전체 ON
-              </button>
-              <button
-                onClick={disableAll}
-                className={`flex-1 px-3 py-2 text-sm rounded transition-colors ${
-                  enabledCount === 0
-                    ? 'bg-blue-600 text-white hover:bg-blue-700'
-                    : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
-                }`}
-              >
-                전체 OFF
-              </button>
-              <button
-                onClick={reset}
-                className="flex-1 px-3 py-2 text-sm bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors"
-              >
-                초기화
-              </button>
-            </div>
-          </div>
-
-          {/* 카테고리별 뉴스 소스 리스트 */}
-          <div className="max-h-[500px] overflow-y-auto">
-            {categories.map((category) => {
-              const categoryName = CATEGORY_MAPPING[category] || category
-              const sources = allSources.filter(s => s.category === category)
-              const stats = getCategoryStats(category)
-              const isCategoryExpanded = expandedCategories.has(category)
-
-              return (
-                <div key={category} className="border-b border-gray-200 dark:border-gray-700">
-                  {/* 카테고리 헤더 */}
-                  <div
-                    className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-                    onClick={() => toggleCategoryExpand(category)}
-                  >
-                    <div className="flex items-center gap-3 flex-1">
-                      <span className="text-lg">{isCategoryExpanded ? '▼' : '▶'}</span>
-                      <h4 className="font-bold text-gray-900 dark:text-gray-100">{categoryName}</h4>
-                      <span className="text-sm text-gray-500 dark:text-gray-400">
-                        ({stats.enabled} / {stats.total})
-                      </span>
-                    </div>
-
-                    <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        onClick={() => toggleCategory(category, true)}
-                        className={`px-2 py-1 text-xs rounded transition-colors ${
-                          stats.allEnabled
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
-                        }`}
-                      >
-                        ON
-                      </button>
-                      <button
-                        onClick={() => toggleCategory(category, false)}
-                        className={`px-2 py-1 text-xs rounded transition-colors ${
-                          stats.noneEnabled
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
-                        }`}
-                      >
-                        OFF
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* 카테고리 내 소스 리스트 */}
-                  {isCategoryExpanded && (
-                    <div className="bg-white dark:bg-gray-800">
-                      {sources.map((source) => {
-                        const isEnabled = settings[source.id] ?? source.enabled
-
-                        return (
-                          <label
-                            key={source.id}
-                            className="flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors border-t border-gray-100 dark:border-gray-700"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={isEnabled}
-                              onChange={() => toggleSource(source.id)}
-                              className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                            />
-                            <div className="flex-1">
-                              <span className="font-medium text-gray-900 dark:text-gray-100">
-                                {source.name}
-                              </span>
-                            </div>
-                          </label>
-                        )
-                      })}
-                    </div>
-                  )}
+                <div className="flex items-center gap-3 flex-1">
+                  <span className="text-sm">{isCategoryExpanded ? '▼' : '▶'}</span>
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{categoryName}</h4>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    ({stats.enabled} / {stats.total})
+                  </span>
                 </div>
-              )
-            })}
+
+                <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    onClick={() => toggleCategory(category, true)}
+                    className={`px-2 py-1 text-xs rounded transition-colors ${
+                      stats.allEnabled
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
+                    }`}
+                  >
+                    ON
+                  </button>
+                  <button
+                    onClick={() => toggleCategory(category, false)}
+                    className={`px-2 py-1 text-xs rounded transition-colors ${
+                      stats.noneEnabled
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
+                    }`}
+                  >
+                    OFF
+                  </button>
+                </div>
+              </div>
+
+              {/* 카테고리 내 소스 리스트 */}
+              {isCategoryExpanded && (
+                <div className="border-t border-gray-200 dark:border-gray-600">
+                  {sources.map((source) => {
+                    const isEnabled = settings[source.id] ?? source.enabled
+
+                    return (
+                      <label
+                        key={source.id}
+                        className="flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer transition-colors border-t border-gray-100 dark:border-gray-600 first:border-t-0"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isEnabled}
+                          onChange={() => toggleSource(source.id)}
+                          className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                        />
+                        <span className="text-sm text-gray-900 dark:text-gray-100">
+                          {source.name}
+                        </span>
+                      </label>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
 
-          {/* 안내 메시지 */}
-          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border-t border-blue-100 dark:border-blue-800">
-            <p className="text-xs text-blue-800 dark:text-blue-300">
-              💡 비활성화한 뉴스 소스는 뉴스 수집 및 검색에서 제외됩니다.
-            </p>
-          </div>
-        </>
-      )}
+      <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+        비활성화한 뉴스 소스는 뉴스 수집 및 검색에서 제외됩니다
+      </p>
     </div>
   )
 }
