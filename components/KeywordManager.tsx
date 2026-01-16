@@ -3,6 +3,7 @@
 
 import { useState } from 'react'
 import { SavedKeyword } from '@/lib/keywords'
+import { useColorTheme } from '@/hooks/useColorTheme'
 
 interface KeywordManagerProps {
   keywords: SavedKeyword[]
@@ -19,6 +20,7 @@ export default function KeywordManager({
   onMoveUp,
   onMoveDown
 }: KeywordManagerProps) {
+  const { buttonClasses, textClasses } = useColorTheme()
   const [input, setInput] = useState('')
   const [showList, setShowList] = useState(false)
   const [error, setError] = useState('')
@@ -57,7 +59,7 @@ export default function KeywordManager({
           />
           <button
             type="submit"
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className={`px-4 py-2 rounded-lg transition-colors ${buttonClasses}`}
           >
             추가
           </button>
@@ -94,7 +96,7 @@ export default function KeywordManager({
                   className={`px-2 py-1 text-sm ${
                     index === 0
                       ? 'text-gray-300 cursor-not-allowed'
-                      : 'text-blue-600 hover:text-blue-800'
+                      : textClasses
                   }`}
                   title="위로 이동"
                 >
@@ -107,7 +109,7 @@ export default function KeywordManager({
                   className={`px-2 py-1 text-sm ${
                     index === keywords.length - 1
                       ? 'text-gray-300 cursor-not-allowed'
-                      : 'text-blue-600 hover:text-blue-800'
+                      : textClasses
                   }`}
                   title="아래로 이동"
                 >
