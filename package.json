@@ -25,6 +25,7 @@
     "rss-parser": "^3.13.0"
   },
   "devDependencies": {
+    "@types/cheerio": "^0.22.35",
     "@types/he": "^1.2.3",
     "@types/node": "^20",
     "@types/node-cron": "^3.0.11",

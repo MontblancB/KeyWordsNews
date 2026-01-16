@@ -32,7 +32,47 @@
       "Bash(npx tsx:*)",
       "Bash(export DATABASE_URL=\"postgres://8af2f559e3270636820527e57d46002a450aa769e5cb9e5828bd4db64a2e9c3e:sk_tHDGLPmsjpukrgAfdE7Ij@db.prisma.io:5432/postgres?sslmode=require\":*)",
       "Bash(vercel whoami)",
-      "Bash(vercel link:*)"
+      "Bash(vercel link:*)",
+      "Bash(vercel ls:*)",
+      "Bash(brew install:*)",
+      "Bash(vercel env add:*)",
+      "Bash(ls:*)",
+      "Bash(vercel env:*)",
+      "Bash(vercel logs:*)",
+      "Bash(xxd:*)",
+      "Bash(npx tsc:*)",
+      "Bash(git reset:*)"
+    ]
+  },
+  "hooks": {
+    "Notification": [
+      {
+        "matcher": "permission_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "terminal-notifier -title 'Claude Code' -message '권한 요청 - 결정이 필요합니다' -sound default"
+          }
+        ]
+      },
+      {
+        "matcher": "idle_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "terminal-notifier -title 'Claude Code' -message '입력을 기다리고 있습니다' -sound default"
+          }
+        ]
+      },
+      {
+        "matcher": "elicitation_dialog",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "terminal-notifier -title 'Claude Code' -message '선택 및 결정이 필요합니다' -sound default"
+          }
+        ]
+      }
     ]
   }
 }

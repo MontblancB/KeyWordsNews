@@ -127,7 +127,7 @@ function getSelectorsForDomain(url: string): string[] {
 /**
  * HTML에서 불필요한 요소 제거
  */
-function cleanContent($: cheerio.CheerioAPI, element: cheerio.Cheerio<any>): void {
+function cleanContent($: cheerio.CheerioAPI, element: any): void {
   // 제거할 요소들
   const removeSelectors = [
     'script',
@@ -186,7 +186,7 @@ export async function scrapeNewsContent(
     }
 
     const html = await response.text()
-    const $ = cheerio.load(html)
+    const $ = cheerio.load(html) as any as cheerio.CheerioAPI
 
     // 도메인별 선택자 가져오기
     const selectors = getSelectorsForDomain(url)
@@ -197,7 +197,7 @@ export async function scrapeNewsContent(
 
       if (element.length > 0) {
         // 불필요한 요소 제거
-        cleanContent($, element)
+        cleanContent($, element as any)
 
         // 텍스트 추출
         let content = element.text().trim()
