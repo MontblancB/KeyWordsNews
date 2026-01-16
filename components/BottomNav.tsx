@@ -5,14 +5,14 @@ import {
   BoltIcon,
   NewspaperIcon,
   StarIcon,
-  MagnifyingGlassIcon,
+  PresentationChartLineIcon,
   Cog6ToothIcon,
 } from '@heroicons/react/24/outline'
 import {
   BoltIcon as BoltIconSolid,
   NewspaperIcon as NewspaperIconSolid,
   StarIcon as StarIconSolid,
-  MagnifyingGlassIcon as MagnifyingGlassIconSolid,
+  PresentationChartLineIcon as PresentationChartLineIconSolid,
   Cog6ToothIcon as Cog6ToothIconSolid,
 } from '@heroicons/react/24/solid'
 
@@ -43,11 +43,11 @@ export default function BottomNav() {
       color: 'text-yellow-500',
     },
     {
-      icon: MagnifyingGlassIcon,
-      iconSolid: MagnifyingGlassIconSolid,
-      label: '검색',
-      path: '/search',
-      color: 'text-purple-500',
+      icon: PresentationChartLineIcon,
+      iconSolid: PresentationChartLineIconSolid,
+      label: '경제지표',
+      path: '/economy',
+      color: 'text-green-500',
     },
     {
       icon: Cog6ToothIcon,
