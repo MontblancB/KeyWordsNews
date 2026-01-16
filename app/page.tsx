@@ -52,47 +52,54 @@ export default function HomePage() {
       ]
       const sources = getEnabledRssSourceNames()
 
-      // 500ms 후 순차적으로 프리페칭 시작 (500ms 간격)
-      setTimeout(() => {
-        allCategories.forEach((category, index) => {
-          setTimeout(() => {
-            queryClient.prefetchInfiniteQuery({
-              queryKey: ['news', 'topic-infinite', category, sources],
-              queryFn: async ({ pageParam = 0 }) => {
-                // 첫 요청은 10개
-                const limit = pageParam === 0 ? 10 : 15
-                const offset = pageParam === 0 ? 0 : 10 + (pageParam - 1) * 15
+      // 500ms 후 동적 순차 프리페칭 시작
+      setTimeout(async () => {
+        for (const category of allCategories) {
+          const start = Date.now()
 
-                const url = sources
-                  ? `/api/news/topics/${category}?limit=${limit}&offset=${offset}&sources=${encodeURIComponent(sources)}`
-                  : `/api/news/topics/${category}?limit=${limit}&offset=${offset}`
-                const res = await fetch(url)
-                return res.json()
-              },
-              initialPageParam: 0,
-              getNextPageParam: (lastPage, allPages) => {
-                if (lastPage.hasMore) {
-                  return allPages.length
-                }
-                return undefined
-              },
-              pages: 1, // 첫 페이지만 프리페칭
-            })
-          }, index * 500) // 500ms 간격으로 순차 실행
-        })
+          await queryClient.prefetchInfiniteQuery({
+            queryKey: ['news', 'topic-infinite', category, sources],
+            queryFn: async ({ pageParam = 0 }) => {
+              // 첫 요청은 10개
+              const limit = pageParam === 0 ? 10 : 15
+              const offset = pageParam === 0 ? 0 : 10 + (pageParam - 1) * 15
+
+              const url = sources
+                ? `/api/news/topics/${category}?limit=${limit}&offset=${offset}&sources=${encodeURIComponent(sources)}`
+                : `/api/news/topics/${category}?limit=${limit}&offset=${offset}`
+              const res = await fetch(url)
+              return res.json()
+            },
+            initialPageParam: 0,
+            getNextPageParam: (lastPage, allPages) => {
+              if (lastPage.hasMore) {
+                return allPages.length
+              }
+              return undefined
+            },
+            pages: 1, // 첫 페이지만 프리페칭
+          })
+
+          // 최소 100ms 간격 보장 (서버 부하 분산)
+          const elapsed = Date.now() - start
+          if (elapsed < 100) {
+            await new Promise(resolve => setTimeout(resolve, 100 - elapsed))
+          }
+        }
       }, 500)
     }
   }, [isLoading, data, queryClient])
 
-  // 전략적 프리페칭: 경제지표 + 키워드
+  // 전략적 프리페칭: 경제지표 + 키워드 (카테고리 완료 후 자동 시작)
   useEffect(() => {
     // 현재 페이지 데이터 로드 완료 후 프리페칭 시작
     if (!isLoading && data) {
       const sources = getEnabledRssSourceNames()
 
-      // 4500ms 후 경제지표 프리페칭 (카테고리 8개 완료 후)
-      setTimeout(() => {
-        queryClient.prefetchQuery({
+      // 카테고리 프리페칭 완료를 기다리기 위한 충분한 지연 후 시작
+      setTimeout(async () => {
+        // 1. 경제지표 프리페칭
+        await queryClient.prefetchQuery({
           queryKey: ['economy-indicators'],
           queryFn: async () => {
             const res = await fetch('/api/economy/indicators')
@@ -102,35 +109,41 @@ export default function HomePage() {
           staleTime: 5 * 60 * 1000,
         })
 
-        // 5000ms 후 키워드 프리페칭 시작
-        setTimeout(() => {
-          const topKeywords = getTopKeywords(3)
+        // 최소 간격 보장
+        await new Promise(resolve => setTimeout(resolve, 100))
 
-          topKeywords.forEach((keyword, index) => {
-            setTimeout(() => {
-              queryClient.prefetchInfiniteQuery({
-                queryKey: ['news', 'search-infinite', keyword, sources],
-                queryFn: async ({ pageParam = 1 }) => {
-                  const url = sources
-                    ? `/api/news/search?q=${encodeURIComponent(keyword)}&page=${pageParam}&sources=${encodeURIComponent(sources)}`
-                    : `/api/news/search?q=${encodeURIComponent(keyword)}&page=${pageParam}`
-                  const res = await fetch(url)
-                  if (!res.ok) throw new Error('Failed to prefetch keyword search')
-                  return res.json()
-                },
-                initialPageParam: 1,
-                getNextPageParam: (lastPage) => {
-                  if (lastPage.page < lastPage.totalPages) {
-                    return lastPage.page + 1
-                  }
-                  return undefined
-                },
-                pages: 1,
-              })
-            }, index * 300)
+        // 2. 키워드 순차 프리페칭
+        const topKeywords = getTopKeywords(3)
+        for (const keyword of topKeywords) {
+          const start = Date.now()
+
+          await queryClient.prefetchInfiniteQuery({
+            queryKey: ['news', 'search-infinite', keyword, sources],
+            queryFn: async ({ pageParam = 1 }) => {
+              const url = sources
+                ? `/api/news/search?q=${encodeURIComponent(keyword)}&page=${pageParam}&sources=${encodeURIComponent(sources)}`
+                : `/api/news/search?q=${encodeURIComponent(keyword)}&page=${pageParam}`
+              const res = await fetch(url)
+              if (!res.ok) throw new Error('Failed to prefetch keyword search')
+              return res.json()
+            },
+            initialPageParam: 1,
+            getNextPageParam: (lastPage) => {
+              if (lastPage.page < lastPage.totalPages) {
+                return lastPage.page + 1
+              }
+              return undefined
+            },
+            pages: 1,
           })
-        }, 500)
-      }, 4500)
+
+          // 최소 100ms 간격 보장
+          const elapsed = Date.now() - start
+          if (elapsed < 100) {
+            await new Promise(resolve => setTimeout(resolve, 100 - elapsed))
+          }
+        }
+      }, 3000) // 카테고리 프리페칭이 대부분 완료될 시점
     }
   }, [isLoading, data, queryClient])
 
