@@ -37,12 +37,19 @@ export class NewsSummarizer {
     title: string,
     content: string
   ): Promise<SummaryResultWithProvider> {
+    console.log('[Summarizer] Starting summarization...')
+
     // 1차 시도: Primary Provider
     const primaryProvider = AIProviderFactory.createPrimaryProvider()
+    console.log('[Summarizer] Primary provider:', primaryProvider?.name || 'none')
+
     if (primaryProvider) {
       try {
         const isAvailable = await primaryProvider.isAvailable()
+        console.log('[Summarizer] Primary provider available:', isAvailable)
+
         if (isAvailable) {
+          console.log('[Summarizer] Using primary provider')
           const result = await primaryProvider.summarize(title, content)
           return {
             ...result,
@@ -51,11 +58,13 @@ export class NewsSummarizer {
         }
       } catch (error) {
         console.error(
-          `Primary provider (${primaryProvider.name}) failed:`,
+          `[Summarizer] Primary provider (${primaryProvider.name}) failed:`,
           error
         )
         // Fallback으로 계속 진행
       }
+    } else {
+      console.error('[Summarizer] No primary provider created!')
     }
 
     // 2차 시도: Fallback Provider

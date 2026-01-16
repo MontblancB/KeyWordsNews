@@ -12,10 +12,13 @@ export class AIProviderFactory {
    */
   static createPrimaryProvider(): AIProvider | null {
     const providerType = (process.env.AI_PROVIDER || 'groq') as AIProviderType
+    console.log('[Factory] AI_PROVIDER:', providerType)
+    console.log('[Factory] GROQ_API_KEY exists:', !!process.env.GROQ_API_KEY)
 
     switch (providerType) {
       case 'groq':
         if (process.env.GROQ_API_KEY) {
+          console.log('[Factory] Creating Groq provider')
           return new GroqProvider({
             apiKey: process.env.GROQ_API_KEY,
             model: process.env.GROQ_MODEL,
@@ -23,6 +26,8 @@ export class AIProviderFactory {
               ? parseFloat(process.env.GROQ_TEMPERATURE)
               : undefined,
           })
+        } else {
+          console.error('[Factory] GROQ_API_KEY is missing!')
         }
         break
 
