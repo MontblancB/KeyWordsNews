@@ -37,6 +37,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko">
+      <head>
+        {/* iOS Safari 화면 방향 힌트 (PWA 모드에서만 작동) */}
+        <meta name="screen-orientation" content="portrait" />
+        <meta name="x5-orientation" content="portrait" />
+      </head>
       <body>
         <Providers>
           <div className="max-w-2xl mx-auto bg-white min-h-screen">
