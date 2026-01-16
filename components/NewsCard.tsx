@@ -48,11 +48,6 @@ export default function NewsCard({ news }: NewsCardProps) {
       >
         <div className="flex gap-3">
           <div className="flex-1 min-w-0">
-            {news.isBreaking && (
-              <span className="inline-block px-2 py-1 text-xs font-bold text-white bg-red-600 dark:bg-red-700 rounded mb-2">
-                속보
-              </span>
-            )}
             <h3 className="font-bold text-sm md:text-base mb-2 line-clamp-2 text-gray-900 dark:text-gray-100">
               {news.title}
             </h3>
