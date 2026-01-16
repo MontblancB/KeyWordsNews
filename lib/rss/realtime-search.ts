@@ -20,12 +20,23 @@ export async function searchGoogleNewsRealtime(
     const feed = await parser.parseURL(url)
 
     const results: NewsItem[] = feed.items.map((item) => {
-      // Google News RSS에서 이미지 추출 (없을 수 있음)
+      // Google News RSS에서 이미지 추출
       let imageUrl: string | undefined = undefined
 
-      // enclosure에서 이미지 추출
+      // 1. enclosure에서 이미지 추출
       if (item.enclosure?.url) {
         imageUrl = item.enclosure.url
+      } else {
+        // 2. description, content, contentEncoded에서 이미지 추출
+        const htmlContent = (item as any).contentEncoded || item.content || (item as any).description || ''
+
+        if (htmlContent) {
+          // 개선된 정규식: 큰따옴표, 작은따옴표, 따옴표 없는 경우 모두 매칭
+          const imgMatch = htmlContent.match(/<img[^>]+src=["']?([^"'\s>]+)["']?/i)
+          if (imgMatch) {
+            imageUrl = imgMatch[1]
+          }
+        }
       }
 
       // contentSnippet 또는 content에서 요약 추출
@@ -139,8 +150,20 @@ export async function searchGoogleNewsByCategory(
     const results: NewsItem[] = feed.items.map((item) => {
       let imageUrl: string | undefined = undefined
 
+      // 1. enclosure에서 이미지 추출
       if (item.enclosure?.url) {
         imageUrl = item.enclosure.url
+      } else {
+        // 2. description, content, contentEncoded에서 이미지 추출
+        const htmlContent = (item as any).contentEncoded || item.content || (item as any).description || ''
+
+        if (htmlContent) {
+          // 개선된 정규식: 큰따옴표, 작은따옴표, 따옴표 없는 경우 모두 매칭
+          const imgMatch = htmlContent.match(/<img[^>]+src=["']?([^"'\s>]+)["']?/i)
+          if (imgMatch) {
+            imageUrl = imgMatch[1]
+          }
+        }
       }
 
       const summary = (item.contentSnippet || item.content || '')
