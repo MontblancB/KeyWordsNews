@@ -6,12 +6,16 @@ import NewsCard from '@/components/NewsCard'
 import BottomNav from '@/components/BottomNav'
 import BreakingBanner from '@/components/BreakingBanner'
 import { useColorTheme } from '@/hooks/useColorTheme'
+import { useQueryClient } from '@tanstack/react-query'
+import { getEnabledRssSourceNames } from '@/lib/rss-settings'
 
 export default function HomePage() {
   const { headerClasses } = useColorTheme()
+  const queryClient = useQueryClient()
   const {
     data,
     isLoading,
+    isFetching,
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
@@ -19,6 +23,45 @@ export default function HomePage() {
 
   const loadMoreRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+
+  // 모든 카테고리 순차적으로 프리페칭 (백그라운드에서 실행)
+  useEffect(() => {
+    const allCategories = [
+      'politics',      // 정치
+      'economy',       // 경제
+      'society',       // 사회
+      'world',         // 국제
+      'tech',          // IT
+      'sports',        // 스포츠
+      'entertainment', // 연예
+      'culture',       // 문화
+    ]
+    const sources = getEnabledRssSourceNames()
+
+    // 순차적으로 프리페칭 (500ms 간격)
+    allCategories.forEach((category, index) => {
+      setTimeout(() => {
+        queryClient.prefetchInfiniteQuery({
+          queryKey: ['news', 'topic-infinite', category, sources],
+          queryFn: async ({ pageParam = 0 }) => {
+            const url = sources
+              ? `/api/news/topics/${category}?limit=20&offset=${pageParam}&sources=${encodeURIComponent(sources)}`
+              : `/api/news/topics/${category}?limit=20&offset=${pageParam}`
+            const res = await fetch(url)
+            return res.json()
+          },
+          initialPageParam: 0,
+          getNextPageParam: (lastPage) => {
+            if (lastPage.hasMore) {
+              return lastPage.offset + 20
+            }
+            return undefined
+          },
+          pages: 1, // 첫 페이지만 프리페칭
+        })
+      }, index * 500) // 500ms 간격으로 순차 실행
+    })
+  }, [queryClient])
 
   // 무한 스크롤: Intersection Observer
   useEffect(() => {
@@ -51,8 +94,16 @@ export default function HomePage() {
 
       <BreakingBanner />
 
-      <main ref={scrollRef} className="pb-20 bg-white dark:bg-gray-900">
-        {isLoading && (
+      <main ref={scrollRef} className="pb-20 bg-white dark:bg-gray-900 relative">
+        {/* 백그라운드 갱신 인디케이터 (캐시가 있을 때) */}
+        {!isLoading && isFetching && (
+          <div className="absolute top-2 right-2 z-10">
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" title="백그라운드 갱신 중"></div>
+          </div>
+        )}
+
+        {/* 캐시가 없을 때만 로딩 스피너 표시 */}
+        {isLoading && !data && (
           <div className="p-8 text-center text-gray-500 dark:text-gray-400">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
             <p className="mt-2">뉴스를 불러오는 중...</p>

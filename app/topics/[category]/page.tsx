@@ -16,6 +16,7 @@ export default function TopicPage() {
   const {
     data,
     isLoading,
+    isFetching,
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
@@ -64,8 +65,16 @@ export default function TopicPage() {
 
       <CategoryTabs />
 
-      <main className="pb-20 bg-white dark:bg-gray-900">
-        {isLoading && (
+      <main className="pb-20 bg-white dark:bg-gray-900 relative">
+        {/* 백그라운드 갱신 인디케이터 (캐시가 있을 때) */}
+        {!isLoading && isFetching && (
+          <div className="absolute top-2 right-2 z-10">
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" title="백그라운드 갱신 중"></div>
+          </div>
+        )}
+
+        {/* 캐시가 없을 때만 로딩 스피너 표시 */}
+        {isLoading && !data && (
           <div className="p-8 text-center text-gray-500 dark:text-gray-400">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
             <p className="mt-2">뉴스를 불러오는 중...</p>

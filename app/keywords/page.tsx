@@ -27,6 +27,7 @@ export default function KeywordsPage() {
   const {
     data,
     isLoading,
+    isFetching,
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
@@ -88,8 +89,15 @@ export default function KeywordsPage() {
               onSelectKeyword={setActiveKeyword}
             />
 
-            {/* 로딩 중 */}
-            {isLoading && activeKeyword && (
+            {/* 백그라운드 갱신 인디케이터 (캐시가 있을 때) */}
+            {!isLoading && isFetching && activeKeyword && data && (
+              <div className="absolute top-2 right-2 z-10">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" title="백그라운드 갱신 중"></div>
+              </div>
+            )}
+
+            {/* 캐시가 없을 때만 로딩 스피너 표시 */}
+            {isLoading && !data && activeKeyword && (
               <div className="p-8 text-center text-gray-500 dark:text-gray-400">
                 <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
                 <p className="mt-2">검색 중...</p>
