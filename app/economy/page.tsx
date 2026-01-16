@@ -7,18 +7,18 @@ import { ArrowPathIcon } from '@heroicons/react/24/outline'
 import { useColorTheme } from '@/hooks/useColorTheme'
 
 export default function EconomyPage() {
-  const { themeClasses } = useColorTheme()
+  const { headerClasses } = useColorTheme()
   const { data, isLoading, error, refetch, isRefetching } = useEconomy()
 
   return (
     <>
-      <header className={`${themeClasses.light} ${themeClasses.dark} text-white p-4 sticky top-0 z-50`}>
+      <header className={`${headerClasses} text-white p-4 sticky top-0 z-50`}>
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold">경제 지표</h1>
           <button
             onClick={() => refetch()}
             disabled={isRefetching}
-            className={`p-2 ${themeClasses.hover} ${themeClasses.darkHover} rounded-lg transition-colors disabled:opacity-50`}
+            className="p-2 hover:bg-white/10 rounded-lg transition-colors disabled:opacity-50"
             aria-label="새로고침"
           >
             <ArrowPathIcon

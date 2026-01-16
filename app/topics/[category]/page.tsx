@@ -9,7 +9,7 @@ import { useParams } from 'next/navigation'
 import { useColorTheme } from '@/hooks/useColorTheme'
 
 export default function TopicPage() {
-  const { themeClasses } = useColorTheme()
+  const { headerClasses } = useColorTheme()
   const params = useParams()
   const category = params.category as string
 
@@ -56,7 +56,7 @@ export default function TopicPage() {
 
   return (
     <>
-      <header className={`${themeClasses.light} ${themeClasses.dark} text-white p-4`}>
+      <header className={`${headerClasses} text-white p-4`}>
         <h1 className="text-xl font-bold">
           {categoryNames[category] || category} 뉴스
         </h1>

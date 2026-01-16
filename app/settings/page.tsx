@@ -7,11 +7,11 @@ import ColorThemeSelector from '@/components/ColorThemeSelector'
 import { useColorTheme } from '@/hooks/useColorTheme'
 
 export default function SettingsPage() {
-  const { themeClasses } = useColorTheme()
+  const { headerClasses } = useColorTheme()
 
   return (
     <>
-      <header className={`${themeClasses.light} ${themeClasses.dark} text-white p-4 sticky top-0 z-50`}>
+      <header className={`${headerClasses} text-white p-4 sticky top-0 z-50`}>
         <h1 className="text-xl font-bold">설정</h1>
       </header>
 
