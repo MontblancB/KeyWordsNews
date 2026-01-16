@@ -67,10 +67,6 @@ export default function ThemeToggle() {
           />
         </button>
       </div>
-
-      <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-        {isDark ? '어두운 테마가 적용되었습니다' : '밝은 테마가 적용되었습니다'}
-      </p>
     </div>
   )
 }
