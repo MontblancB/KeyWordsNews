@@ -59,7 +59,7 @@ export default function BottomNav() {
   ]
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-50">
       <div className="max-w-2xl mx-auto flex justify-around">
         {navItems.map((item) => {
           const isActive =
@@ -72,7 +72,7 @@ export default function BottomNav() {
               key={item.path}
               onClick={() => router.push(item.path)}
               className={`flex-1 py-3 flex flex-col items-center gap-1 transition-all ${
-                isActive ? item.color : 'text-gray-400'
+                isActive ? item.color : 'text-gray-400 dark:text-gray-500'
               }`}
             >
               <Icon className="w-6 h-6" />

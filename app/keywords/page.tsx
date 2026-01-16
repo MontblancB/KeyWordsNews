@@ -53,7 +53,7 @@ export default function KeywordsPage() {
   return (
     <>
       {/* 헤더 */}
-      <header className="bg-blue-600 text-white p-4 sticky top-0 z-50">
+      <header className="bg-blue-600 dark:bg-blue-700 text-white p-4 sticky top-0 z-50">
         <h1 className="text-xl font-bold">키워드 뉴스</h1>
       </header>
 
@@ -66,12 +66,12 @@ export default function KeywordsPage() {
         onMoveDown={moveKeywordDown}
       />
 
-      <main className="pb-20">
+      <main className="pb-20 bg-white dark:bg-gray-900">
         {/* 키워드가 없을 때 */}
         {!hasKeywords && (
-          <div className="p-8 text-center text-gray-500">
+          <div className="p-8 text-center text-gray-500 dark:text-gray-400">
             <p className="mb-2">등록된 키워드가 없습니다.</p>
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-gray-400 dark:text-gray-500">
               상단에서 관심있는 키워드를 추가해보세요.
             </p>
           </div>
@@ -88,8 +88,8 @@ export default function KeywordsPage() {
 
             {/* 로딩 중 */}
             {isLoading && activeKeyword && (
-              <div className="p-8 text-center text-gray-500">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
                 <p className="mt-2">검색 중...</p>
               </div>
             )}
@@ -97,13 +97,13 @@ export default function KeywordsPage() {
             {/* 뉴스 리스트 */}
             {activeKeyword && data && (
               <>
-                <div className="p-4 bg-gray-50 border-b border-gray-200">
-                  <p className="text-sm text-gray-600">
-                    <span className="font-bold text-blue-600">{activeKeyword}</span>
+                <div className="p-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <span className="font-bold text-blue-600 dark:text-blue-400">{activeKeyword}</span>
                     에 대한 검색 결과{' '}
                     <span className="font-bold">{totalCount}건</span>
                     {allNews.length > 0 && (
-                      <span className="text-gray-400 ml-2">
+                      <span className="text-gray-400 dark:text-gray-500 ml-2">
                         (현재 {allNews.length}건 표시)
                       </span>
                     )}
@@ -111,7 +111,7 @@ export default function KeywordsPage() {
                 </div>
 
                 {allNews.length === 0 ? (
-                  <div className="p-8 text-center text-gray-500">
+                  <div className="p-8 text-center text-gray-500 dark:text-gray-400">
                     <p>검색 결과가 없습니다.</p>
                   </div>
                 ) : (
@@ -125,13 +125,13 @@ export default function KeywordsPage() {
                     {/* 무한 스크롤 트리거 */}
                     <div ref={loadMoreRef} className="p-4">
                       {isFetchingNextPage && (
-                        <div className="text-center text-gray-500">
-                          <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                        <div className="text-center text-gray-500 dark:text-gray-400">
+                          <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 dark:border-blue-400"></div>
                           <p className="mt-2 text-sm">더 불러오는 중...</p>
                         </div>
                       )}
                       {!hasNextPage && allNews.length > 0 && (
-                        <div className="text-center text-gray-400 text-sm">
+                        <div className="text-center text-gray-400 dark:text-gray-500 text-sm">
                           모든 검색 결과를 불러왔습니다.
                         </div>
                       )}

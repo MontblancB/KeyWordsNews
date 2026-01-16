@@ -36,15 +36,15 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="ko">
+    <html lang="ko" suppressHydrationWarning>
       <head>
         {/* iOS Safari 화면 방향 힌트 (PWA 모드에서만 작동) */}
         <meta name="screen-orientation" content="portrait" />
         <meta name="x5-orientation" content="portrait" />
       </head>
-      <body>
+      <body className="bg-white dark:bg-gray-900">
         <Providers>
-          <div className="max-w-2xl mx-auto bg-white min-h-screen">
+          <div className="max-w-2xl mx-auto bg-white dark:bg-gray-900 min-h-screen">
             {children}
           </div>
         </Providers>

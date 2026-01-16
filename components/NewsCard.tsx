@@ -36,7 +36,7 @@ export default function NewsCard({ news }: NewsCardProps) {
   }, [news.publishedAt])
 
   return (
-    <article className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
+    <article className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
       <a
         href={news.url}
         target="_blank"
@@ -46,17 +46,17 @@ export default function NewsCard({ news }: NewsCardProps) {
         <div className="flex gap-3">
           <div className="flex-1 min-w-0">
             {news.isBreaking && (
-              <span className="inline-block px-2 py-1 text-xs font-bold text-white bg-red-600 rounded mb-2">
+              <span className="inline-block px-2 py-1 text-xs font-bold text-white bg-red-600 dark:bg-red-700 rounded mb-2">
                 속보
               </span>
             )}
-            <h3 className="font-bold text-sm md:text-base mb-2 line-clamp-2 text-gray-900">
+            <h3 className="font-bold text-sm md:text-base mb-2 line-clamp-2 text-gray-900 dark:text-gray-100">
               {news.title}
             </h3>
-            <p className="text-xs md:text-sm text-gray-600 mb-2 line-clamp-2">
+            <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-2 line-clamp-2">
               {news.summary}
             </p>
-            <div className="flex items-center gap-2 text-xs text-gray-500">
+            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
               <span className="font-medium">{news.source}</span>
               <span>•</span>
               <time>{timeAgo}</time>

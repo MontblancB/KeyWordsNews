@@ -10,13 +10,13 @@ export default function EconomyPage() {
 
   return (
     <>
-      <header className="bg-green-600 text-white p-4 sticky top-0 z-50">
+      <header className="bg-green-600 dark:bg-green-700 text-white p-4 sticky top-0 z-50">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold">경제 지표</h1>
           <button
             onClick={() => refetch()}
             disabled={isRefetching}
-            className="p-2 hover:bg-green-700 rounded-lg transition-colors disabled:opacity-50"
+            className="p-2 hover:bg-green-700 dark:hover:bg-green-800 rounded-lg transition-colors disabled:opacity-50"
             aria-label="새로고침"
           >
             <ArrowPathIcon
@@ -26,15 +26,15 @@ export default function EconomyPage() {
         </div>
       </header>
 
-      <main className="pb-20 p-4">
+      <main className="pb-20 p-4 bg-white dark:bg-gray-900">
         {isLoading && (
           <div className="flex items-center justify-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 dark:border-green-400"></div>
           </div>
         )}
 
         {error && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-center">
+          <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400 text-center">
             데이터를 불러오는데 실패했습니다.
           </div>
         )}
@@ -43,7 +43,7 @@ export default function EconomyPage() {
           <div className="space-y-6">
             {/* 국내 지수 */}
             <section>
-              <h2 className="text-lg font-bold mb-3 text-gray-800">
+              <h2 className="text-lg font-bold mb-3 text-gray-800 dark:text-gray-200">
                 📈 국내 지수
               </h2>
               <div className="grid grid-cols-2 gap-3">
@@ -54,7 +54,7 @@ export default function EconomyPage() {
 
             {/* 해외 지수 */}
             <section>
-              <h2 className="text-lg font-bold mb-3 text-gray-800">
+              <h2 className="text-lg font-bold mb-3 text-gray-800 dark:text-gray-200">
                 🌍 해외 지수
               </h2>
               <div className="grid grid-cols-2 gap-3">
@@ -67,7 +67,7 @@ export default function EconomyPage() {
 
             {/* 환율 */}
             <section>
-              <h2 className="text-lg font-bold mb-3 text-gray-800">
+              <h2 className="text-lg font-bold mb-3 text-gray-800 dark:text-gray-200">
                 💱 환율
               </h2>
               <div className="grid grid-cols-2 gap-3">
@@ -80,7 +80,7 @@ export default function EconomyPage() {
 
             {/* 금시세 */}
             <section>
-              <h2 className="text-lg font-bold mb-3 text-gray-800">
+              <h2 className="text-lg font-bold mb-3 text-gray-800 dark:text-gray-200">
                 💰 금시세
               </h2>
               <div className="grid grid-cols-2 gap-3">
@@ -90,7 +90,7 @@ export default function EconomyPage() {
 
             {/* 암호화폐 */}
             <section>
-              <h2 className="text-lg font-bold mb-3 text-gray-800">
+              <h2 className="text-lg font-bold mb-3 text-gray-800 dark:text-gray-200">
                 ₿ 암호화폐
               </h2>
               <div className="grid grid-cols-2 gap-3">
@@ -102,7 +102,7 @@ export default function EconomyPage() {
             </section>
 
             {/* 마지막 업데이트 */}
-            <div className="text-center text-xs text-gray-500 pt-4">
+            <div className="text-center text-xs text-gray-500 dark:text-gray-400 pt-4">
               마지막 업데이트: {data.lastUpdated}
             </div>
           </div>

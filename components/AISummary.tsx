@@ -88,7 +88,7 @@ export default function AISummary({
         {/* 토글 버튼 */}
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="flex items-center justify-between w-full px-3 py-1.5 text-sm font-medium text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors"
+          className="flex items-center justify-between w-full px-3 py-1.5 text-sm font-medium text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 rounded-lg transition-colors"
         >
           <div className="flex items-center gap-1.5">
             <SparklesIconSolid className="w-4 h-4" />
@@ -103,14 +103,14 @@ export default function AISummary({
 
         {/* 요약 내용 (토글) */}
         {isExpanded && (
-          <div className="mt-2 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
+          <div className="mt-2 p-3 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
             {/* 키워드 배지 */}
             {summaryData.keywords.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-2">
                 {summaryData.keywords.map((keyword, index) => (
                   <span
                     key={index}
-                    className="px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 rounded-full"
+                    className="px-2 py-0.5 text-xs font-medium bg-purple-100 dark:bg-purple-800 text-purple-700 dark:text-purple-300 rounded-full"
                   >
                     #{keyword}
                   </span>
@@ -120,17 +120,17 @@ export default function AISummary({
 
             {/* AI 요약 */}
             <div className="flex items-start gap-2">
-              <SparklesIconSolid className="w-4 h-4 text-purple-500 flex-shrink-0 mt-0.5" />
+              <SparklesIconSolid className="w-4 h-4 text-purple-500 dark:text-purple-400 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
                 {/* 불릿 포인트 리스트로 렌더링 */}
                 {summaryData.summary.includes('•') ? (
-                  <ul className="space-y-1.5 text-sm text-gray-700">
+                  <ul className="space-y-1.5 text-sm text-gray-700 dark:text-gray-300">
                     {summaryData.summary
                       .split('\n')
                       .filter((line) => line.includes('•'))
                       .map((line, index) => (
                         <li key={index} className="flex items-start gap-1.5">
-                          <span className="text-purple-500 font-bold flex-shrink-0 mt-0.5">
+                          <span className="text-purple-500 dark:text-purple-400 font-bold flex-shrink-0 mt-0.5">
                             •
                           </span>
                           <span className="leading-relaxed">
@@ -141,14 +141,14 @@ export default function AISummary({
                   </ul>
                 ) : (
                   // 구 형식 호환성 (불릿 포인트 없는 경우)
-                  <p className="text-sm text-gray-700 leading-relaxed">
+                  <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
                     {summaryData.summary}
                   </p>
                 )}
 
                 {/* Provider 정보 (디버그용) */}
                 {process.env.NODE_ENV === 'development' && (
-                  <p className="text-xs text-gray-400 mt-1">
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                     AI: {summaryData.provider}
                     {summaryData.cached && ' (cached)'}
                   </p>
@@ -167,11 +167,11 @@ export default function AISummary({
       <button
         onClick={handleSummarize}
         disabled={loading}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? (
           <>
-            <div className="w-4 h-4 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-purple-600 dark:border-purple-400 border-t-transparent rounded-full animate-spin" />
             <span>AI 요약 생성 중...</span>
           </>
         ) : (
@@ -184,7 +184,7 @@ export default function AISummary({
 
       {/* 에러 메시지 */}
       {error && (
-        <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-600">
+        <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-xs text-red-600 dark:text-red-400">
           {error}
         </div>
       )}
