@@ -5,8 +5,10 @@ import { useInfiniteLatestNews } from '@/hooks/useNews'
 import NewsCard from '@/components/NewsCard'
 import BottomNav from '@/components/BottomNav'
 import BreakingBanner from '@/components/BreakingBanner'
+import { useColorTheme } from '@/hooks/useColorTheme'
 
 export default function HomePage() {
+  const { themeClasses } = useColorTheme()
   const {
     data,
     isLoading,
@@ -40,7 +42,7 @@ export default function HomePage() {
 
   return (
     <>
-      <header className="bg-blue-600 dark:bg-blue-700 text-white p-4 sticky top-0 z-50">
+      <header className={`${themeClasses.light} ${themeClasses.dark} text-white p-4 sticky top-0 z-50`}>
         <div>
           <h1 className="text-xl font-bold">키워드뉴스</h1>
           <p className="text-sm opacity-90">실시간 뉴스 속보</p>

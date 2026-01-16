@@ -3,18 +3,27 @@
 import BottomNav from '@/components/BottomNav'
 import RssSourceManager from '@/components/RssSourceManager'
 import ThemeToggle from '@/components/ThemeToggle'
+import ColorThemeSelector from '@/components/ColorThemeSelector'
+import { useColorTheme } from '@/hooks/useColorTheme'
 
 export default function SettingsPage() {
+  const { themeClasses } = useColorTheme()
+
   return (
     <>
-      <header className="bg-blue-600 dark:bg-blue-700 text-white p-4 sticky top-0 z-50">
+      <header className={`${themeClasses.light} ${themeClasses.dark} text-white p-4 sticky top-0 z-50`}>
         <h1 className="text-xl font-bold">설정</h1>
       </header>
 
       <main className="pb-20 bg-gray-50 dark:bg-gray-900">
-        {/* 테마 설정 섹션 */}
+        {/* 다크 모드 설정 섹션 */}
         <section className="p-4 bg-white dark:bg-gray-800 border-b-8 border-gray-100 dark:border-gray-700">
           <ThemeToggle />
+        </section>
+
+        {/* 색상 테마 설정 섹션 */}
+        <section className="p-4 bg-white dark:bg-gray-800 border-b-8 border-gray-100 dark:border-gray-700">
+          <ColorThemeSelector />
         </section>
 
         {/* 뉴스 소스 관리 섹션 */}

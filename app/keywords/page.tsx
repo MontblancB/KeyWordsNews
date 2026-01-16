@@ -8,8 +8,10 @@ import NewsCard from '@/components/NewsCard'
 import BottomNav from '@/components/BottomNav'
 import KeywordTabs from '@/components/KeywordTabs'
 import KeywordManager from '@/components/KeywordManager'
+import { useColorTheme } from '@/hooks/useColorTheme'
 
 export default function KeywordsPage() {
+  const { themeClasses } = useColorTheme()
   const { keywords, addKeyword, deleteKeyword, moveKeywordUp, moveKeywordDown, hasKeywords } = useKeywords()
   const [activeKeyword, setActiveKeyword] = useState<string | null>(null)
   const loadMoreRef = useRef<HTMLDivElement>(null)
@@ -53,7 +55,7 @@ export default function KeywordsPage() {
   return (
     <>
       {/* 헤더 */}
-      <header className="bg-blue-600 dark:bg-blue-700 text-white p-4 sticky top-0 z-50">
+      <header className={`${themeClasses.light} ${themeClasses.dark} text-white p-4 sticky top-0 z-50`}>
         <h1 className="text-xl font-bold">키워드 뉴스</h1>
       </header>
 
