@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { Providers } from './providers'
+import SwipeableLayout from '@/components/SwipeableLayout'
 
 export const metadata: Metadata = {
   title: '키워드뉴스 - 실시간 뉴스',
@@ -45,7 +46,9 @@ export default function RootLayout({
       <body className="bg-white dark:bg-gray-900">
         <Providers>
           <div className="max-w-2xl mx-auto bg-white dark:bg-gray-900 min-h-screen">
-            {children}
+            <SwipeableLayout>
+              {children}
+            </SwipeableLayout>
           </div>
         </Providers>
       </body>
