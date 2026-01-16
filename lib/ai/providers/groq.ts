@@ -22,14 +22,15 @@ export class GroqProvider implements AIProvider {
   }
 
   async summarize(title: string, content: string): Promise<SummaryResult> {
-    const prompt = `다음 뉴스 기사를 읽고 핵심 내용을 **100-150자 분량**으로 요약하고, 주요 키워드 3-5개를 추출해주세요.
+    const prompt = `다음 뉴스 기사를 읽고 핵심 내용을 **2-3문장으로 요약**하고, 주요 키워드 3-5개를 추출해주세요.
 
-**요약 작성 가이드:**
-1. 본문 내용을 중심으로 작성 (제목만 반복하지 마세요)
-2. 육하원칙(누가, 언제, 어디서, 무엇을, 왜, 어떻게)을 포함
-3. 구체적인 수치나 사실을 포함하여 상세하게 작성
-4. **반드시 100자 이상 작성** (너무 짧게 요약하지 마세요)
-5. 문장을 완결하고 자연스럽게 연결
+**중요한 요약 규칙:**
+1. **2-3문장으로 작성** (내용이 복잡하면 최대 5문장까지 허용)
+2. 본문의 핵심 내용만 추출 (제목 반복 금지)
+3. 육하원칙(누가, 언제, 어디서, 무엇을, 왜, 어떻게) 포함
+4. 구체적인 수치, 날짜, 장소 등 사실 포함
+5. **절대 "..."로 끝내지 말 것** - 반드시 완전한 문장으로 마무리
+6. 문장이 잘리거나 중간에 끊기지 않도록 주의
 
 제목: ${title}
 
@@ -41,7 +42,7 @@ ${content}
 
 반드시 JSON 형식으로만 응답해주세요:
 {
-  "summary": "본문의 핵심 내용을 100-150자로 상세히 요약",
+  "summary": "완결된 2-3문장 요약 (절대 ...로 끝내지 마세요)",
   "keywords": ["키워드1", "키워드2", "키워드3", "키워드4"]
 }`
 
@@ -52,7 +53,7 @@ ${content}
           {
             role: 'system',
             content:
-              '당신은 한국어 뉴스 기사를 분석하고 요약하는 전문 AI입니다. 본문의 핵심 내용(누가, 언제, 어디서, 무엇을, 왜, 어떻게)을 파악하여 **100-150자 분량으로 상세하고 구체적으로** 요약합니다. 수치, 날짜, 장소 등 구체적인 정보를 반드시 포함하세요. 너무 짧게 요약하지 마세요. 항상 JSON 형식으로 응답합니다.',
+              '당신은 한국어 뉴스 기사를 분석하고 요약하는 전문 AI입니다. 본문의 핵심 내용(누가, 언제, 어디서, 무엇을, 왜, 어떻게)을 파악하여 **2-3문장으로 완결된 요약**을 작성합니다. 절대 "..."로 끝내지 말고 반드시 완전한 문장으로 마무리하세요. 수치, 날짜, 장소 등 구체적인 정보를 포함하세요. 항상 JSON 형식으로 응답합니다.',
           },
           {
             role: 'user',
@@ -76,9 +77,24 @@ ${content}
         throw new Error('Invalid response format from Groq API')
       }
 
-      // 요약 길이 제한 (150자)
-      if (result.summary.length > 150) {
-        result.summary = result.summary.slice(0, 147) + '...'
+      // '...'로 끝나는 경우 제거 (AI가 실수로 붙였을 수 있음)
+      result.summary = result.summary.trim()
+      if (result.summary.endsWith('...')) {
+        result.summary = result.summary.slice(0, -3).trim()
+        // 마지막 문장이 완결되지 않았으면 문장 단위로 자르기
+        const lastPeriod = Math.max(
+          result.summary.lastIndexOf('.'),
+          result.summary.lastIndexOf('다'),
+          result.summary.lastIndexOf('요')
+        )
+        if (lastPeriod > 0) {
+          result.summary = result.summary.slice(0, lastPeriod + 1)
+        }
+      }
+
+      // 너무 긴 경우만 경고 (250자 이상)
+      if (result.summary.length > 250) {
+        console.warn(`[Groq] Warning: Summary is too long (${result.summary.length} chars)`)
       }
 
       // 키워드 개수 제한 (3-5개)
