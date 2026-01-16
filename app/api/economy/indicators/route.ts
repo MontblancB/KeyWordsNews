@@ -25,21 +25,24 @@ export async function GET(request: Request) {
 
     // 강제 새로고침이 아니고 캐시가 유효한 경우
     if (!forceRefresh && cachedData && now - lastFetchTime < CACHE_DURATION) {
-      console.log('[Economy API] Returning cached data')
+      const cacheAge = Math.floor((now - lastFetchTime) / 1000)
+      console.log(`[Economy API] Returning cached data (age: ${cacheAge}s)`)
       return NextResponse.json({
         success: true,
         data: cachedData,
         cached: true,
+        cacheAge,
       })
     }
 
     // 하이브리드 데이터 수집
-    console.log(
-      forceRefresh
-        ? '[Economy API] Force refresh - Collecting fresh data'
-        : '[Economy API] Collecting fresh data (Naver Finance + Finnhub API)'
-    )
+    const logMessage = forceRefresh
+      ? `[Economy API] 🔄 Force refresh at ${new Date().toLocaleTimeString('ko-KR')}`
+      : `[Economy API] Collecting fresh data (cache expired)`
+    console.log(logMessage)
+
     const data = await collectAllEconomyData()
+    console.log(`[Economy API] ✅ Data collected. lastUpdated: ${data.lastUpdated}`)
 
     // 캐시 업데이트
     cachedData = data
@@ -50,6 +53,7 @@ export async function GET(request: Request) {
       data,
       cached: false,
       forceRefresh,
+      collectedAt: new Date().toISOString(),
     })
   } catch (error) {
     console.error('Economy indicators error:', error)
