@@ -4,7 +4,8 @@ import {
   scrapeExchangeV2,
   scrapeGoldPriceV2,
 } from './naver-finance-v2'
-import { fetchAllFinnhubData } from '../api/finnhub'
+import { fetchInternationalIndices } from '../api/yahoo-finance'
+import { fetchCryptoPrices } from '../api/finnhub'
 
 /**
  * 하이브리드 경제 지표 수집기
@@ -12,7 +13,7 @@ import { fetchAllFinnhubData } from '../api/finnhub'
  * - 국내 지수 (KOSPI, KOSDAQ): 네이버 금융 스크래핑
  * - 환율 (USD, JPY, EUR, CNY): 네이버 금융 스크래핑
  * - 금시세: 네이버 금융 스크래핑
- * - 해외 지수 (S&P 500, NASDAQ, Dow, Nikkei): Finnhub API
+ * - 해외 지수 (S&P 500, NASDAQ, Dow, Nikkei): Yahoo Finance API (실제 지수 값)
  * - 암호화폐 (BTC, ETH, XRP, ADA): Finnhub API
  */
 
@@ -21,27 +22,26 @@ import { fetchAllFinnhubData } from '../api/finnhub'
  */
 export async function collectAllEconomyData(): Promise<EconomyData> {
   // 네이버 금융 스크래핑 (국내 데이터)
-  const [kospi, kosdaq, exchange, gold] = await Promise.all([
+  const [kospi, kosdaq, exchange, gold, international, crypto] = await Promise.all([
     scrapeDomesticIndexV2('KOSPI'),
     scrapeDomesticIndexV2('KOSDAQ'),
     scrapeExchangeV2(),
     scrapeGoldPriceV2(),
+    fetchInternationalIndices(), // Yahoo Finance API
+    fetchCryptoPrices(),         // Finnhub API
   ])
-
-  // Finnhub API (해외 지수 + 암호화폐)
-  const finnhubData = await fetchAllFinnhubData()
 
   return {
     domestic: {
       kospi,
       kosdaq,
     },
-    international: finnhubData.international,
+    international,
     exchange,
     gold: {
       international: gold,
     },
-    crypto: finnhubData.crypto,
+    crypto,
     lastUpdated: new Date().toLocaleString('ko-KR', {
       year: 'numeric',
       month: '2-digit',
