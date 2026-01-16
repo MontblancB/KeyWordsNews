@@ -19,14 +19,14 @@ export class OpenRouterProvider implements AIProvider {
   }
 
   async summarize(title: string, content: string): Promise<SummaryResult> {
-    const prompt = `다음 뉴스 기사를 읽고 핵심 내용을 **최대 3문장**으로 간결하게 요약하고, 주요 키워드 3-5개를 추출해주세요.
+    const prompt = `다음 뉴스 기사를 읽고 핵심 내용을 **3-5개의 압축된 불릿 포인트**로 정리하고, 주요 키워드 3-5개를 추출해주세요.
 
 **중요한 요약 규칙:**
-1. **최대 3문장** - 짧고 간결하게 작성 (1-2문장도 가능)
-2. 본문의 가장 중요한 핵심만 추출 (제목 반복 금지)
-3. 핵심 사실만 간단명료하게 (누가, 무엇을, 왜)
-4. 불필요한 배경 설명, 반응, 의견은 생략
-5. **절대 "..."로 끝내지 말 것** - 반드시 완전한 문장으로 마무리
+1. **3-5개의 불릿 포인트** - 각 포인트는 한 문장으로 간결하게
+2. 가장 중요한 핵심만 추출 (제목 반복 금지, 배경 설명 생략)
+3. 각 포인트는 구체적 사실 위주 (누가, 무엇을, 어떻게, 결과)
+4. 숫자, 날짜, 금액 등 구체적 정보 포함
+5. 불필요한 수식어, 감정 표현 제거
 
 제목: ${title}
 
@@ -34,11 +34,14 @@ export class OpenRouterProvider implements AIProvider {
 ${content}
 
 **좋은 요약 예시:**
-"정부가 2026년 최저임금을 시간당 1만 2천원(전년 대비 7.3% 인상)으로 확정했다. 노동계는 불충분하다며 반발했고, 경영계는 중소기업 부담을 우려했다."
+"• 정부가 2026년 최저임금을 시간당 1만 2천원으로 확정 (전년 대비 7.3% 인상)
+• 노동계는 물가 상승률을 고려하면 불충분하다며 반발
+• 경영계는 중소기업의 인건비 부담 증가를 우려
+• 최저임금 적용 대상 근로자는 약 300만명으로 추산"
 
 반드시 JSON 형식으로만 응답해주세요:
 {
-  "summary": "완결된 1-3문장 요약 (절대 ...로 끝내지 마세요)",
+  "summary": "• 포인트1\\n• 포인트2\\n• 포인트3\\n• 포인트4",
   "keywords": ["키워드1", "키워드2", "키워드3", "키워드4"]
 }`
 
@@ -57,7 +60,7 @@ ${content}
             {
               role: 'system',
               content:
-                '당신은 한국어 뉴스 기사를 분석하고 요약하는 전문 AI입니다. 본문의 가장 중요한 핵심만 파악하여 **최대 3문장**으로 간결하게 요약합니다. 불필요한 배경 설명이나 부가 정보는 생략하고, 핵심 사실만 간단명료하게 전달합니다. 절대 "..."로 끝내지 말고 반드시 완전한 문장으로 마무리하세요. 항상 JSON 형식으로 응답합니다.',
+                '당신은 한국어 뉴스 기사를 분석하고 핵심만 추출하는 전문 AI입니다. 기사를 읽고 가장 중요한 정보만 **3-5개의 압축된 불릿 포인트**로 정리합니다. 각 포인트는 구체적 사실(숫자, 날짜, 금액 등) 중심으로 한 문장으로 작성하며, 불필요한 배경 설명이나 감정 표현은 제거합니다. 항상 JSON 형식으로 응답하며, summary는 "• 포인트1\\n• 포인트2" 형식입니다.',
             },
             {
               role: 'user',
@@ -93,24 +96,26 @@ ${content}
         throw new Error('Invalid response format from OpenRouter API')
       }
 
-      // '...'로 끝나는 경우 제거 (AI가 실수로 붙였을 수 있음)
+      // 요약 정제
       result.summary = result.summary.trim()
-      if (result.summary.endsWith('...')) {
-        result.summary = result.summary.slice(0, -3).trim()
-        // 마지막 문장이 완결되지 않았으면 문장 단위로 자르기
-        const lastPeriod = Math.max(
-          result.summary.lastIndexOf('.'),
-          result.summary.lastIndexOf('다'),
-          result.summary.lastIndexOf('요')
-        )
-        if (lastPeriod > 0) {
-          result.summary = result.summary.slice(0, lastPeriod + 1)
-        }
+
+      // 불릿 포인트가 없으면 추가 (AI가 형식을 안 지킨 경우)
+      if (!result.summary.includes('•')) {
+        // 줄바꿈으로 분리된 경우 불릿 추가
+        result.summary = result.summary
+          .split('\n')
+          .filter((line) => line.trim())
+          .map((line) => `• ${line.trim()}`)
+          .join('\n')
       }
 
-      // 너무 긴 경우만 경고 (250자 이상)
-      if (result.summary.length > 250) {
-        console.warn(`[OpenRouter] Warning: Summary is too long (${result.summary.length} chars)`)
+      // 불릿 포인트 개수 확인 (3-5개)
+      const bulletPoints = result.summary.split('\n').filter((line) => line.includes('•'))
+      if (bulletPoints.length < 3) {
+        console.warn(`[OpenRouter] Warning: Too few bullet points (${bulletPoints.length})`)
+      } else if (bulletPoints.length > 5) {
+        // 5개로 제한
+        result.summary = bulletPoints.slice(0, 5).join('\n')
       }
 
       // 키워드 개수 제한 (3-5개)

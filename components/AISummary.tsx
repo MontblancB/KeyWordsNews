@@ -121,9 +121,29 @@ export default function AISummary({
             <div className="flex items-start gap-2">
               <SparklesIconSolid className="w-4 h-4 text-purple-500 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
-                <p className="text-sm text-gray-700 leading-relaxed">
-                  {summaryData.summary}
-                </p>
+                {/* 불릿 포인트 리스트로 렌더링 */}
+                {summaryData.summary.includes('•') ? (
+                  <ul className="space-y-1.5 text-sm text-gray-700">
+                    {summaryData.summary
+                      .split('\n')
+                      .filter((line) => line.includes('•'))
+                      .map((line, index) => (
+                        <li key={index} className="flex items-start gap-1.5">
+                          <span className="text-purple-500 font-bold flex-shrink-0 mt-0.5">
+                            •
+                          </span>
+                          <span className="leading-relaxed">
+                            {line.replace('•', '').trim()}
+                          </span>
+                        </li>
+                      ))}
+                  </ul>
+                ) : (
+                  // 구 형식 호환성 (불릿 포인트 없는 경우)
+                  <p className="text-sm text-gray-700 leading-relaxed">
+                    {summaryData.summary}
+                  </p>
+                )}
                 {/* Provider 정보 (디버그용) */}
                 {process.env.NODE_ENV === 'development' && (
                   <p className="text-xs text-gray-400 mt-1">
