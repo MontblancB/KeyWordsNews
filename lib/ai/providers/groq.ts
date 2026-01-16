@@ -84,12 +84,9 @@ export class GroqProvider implements AIProvider {
   async isAvailable(): Promise<boolean> {
     try {
       // API 키가 설정되어 있는지 확인
-      console.log('[Groq] Checking availability...')
       await this.client.models.list()
-      console.log('[Groq] ✅ Available')
       return true
     } catch (error) {
-      console.error('[Groq] ❌ Not available:', error instanceof Error ? error.message : error)
       return false
     }
   }
