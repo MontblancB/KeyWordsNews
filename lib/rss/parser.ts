@@ -45,11 +45,17 @@ export class RSSParserService {
           }
         } else if (item.thumbnail?.$?.url) {
           imageUrl = item.thumbnail.$.url
-        } else if (item.contentEncoded) {
+        } else {
           // HTML 콘텐츠에서 첫 번째 이미지 추출
-          const imgMatch = item.contentEncoded.match(/<img[^>]+src="([^">]+)"/)
-          if (imgMatch) {
-            imageUrl = imgMatch[1]
+          // contentEncoded, description 모두 확인
+          const htmlContent = item.contentEncoded || item.description || ''
+
+          if (htmlContent) {
+            // 개선된 정규식: 큰따옴표, 작은따옴표, 따옴표 없는 경우 모두 매칭
+            const imgMatch = htmlContent.match(/<img[^>]+src=["']?([^"'\s>]+)["']?/i)
+            if (imgMatch) {
+              imageUrl = imgMatch[1]
+            }
           }
         }
 
