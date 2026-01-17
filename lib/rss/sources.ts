@@ -1,8 +1,7 @@
 import { RSSFeedSource } from '@/types/news'
 
 export const RSS_FEED_SOURCES: RSSFeedSource[] = [
-  // ========== Google News RSS (URL 인코딩 적용) ==========
-  // 속보 키워드
+  // ========== 속보 ==========
   {
     id: 'google_news_breaking',
     name: 'Google News 속보',
@@ -10,39 +9,11 @@ export const RSS_FEED_SOURCES: RSSFeedSource[] = [
     url: 'https://news.google.com/rss/search?q=%EC%86%8D%EB%B3%B4+OR+%EA%B8%B4%EA%B8%89&hl=ko&gl=KR&ceid=KR:ko',
     priority: 10,
     updateInterval: 3,
-    enabled: false // 실시간성 부족으로 비활성화
-  },
-
-  // 실시간 속보 소스 추가
-  {
-    id: 'donga_breaking',
-    name: '동아일보',
-    category: 'breaking',
-    url: 'http://rss.donga.com/total.xml',
-    priority: 10,
-    updateInterval: 3,
-    enabled: true
-  },
-  {
-    id: 'chosun_breaking',
-    name: '조선일보',
-    category: 'breaking',
-    url: 'https://www.chosun.com/arc/outboundfeeds/rss/?outputType=xml',
-    priority: 10,
-    updateInterval: 3,
-    enabled: true
-  },
-  {
-    id: 'sbs_breaking',
-    name: 'SBS',
-    category: 'breaking',
-    url: 'https://news.sbs.co.kr/news/SectionRssFeed.do?sectionId=01',
-    priority: 10,
-    updateInterval: 3,
     enabled: true
   },
 
-  // 정치 키워드 (정치, 국회, 대통령)
+  // ========== Google News 카테고리별 ==========
+  // 정치
   {
     id: 'google_news_politics',
     name: 'Google News 정치',
@@ -86,28 +57,6 @@ export const RSS_FEED_SOURCES: RSSFeedSource[] = [
     enabled: true
   },
 
-  // ========== 종합 통신사 ==========
-  {
-    id: 'newsis',
-    name: '뉴시스',
-    category: 'breaking',
-    url: 'https://www.newsis.com/RSS/allnews.xml',
-    priority: 10,
-    updateInterval: 3,
-    enabled: false // XML 파싱 오류
-  },
-
-  // 연합뉴스
-  {
-    id: 'yonhap',
-    name: '연합뉴스',
-    category: 'general',
-    url: 'https://www.yonhapnewstv.co.kr/category/news/rss.xml',
-    priority: 9,
-    updateInterval: 3,
-    enabled: false // 404 오류
-  },
-
   // ========== 종합 일간지 ==========
   {
     id: 'donga',
@@ -133,10 +82,40 @@ export const RSS_FEED_SOURCES: RSSFeedSource[] = [
     id: 'joongang',
     name: '중앙일보',
     category: 'general',
-    url: 'https://koreajoongangdaily.joins.com/RSS/allArticle.xml',
+    url: 'http://rss.joinsmsn.com/joins_news_list.xml',
     priority: 8,
     updateInterval: 5,
-    enabled: false // 404 오류
+    enabled: true
+  },
+
+  {
+    id: 'khan',
+    name: '경향신문',
+    category: 'general',
+    url: 'http://www.khan.co.kr/rss/rssdata/total_news.xml',
+    priority: 8,
+    updateInterval: 5,
+    enabled: true
+  },
+
+  {
+    id: 'ohmynews',
+    name: '오마이뉴스',
+    category: 'general',
+    url: 'https://rss.ohmynews.com/rss/ohmynews.xml',
+    priority: 6,
+    updateInterval: 10,
+    enabled: true
+  },
+
+  {
+    id: 'nocutnews',
+    name: '노컷뉴스',
+    category: 'general',
+    url: 'http://rss.nocutnews.co.kr/nocutnews.xml',
+    priority: 7,
+    updateInterval: 10,
+    enabled: true
   },
 
   // ========== 방송사 ==========
@@ -151,23 +130,13 @@ export const RSS_FEED_SOURCES: RSSFeedSource[] = [
   },
 
   {
-    id: 'kbs',
-    name: 'KBS',
+    id: 'mbc',
+    name: 'MBC',
     category: 'general',
-    url: 'http://world.kbs.co.kr/rss/rss_news.htm?lang=k',
-    priority: 7,
+    url: 'http://imnews.imbc.com/rss/news/news_00.xml',
+    priority: 8,
     updateInterval: 5,
-    enabled: false // XML 파싱 오류
-  },
-
-  {
-    id: 'ytn',
-    name: 'YTN',
-    category: 'breaking',
-    url: 'https://www.ytn.co.kr/_ln/0101_201504301705010353_rss.xml',
-    priority: 9,
-    updateInterval: 3,
-    enabled: false // 404 오류
+    enabled: true
   },
 
   // ========== 정치 ==========
@@ -191,6 +160,16 @@ export const RSS_FEED_SOURCES: RSSFeedSource[] = [
     enabled: true
   },
 
+  {
+    id: 'mbc_politics',
+    name: 'MBC 정치',
+    category: 'politics',
+    url: 'http://imnews.imbc.com/rss/news/news_01.xml',
+    priority: 7,
+    updateInterval: 10,
+    enabled: true
+  },
+
   // ========== 경제 ==========
   {
     id: 'donga_economy',
@@ -200,16 +179,6 @@ export const RSS_FEED_SOURCES: RSSFeedSource[] = [
     priority: 7,
     updateInterval: 10,
     enabled: true
-  },
-
-  {
-    id: 'hankyung',
-    name: '한국경제',
-    category: 'economy',
-    url: 'https://www.hankyung.com/feed',
-    priority: 7,
-    updateInterval: 10,
-    enabled: false // XML 파싱 오류
   },
 
   {
@@ -242,6 +211,16 @@ export const RSS_FEED_SOURCES: RSSFeedSource[] = [
     enabled: true
   },
 
+  {
+    id: 'mbc_economy',
+    name: 'MBC 경제',
+    category: 'economy',
+    url: 'http://imnews.imbc.com/rss/news/news_04.xml',
+    priority: 7,
+    updateInterval: 10,
+    enabled: true
+  },
+
   // ========== IT/과학 ==========
   {
     id: 'donga_tech',
@@ -254,23 +233,13 @@ export const RSS_FEED_SOURCES: RSSFeedSource[] = [
   },
 
   {
-    id: 'zdnet',
-    name: 'ZDNet Korea',
+    id: 'boannews',
+    name: '보안뉴스',
     category: 'tech',
-    url: 'https://zdnet.co.kr/rss/news/',
-    priority: 7,
-    updateInterval: 10,
-    enabled: false // 404 오류
-  },
-
-  {
-    id: 'bloter',
-    name: '블로터',
-    category: 'tech',
-    url: 'https://www.bloter.net/feed/',
+    url: 'https://www.boannews.com/custom/news_rss.asp',
     priority: 6,
     updateInterval: 15,
-    enabled: false // 404 오류
+    enabled: true
   },
 
   // ========== 스포츠 ==========
@@ -556,26 +525,6 @@ export const RSS_FEED_SOURCES: RSSFeedSource[] = [
     name: '스포츠동아',
     category: 'entertainment',
     url: 'http://sports.donga.com/rss/sports.xml',
-    priority: 5,
-    updateInterval: 20,
-    enabled: true
-  },
-
-  // ========== 지역 언론 ==========
-  {
-    id: 'busan',
-    name: '부산일보',
-    category: 'general',
-    url: 'http://www.busan.com/rss/busan_total.xml',
-    priority: 5,
-    updateInterval: 20,
-    enabled: true
-  },
-  {
-    id: 'kwnews',
-    name: '강원일보',
-    category: 'general',
-    url: 'http://www.kwnews.co.kr/rss/clickTop.xml',
     priority: 5,
     updateInterval: 20,
     enabled: true
