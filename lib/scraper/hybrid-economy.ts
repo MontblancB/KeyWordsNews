@@ -43,6 +43,7 @@ export async function collectAllEconomyData(): Promise<EconomyData> {
     },
     crypto,
     lastUpdated: new Date().toLocaleString('ko-KR', {
+      timeZone: 'Asia/Seoul',  // 한국 시간(KST, UTC+9) 기준
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
