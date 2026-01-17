@@ -1,6 +1,6 @@
 'use client'
 
-import type { WeatherData, AirQuality } from '@/types/weather'
+import type { WeatherData, AirQuality, UVLevel } from '@/types/weather'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 
 interface Props {
@@ -83,8 +83,47 @@ export default function WeatherDetailModal({ data, onClose }: Props) {
                 value={data.weather.pm25}
                 grade={data.weather.pm25Grade}
               />
+
+              {/* 자외선 (선택적) */}
+              {data.weather.uv && (
+                <UVCard
+                  label="자외선"
+                  index={data.weather.uv.index}
+                  level={data.weather.uv.level}
+                />
+              )}
+
+              {/* 오존 (선택적) */}
+              {data.weather.ozone && (
+                <AirQualityCard
+                  label="오존"
+                  value={data.weather.ozone.value}
+                  grade={data.weather.ozone.level}
+                />
+              )}
             </div>
           </div>
+
+          {/* 일출/일몰 섹션 (선택적) */}
+          {data.weather.sunriseSunset && (
+            <div className="pt-3 border-t border-gray-100 dark:border-gray-700">
+              <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
+                일출/일몰
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                <SunCard
+                  label="일출"
+                  time={data.weather.sunriseSunset.sunrise}
+                  icon="🌅"
+                />
+                <SunCard
+                  label="일몰"
+                  time={data.weather.sunriseSunset.sunset}
+                  icon="🌇"
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -159,6 +198,78 @@ function AirQualityCard({
         <span className={`text-xl font-bold ${info.color}`}>{value}</span>
         <span className={`text-xs font-medium ${info.color}`}>
           {info.text}
+        </span>
+      </div>
+    </div>
+  )
+}
+
+// 자외선 카드
+function UVCard({
+  label,
+  index,
+  level,
+}: {
+  label: string
+  index: string
+  level: UVLevel
+}) {
+  const levelInfo = {
+    low: {
+      text: '낮음',
+      color: 'text-green-600 dark:text-green-400',
+      bg: 'bg-green-50 dark:bg-green-900/20',
+    },
+    moderate: {
+      text: '보통',
+      color: 'text-blue-600 dark:text-blue-400',
+      bg: 'bg-blue-50 dark:bg-blue-900/20',
+    },
+    high: {
+      text: '높음',
+      color: 'text-orange-600 dark:text-orange-400',
+      bg: 'bg-orange-50 dark:bg-orange-900/20',
+    },
+    very_high: {
+      text: '매우높음',
+      color: 'text-red-600 dark:text-red-400',
+      bg: 'bg-red-50 dark:bg-red-900/20',
+    },
+  }
+  const info = levelInfo[level]
+
+  return (
+    <div className={`${info.bg} rounded-xl p-3`}>
+      <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">
+        {label}
+      </div>
+      <div className="flex items-baseline gap-1.5">
+        <span className={`text-xl font-bold ${info.color}`}>{index}</span>
+        <span className={`text-xs font-medium ${info.color}`}>{info.text}</span>
+      </div>
+    </div>
+  )
+}
+
+// 일출/일몰 카드
+function SunCard({
+  label,
+  time,
+  icon,
+}: {
+  label: string
+  time: string
+  icon: string
+}) {
+  return (
+    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-3">
+      <div className="text-xs text-gray-500 dark:text-gray-400 mb-1.5">
+        {label}
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-2xl">{icon}</span>
+        <span className="text-xl font-bold text-gray-900 dark:text-white">
+          {time}
         </span>
       </div>
     </div>

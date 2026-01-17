@@ -45,7 +45,9 @@
       "WebFetch(domain:finnhub.io)",
       "WebFetch(domain:github.com)",
       "mcp__sequential-thinking__sequentialthinking",
-      "Bash(npx next build)"
+      "Bash(npx next build)",
+      "Bash(tree:*)",
+      "Skill(automated-publishing)"
     ]
   },
   "hooks": {

@@ -1,5 +1,13 @@
 import * as cheerio from 'cheerio'
-import type { NaverWeatherData, SkyStatus, AirQuality } from '@/types/weather'
+import type {
+  NaverWeatherData,
+  SkyStatus,
+  AirQuality,
+  UV,
+  UVLevel,
+  SunriseSunset,
+  Ozone,
+} from '@/types/weather'
 
 /**
  * 네이버 날씨 스크래퍼
@@ -28,6 +36,16 @@ function parseAirQuality(grade: string): AirQuality {
   if (cleanGrade.includes('나쁨') && cleanGrade.includes('매우')) return 'very_bad'
   if (cleanGrade.includes('나쁨')) return 'bad'
   return 'normal'
+}
+
+/**
+ * 자외선 등급 파싱 (수치 → UVLevel)
+ */
+function parseUVLevel(index: number): UVLevel {
+  if (index < 3) return 'low'
+  if (index < 6) return 'moderate'
+  if (index < 8) return 'high'
+  return 'very_high'
 }
 
 /**
@@ -133,6 +151,61 @@ export async function scrapeNaverWeather(
       }
     })
 
+    // 자외선 지수 추출
+    let uv: UV | undefined = undefined
+    $('.sub_info .item_today, .life_index').each((_, el) => {
+      const text = $(el).find('.title').text()
+      if (text.includes('자외선')) {
+        const value = extractNumber($(el).find('.num').text())
+        const index = parseFloat(value)
+        if (!isNaN(index)) {
+          uv = {
+            index: value,
+            level: parseUVLevel(index),
+          }
+        }
+      }
+    })
+
+    // 일출/일몰 시간 추출
+    let sunriseSunset: SunriseSunset | undefined = undefined
+    $('.life_index, .today_chart_list, .spot_info').each((_, el) => {
+      const text = $(el).text()
+      const sunriseMatch = text.match(/일출\s*(\d{1,2}:\d{2})/)
+      const sunsetMatch = text.match(/일몰\s*(\d{1,2}:\d{2})/)
+
+      if (sunriseMatch && sunsetMatch) {
+        sunriseSunset = {
+          sunrise: sunriseMatch[1],
+          sunset: sunsetMatch[1],
+        }
+      }
+    })
+
+    // 오존 농도 추출
+    let ozone: Ozone | undefined = undefined
+    $('.sub_info .item_today').each((_, el) => {
+      const text = $(el).find('.title').text()
+      if (text.includes('오존')) {
+        const value = extractNumber($(el).find('.num').text())
+        const level = parseAirQuality($(el).find('.txt').text())
+        ozone = { value, level }
+      }
+    })
+
+    // 황사 정보 추출 (선택적)
+    let dust: { detected: boolean; level?: string } | undefined = undefined
+    $('.sub_info .item_today').each((_, el) => {
+      const text = $(el).find('.title').text()
+      if (text.includes('황사')) {
+        const levelText = $(el).find('.txt').text()
+        dust = {
+          detected: !levelText.includes('없음'),
+          level: levelText,
+        }
+      }
+    })
+
     return {
       temperature,
       feelsLike,
@@ -144,6 +217,10 @@ export async function scrapeNaverWeather(
       pm25,
       pm10Grade,
       pm25Grade,
+      uv,
+      sunriseSunset,
+      ozone,
+      dust,
     }
   } catch (error) {
     console.error('Error scraping Naver weather:', error)
