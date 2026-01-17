@@ -10,9 +10,9 @@ export default function IndicatorCard({ indicator }: IndicatorCardProps) {
   const isDown = indicator.changeType === 'down'
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg p-2.5 border border-gray-200 dark:border-gray-700 shadow-sm">
+    <div className="bg-white dark:bg-gray-800 rounded-lg p-2 border border-gray-200 dark:border-gray-700 shadow-sm">
       <div className="text-[10px] text-gray-500 dark:text-gray-400 mb-1">{indicator.name}</div>
-      <div className="text-lg font-bold mb-2 text-gray-900 dark:text-gray-100">{indicator.value}</div>
+      <div className="text-base font-bold mb-1.5 text-gray-900 dark:text-gray-100">{indicator.value}</div>
       <div className="flex items-center gap-0.5">
         {isUp && (
           <>

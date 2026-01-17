@@ -70,8 +70,8 @@ export default function EconomyPage() {
             {/* 국내 지수 */}
             <section>
               <div className="flex items-center gap-2 mb-2">
-                <ChartBarIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200">
+                <ChartBarIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <h2 className="text-sm font-bold text-gray-800 dark:text-gray-200">
                   국내 지수
                 </h2>
               </div>
@@ -84,8 +84,8 @@ export default function EconomyPage() {
             {/* 해외 지수 */}
             <section>
               <div className="flex items-center gap-2 mb-2">
-                <GlobeAltIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
-                <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200">
+                <GlobeAltIcon className="w-4 h-4 text-green-600 dark:text-green-400" />
+                <h2 className="text-sm font-bold text-gray-800 dark:text-gray-200">
                   해외 지수
                 </h2>
               </div>
@@ -100,8 +100,8 @@ export default function EconomyPage() {
             {/* 환율 */}
             <section>
               <div className="flex items-center gap-2 mb-2">
-                <CurrencyDollarIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200">
+                <CurrencyDollarIcon className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                <h2 className="text-sm font-bold text-gray-800 dark:text-gray-200">
                   환율
                 </h2>
               </div>
@@ -116,8 +116,8 @@ export default function EconomyPage() {
             {/* 금시세 */}
             <section>
               <div className="flex items-center gap-2 mb-2">
-                <SparklesIcon className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
-                <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200">
+                <SparklesIcon className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+                <h2 className="text-sm font-bold text-gray-800 dark:text-gray-200">
                   금시세
                 </h2>
               </div>
@@ -129,8 +129,8 @@ export default function EconomyPage() {
             {/* 암호화폐 */}
             <section>
               <div className="flex items-center gap-2 mb-2">
-                <CircleStackIcon className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-                <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200">
+                <CircleStackIcon className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                <h2 className="text-sm font-bold text-gray-800 dark:text-gray-200">
                   암호화폐
                 </h2>
               </div>
@@ -141,11 +141,6 @@ export default function EconomyPage() {
                 <IndicatorCard indicator={data.crypto.cardano} />
               </div>
             </section>
-
-            {/* 마지막 업데이트 */}
-            <div className="text-center text-xs text-gray-500 dark:text-gray-400 pt-4">
-              마지막 업데이트: {data.lastUpdated}
-            </div>
           </div>
         )}
       </main>
