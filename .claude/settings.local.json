@@ -48,7 +48,10 @@
       "Bash(npx next build)",
       "Bash(tree:*)",
       "Skill(automated-publishing)",
-      "Bash(git mv:*)"
+      "Bash(git mv:*)",
+      "Bash(git fetch:*)",
+      "Bash(git pull:*)",
+      "Bash(git rm:*)"
     ]
   },
   "hooks": {

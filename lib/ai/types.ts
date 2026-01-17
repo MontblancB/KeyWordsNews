@@ -18,6 +18,16 @@ export interface AIProviderConfig {
 }
 
 /**
+ * 스트리밍 청크 타입
+ */
+export interface StreamChunk {
+  type: 'token' | 'done' | 'error'
+  content?: string
+  result?: SummaryResult
+  error?: string
+}
+
+/**
  * AI Provider 추상 인터페이스
  * 모든 AI 프로바이더는 이 인터페이스를 구현해야 함
  */
@@ -31,6 +41,17 @@ export interface AIProvider {
    * @returns 요약 결과
    */
   summarize(title: string, content: string): Promise<SummaryResult>
+
+  /**
+   * 뉴스 요약 생성 (스트리밍)
+   * @param title 뉴스 제목
+   * @param content 뉴스 본문
+   * @returns 스트리밍 청크 제너레이터
+   */
+  summarizeStream?(
+    title: string,
+    content: string
+  ): AsyncGenerator<StreamChunk>
 
   /**
    * Provider 상태 확인

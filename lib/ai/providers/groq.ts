@@ -1,5 +1,5 @@
 import Groq from 'groq-sdk'
-import { AIProvider, AIProviderConfig, SummaryResult } from '../types'
+import { AIProvider, AIProviderConfig, SummaryResult, StreamChunk } from '../types'
 
 /**
  * Groq AI Provider
@@ -112,6 +112,114 @@ ${content}
         throw new Error(`Groq API error: ${error.message}`)
       }
       throw error
+    }
+  }
+
+  /**
+   * 스트리밍 요약 생성
+   * 실시간으로 토큰을 반환하는 AsyncGenerator
+   */
+  async *summarizeStream(
+    title: string,
+    content: string
+  ): AsyncGenerator<StreamChunk> {
+    // 짧은 프롬프트 (TTFT 최적화)
+    const prompt = `뉴스를 3-4개 불릿으로 요약 (각 15-25단어):
+
+제목: ${title}
+
+본문:
+${content}
+
+JSON 형식:
+{
+  "summary": "• 불릿1\\n• 불릿2\\n• 불릿3",
+  "keywords": ["키워드1", "키워드2", "키워드3"]
+}`
+
+    try {
+      const stream = await this.client.chat.completions.create({
+        model: this.model,
+        messages: [
+          {
+            role: 'system',
+            content:
+              '뉴스를 3-4개 불릿으로 간결하게 요약. 각 불릿은 15-25단어, 5W1H 포함, 구체적 정보(숫자/날짜/금액) 필수. JSON 형식 응답.',
+          },
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        temperature: this.temperature,
+        max_tokens: this.maxTokens,
+        response_format: { type: 'json_object' },
+        stream: true, // 스트리밍 활성화
+      })
+
+      let fullContent = ''
+
+      // 스트림에서 토큰을 실시간으로 yield
+      for await (const chunk of stream) {
+        const delta = chunk.choices[0]?.delta?.content
+
+        if (delta) {
+          fullContent += delta
+
+          // 각 토큰을 클라이언트로 전송
+          yield {
+            type: 'token',
+            content: delta,
+          }
+        }
+      }
+
+      // 최종 결과 파싱
+      const result = JSON.parse(fullContent) as SummaryResult
+
+      // 검증
+      if (!result.summary || !Array.isArray(result.keywords)) {
+        throw new Error('Invalid response format from Groq API')
+      }
+
+      // 요약 정제
+      result.summary = result.summary.trim()
+
+      // 불릿 포인트가 없으면 추가
+      if (!result.summary.includes('•')) {
+        result.summary = result.summary
+          .split('\n')
+          .filter((line) => line.trim())
+          .map((line) => `• ${line.trim()}`)
+          .join('\n')
+      }
+
+      // 불릿 포인트 개수 확인 (3-4개)
+      const bulletPoints = result.summary
+        .split('\n')
+        .filter((line) => line.includes('•'))
+      if (bulletPoints.length > 4) {
+        result.summary = bulletPoints.slice(0, 4).join('\n')
+      }
+
+      // 키워드 개수 제한 (3-5개)
+      result.keywords = result.keywords.slice(0, 5)
+
+      // 완료 신호
+      yield {
+        type: 'done',
+        result,
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error'
+
+      yield {
+        type: 'error',
+        error: `Groq streaming error: ${errorMessage}`,
+      }
+
+      throw new Error(`Groq streaming error: ${errorMessage}`)
     }
   }
 

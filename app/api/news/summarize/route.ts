@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
         let contentSource: 'scraped' | 'summary' = 'scraped'
 
         try {
-          content = await scrapeNewsContent(url, 5000)
+          content = await scrapeNewsContent(url, 3000)
           console.log(`[Scraping] 성공: ${content.length}자 확보 - ${url}`)
         } catch (error) {
           console.error(`[Scraping] 실패: ${url}`, error)
@@ -100,12 +100,12 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // 4. 본문 크롤링 (5000자로 증가하여 더 풍부한 내용 확보)
+    // 4. 본문 크롤링 (3000자로 최적화 - AI 요약에 충분)
     let content: string
     let contentSource: 'scraped' | 'summary' = 'scraped'
 
     try {
-      content = await scrapeNewsContent(news.url, 5000)
+      content = await scrapeNewsContent(news.url, 3000)
       console.log(`[Scraping] 성공: ${content.length}자 확보 - ${news.url}`)
     } catch (error) {
       console.error(`[Scraping] 실패: ${news.url}`, error)

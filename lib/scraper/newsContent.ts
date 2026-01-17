@@ -158,12 +158,12 @@ function cleanContent($: cheerio.CheerioAPI, element: any): void {
 /**
  * 뉴스 본문 크롤링
  * @param url 뉴스 URL
- * @param maxLength 최대 텍스트 길이 (기본: 2000자)
+ * @param maxLength 최대 텍스트 길이 (기본: 3000자, AI 요약에 최적화)
  * @returns 본문 텍스트
  */
 export async function scrapeNewsContent(
   url: string,
-  maxLength: number = 2000
+  maxLength: number = 3000
 ): Promise<string> {
   try {
     // User-Agent 설정 (크롤링 방지 우회)
@@ -175,7 +175,7 @@ export async function scrapeNewsContent(
           'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
         'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
       },
-      signal: AbortSignal.timeout(10000), // 10초 타임아웃
+      signal: AbortSignal.timeout(5000), // 5초 타임아웃 (속도 최적화)
     })
 
     if (!response.ok) {
