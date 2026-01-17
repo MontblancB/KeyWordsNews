@@ -12,6 +12,7 @@ export class RSSParserService {
           ['media:content', 'media', { keepArray: true }],
           ['media:thumbnail', 'thumbnail'],
           ['dc:creator', 'creator'],
+          ['dc:date', 'dcDate'],  // 노컷뉴스, 경향신문 등의 날짜 필드
           ['description', 'description'],
           ['content:encoded', 'contentEncoded']
         ]
@@ -64,10 +65,33 @@ export class RSSParserService {
           item.contentSnippet || item.description || item.summary || ''
         )
 
+        // 날짜 파싱: dc:date, pubDate, isoDate 순서로 확인
+        let publishedDate: Date
+        try {
+          if (item.dcDate) {
+            publishedDate = new Date(item.dcDate)
+          } else if (item.pubDate) {
+            publishedDate = new Date(item.pubDate)
+          } else if (item.isoDate) {
+            publishedDate = new Date(item.isoDate)
+          } else {
+            publishedDate = new Date()
+          }
+
+          // 유효한 날짜인지 확인
+          if (isNaN(publishedDate.getTime())) {
+            console.warn(`⚠️ ${feedSource.name}: 잘못된 날짜 형식, 현재 시간 사용`)
+            publishedDate = new Date()
+          }
+        } catch (error) {
+          console.warn(`⚠️ ${feedSource.name}: 날짜 파싱 실패, 현재 시간 사용`)
+          publishedDate = new Date()
+        }
+
         return {
           title: this.cleanText(item.title || ''),
           link: item.link || item.guid || '',
-          pubDate: item.pubDate ? new Date(item.pubDate) : new Date(),
+          pubDate: publishedDate,
           content: item.content || item.contentEncoded,
           contentSnippet: summary,
           creator: item.creator || item['dc:creator'] || feedSource.name,
