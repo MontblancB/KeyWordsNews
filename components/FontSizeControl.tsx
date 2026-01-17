@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useFontSize } from '@/hooks/useFontSize'
-import { MinusIcon, PlusIcon, ChevronDownIcon } from '@heroicons/react/24/outline'
+import { MinusIcon, PlusIcon } from '@heroicons/react/24/outline'
 import { DocumentTextIcon } from '@heroicons/react/24/solid'
 
 export default function FontSizeControl() {
@@ -27,28 +27,23 @@ export default function FontSizeControl() {
       >
         <div className="flex items-center gap-3">
           <DocumentTextIcon className="w-5 h-5 text-purple-500 dark:text-purple-400" />
-          <div>
-            <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
-              폰트 크기
-            </h3>
-            {!isExpanded && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                {sizeLabel()} ({fontSize}px)
-              </p>
-            )}
-          </div>
+          <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            폰트 크기
+          </h3>
         </div>
-
-        <ChevronDownIcon
-          className={`w-5 h-5 text-gray-500 dark:text-gray-400 transition-transform ${
-            isExpanded ? 'rotate-180' : ''
-          }`}
-        />
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-600 dark:text-gray-400">
+            {sizeLabel()}
+          </span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">
+            {isExpanded ? '▲' : '▼'}
+          </span>
+        </div>
       </div>
 
       {/* 확장된 내용 */}
       {isExpanded && (
-        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="mt-3 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-600 dark:text-gray-400">
@@ -110,9 +105,9 @@ export default function FontSizeControl() {
             </div>
           </div>
 
-          <div className="mt-3 text-xs text-gray-500 dark:text-gray-400 text-center">
-            실시간 적용됩니다
-          </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            텍스트 크기만 변경됩니다 (레이아웃 유지)
+          </p>
         </div>
       )}
     </div>
