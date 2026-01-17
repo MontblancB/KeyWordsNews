@@ -1,5 +1,9 @@
 import { QueryClient } from '@tanstack/react-query'
-import { getEnabledRssSourceNames, getAllKeywords } from './rss-settings'
+import {
+  getEnabledBreakingTabSourceNames,
+  getEnabledCategorySourceNames,
+  getAllKeywords
+} from './rss-settings'
 
 /**
  * 글로벌 프리페칭 서비스
@@ -201,7 +205,7 @@ export async function prefetchAllData(queryClient: QueryClient) {
   // 사용자 활동 감지 설정
   setupActivityDetection()
 
-  const sources = getEnabledRssSourceNames()
+  const breakingTabSources = getEnabledBreakingTabSourceNames()
   const allCategories = [
     'politics',      // 정치
     'economy',       // 경제
@@ -217,15 +221,16 @@ export async function prefetchAllData(queryClient: QueryClient) {
     // 1초 후 시작 (현재 페이지 로딩 완료 대기)
     await new Promise(resolve => setTimeout(resolve, 1000))
 
-    // Priority 1: 속보 (가장 중요)
+    // Priority 1: 속보 (가장 중요) - 속보 탭 소스 설정 사용
     console.log('[Prefetch] 📰 Prefetching breaking news...')
-    await prefetchBreakingNews(queryClient, sources)
+    await prefetchBreakingNews(queryClient, breakingTabSources)
     await delay(150)
 
-    // Priority 2: 모든 카테고리 (순차 실행)
+    // Priority 2: 모든 카테고리 (순차 실행) - 각 카테고리별 소스 설정 사용
     console.log('[Prefetch] 📂 Prefetching categories...')
     for (const category of allCategories) {
-      await prefetchCategory(queryClient, category, sources)
+      const categorySources = getEnabledCategorySourceNames(category)
+      await prefetchCategory(queryClient, category, categorySources)
       await delay(150) // 150ms 간격 보장 (사용자 경험 보호)
     }
 
@@ -234,11 +239,11 @@ export async function prefetchAllData(queryClient: QueryClient) {
     await prefetchEconomyIndicators(queryClient)
     await delay(150)
 
-    // Priority 4: 모든 키워드 (최대 10개)
+    // Priority 4: 모든 키워드 (최대 10개) - 속보 탭 소스 설정 사용 (검색용)
     console.log('[Prefetch] 🔍 Prefetching all keywords...')
     const allKeywords = getAllKeywords() // 모든 키워드 (최대 10개)
     for (const keyword of allKeywords) {
-      await prefetchKeyword(queryClient, keyword, sources)
+      await prefetchKeyword(queryClient, keyword, breakingTabSources)
       await delay(150)
     }
 
