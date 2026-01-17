@@ -1,6 +1,6 @@
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query'
 import { NewsItem } from '@/types/news'
-import { getEnabledRssSourceNames } from '@/lib/rss-settings'
+import { getEnabledRssSourceNames, getEnabledBreakingTabSourceNames } from '@/lib/rss-settings'
 
 interface NewsResponse {
   success: boolean
@@ -112,9 +112,9 @@ export function useInfiniteNewsSearch(keyword: string) {
   })
 }
 
-// 무한 스크롤용 최신 뉴스 훅
+// 무한 스크롤용 최신 뉴스 훅 (속보 탭 전용)
 export function useInfiniteLatestNews() {
-  const sources = getEnabledRssSourceNames()
+  const sources = getEnabledBreakingTabSourceNames()  // 속보 탭 전용 설정 사용
   return useInfiniteQuery({
     queryKey: ['news', 'latest-infinite', sources],
     queryFn: async ({ pageParam = 0 }) => {

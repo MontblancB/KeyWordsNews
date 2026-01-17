@@ -2,6 +2,7 @@
 
 import BottomNav from '@/components/BottomNav'
 import RssSourceManager from '@/components/RssSourceManager'
+import BreakingTabSourceManager from '@/components/BreakingTabSourceManager'
 import ThemeToggle from '@/components/ThemeToggle'
 import ColorThemeSelector from '@/components/ColorThemeSelector'
 import AISummaryToggle from '@/components/AISummaryToggle'
@@ -31,7 +32,10 @@ export default function SettingsPage() {
         {/* 폰트 크기 설정 */}
         <FontSizeControl />
 
-        {/* 뉴스 소스 관리 */}
+        {/* 속보 탭 소스 관리 */}
+        <BreakingTabSourceManager />
+
+        {/* 뉴스 소스 관리 (토픽 탭용) */}
         <RssSourceManager />
 
         {/* 앱 정보 */}

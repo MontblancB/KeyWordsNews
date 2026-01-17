@@ -2,6 +2,7 @@ import { RSS_FEED_SOURCES } from './rss/sources'
 import { RSSFeedSource } from '@/types/news'
 
 const RSS_SETTINGS_STORAGE_KEY = 'rss_source_settings'
+const BREAKING_TAB_SETTINGS_STORAGE_KEY = 'breaking_tab_source_settings'
 
 export interface RssSourceSettings {
   [sourceId: string]: boolean // sourceId -> enabled/disabled
@@ -178,4 +179,118 @@ export function getAllKeywords(maxLimit: number = 10): string[] {
   } catch {
     return []
   }
+}
+
+// ==================== 속보 탭 전용 설정 ====================
+
+/**
+ * localStorage에서 속보 탭 RSS 소스 설정 조회
+ * 저장된 설정이 없으면 모든 소스 활성화 (기본값)
+ */
+export function getBreakingTabSettings(): RssSourceSettings {
+  if (typeof window === 'undefined') {
+    // SSR 환경에서는 기본 설정 반환 (모두 활성화)
+    return getDefaultSettings()
+  }
+
+  const stored = localStorage.getItem(BREAKING_TAB_SETTINGS_STORAGE_KEY)
+
+  if (stored) {
+    try {
+      return JSON.parse(stored)
+    } catch (error) {
+      console.error('속보 탭 설정 파싱 실패:', error)
+      return getDefaultSettings()
+    }
+  }
+
+  // 초기값: 모든 소스 활성화
+  return getDefaultSettings()
+}
+
+/**
+ * 속보 탭 RSS 소스 설정 저장
+ */
+export function saveBreakingTabSettings(settings: RssSourceSettings): void {
+  if (typeof window === 'undefined') return
+
+  localStorage.setItem(BREAKING_TAB_SETTINGS_STORAGE_KEY, JSON.stringify(settings))
+}
+
+/**
+ * 속보 탭에서 특정 RSS 소스 활성화/비활성화
+ */
+export function toggleBreakingTabSource(sourceId: string): RssSourceSettings {
+  const settings = getBreakingTabSettings()
+  settings[sourceId] = !settings[sourceId]
+  saveBreakingTabSettings(settings)
+  return settings
+}
+
+/**
+ * 속보 탭에서 활성화된 RSS 소스 목록 조회
+ */
+export function getEnabledBreakingTabSources(): RSSFeedSource[] {
+  const settings = getBreakingTabSettings()
+
+  return RSS_FEED_SOURCES.filter(source => {
+    return settings[source.id] ?? true  // 기본값은 true (활성화)
+  })
+}
+
+/**
+ * 속보 탭에서 활성화된 RSS 소스의 이름 목록 (API 쿼리용)
+ */
+export function getEnabledBreakingTabSourceNames(): string {
+  const enabledSources = getEnabledBreakingTabSources()
+  return enabledSources.map(source => source.name).join(',')
+}
+
+/**
+ * 속보 탭 모든 RSS 소스 활성화
+ */
+export function enableAllBreakingTabSources(): RssSourceSettings {
+  const settings: RssSourceSettings = {}
+  RSS_FEED_SOURCES.forEach(source => {
+    settings[source.id] = true
+  })
+  saveBreakingTabSettings(settings)
+  return settings
+}
+
+/**
+ * 속보 탭 모든 RSS 소스 비활성화
+ */
+export function disableAllBreakingTabSources(): RssSourceSettings {
+  const settings: RssSourceSettings = {}
+  RSS_FEED_SOURCES.forEach(source => {
+    settings[source.id] = false
+  })
+  saveBreakingTabSettings(settings)
+  return settings
+}
+
+/**
+ * 속보 탭 카테고리별 RSS 소스 일괄 활성화/비활성화
+ */
+export function toggleBreakingTabCategorySources(category: string, enabled: boolean): RssSourceSettings {
+  const settings = getBreakingTabSettings()
+
+  RSS_FEED_SOURCES.forEach(source => {
+    if (source.category === category) {
+      settings[source.id] = enabled
+    }
+  })
+
+  saveBreakingTabSettings(settings)
+  return settings
+}
+
+/**
+ * 속보 탭 RSS 설정 초기화 (모두 활성화)
+ */
+export function resetBreakingTabSettings(): RssSourceSettings {
+  const defaultSettings = getDefaultSettings()
+  saveBreakingTabSettings(defaultSettings)
+  return defaultSettings
 }
