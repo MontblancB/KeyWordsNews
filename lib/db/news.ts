@@ -66,8 +66,13 @@ export class NewsService {
   }
 
   // 전체 최신 뉴스
-  async getLatestNews(limit: number = 20, offset: number = 0): Promise<NewsItem[]> {
+  async getLatestNews(limit: number = 20, offset: number = 0, sources?: string[]): Promise<NewsItem[]> {
+    const whereClause = sources && sources.length > 0
+      ? { source: { in: sources } }
+      : {}
+
     return await prisma.news.findMany({
+      where: whereClause,
       orderBy: { publishedAt: 'desc' },
       skip: offset,
       take: limit
@@ -75,8 +80,12 @@ export class NewsService {
   }
 
   // 전체 뉴스 개수
-  async getLatestNewsCount(): Promise<number> {
-    return await prisma.news.count()
+  async getLatestNewsCount(sources?: string[]): Promise<number> {
+    const whereClause = sources && sources.length > 0
+      ? { source: { in: sources } }
+      : {}
+
+    return await prisma.news.count({ where: whereClause })
   }
 
   // 키워드 검색

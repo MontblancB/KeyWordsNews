@@ -9,8 +9,10 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const limit = parseInt(searchParams.get('limit') || '20')
     const offset = parseInt(searchParams.get('offset') || '0')
+    const sourcesParam = searchParams.get('sources')
+    const sources = sourcesParam ? sourcesParam.split(',') : undefined
 
-    const cacheKey = `news:latest:${limit}:${offset}`
+    const cacheKey = `news:latest:${limit}:${offset}:${sourcesParam || 'all'}`
 
     // 캐시 확인
     const cached = cache.get<any>(cacheKey)
@@ -26,8 +28,8 @@ export async function GET(request: Request) {
 
     if (isDatabaseEnabled()) {
       // ========== DB 모드 ==========
-      const news = await newsService.getLatestNews(limit, offset)
-      const total = await newsService.getLatestNewsCount()
+      const news = await newsService.getLatestNews(limit, offset, sources)
+      const total = await newsService.getLatestNewsCount(sources)
 
       response = {
         data: news,
@@ -39,13 +41,18 @@ export async function GET(request: Request) {
       // ========== 실시간 RSS 모드 ==========
       const allNews = await realtimeCollector.collectAllRealtime()
 
+      // 소스 필터링
+      const filteredNews = sources && sources.length > 0
+        ? allNews.filter(news => sources.includes(news.source))
+        : allNews
+
       // 메모리에서 페이지네이션
-      const paginatedNews = allNews.slice(offset, offset + limit)
+      const paginatedNews = filteredNews.slice(offset, offset + limit)
 
       response = {
         data: paginatedNews,
-        total: allNews.length,
-        hasMore: offset + limit < allNews.length,
+        total: filteredNews.length,
+        hasMore: offset + limit < filteredNews.length,
         source: 'realtime-rss'
       }
     }
