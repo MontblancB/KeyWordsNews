@@ -12,13 +12,29 @@ import {
   CircleStackIcon,
 } from '@heroicons/react/24/outline'
 import { useColorTheme } from '@/hooks/useColorTheme'
+import { usePullToRefresh } from '@/hooks/usePullToRefresh'
+import PullToRefreshIndicator from '@/components/PullToRefreshIndicator'
 
 export default function EconomyPage() {
   const { headerClasses } = useColorTheme()
   const { data, isLoading, error, forceRefetch, isRefetching } = useEconomy()
 
+  // Pull-to-Refresh
+  const pullToRefresh = usePullToRefresh({
+    onRefresh: async () => {
+      await new Promise<void>((resolve) => {
+        forceRefetch()
+        // forceRefetch는 mutation이므로 완료를 기다림
+        setTimeout(resolve, 1000)
+      })
+    },
+  })
+
   return (
     <>
+      {/* Pull-to-Refresh 인디케이터 */}
+      <PullToRefreshIndicator {...pullToRefresh} />
+
       <header className={`${headerClasses} text-white p-4 sticky top-0 z-50`}>
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold">경제 지표</h1>

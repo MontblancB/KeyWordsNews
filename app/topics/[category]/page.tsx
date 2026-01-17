@@ -7,6 +7,8 @@ import BottomNav from '@/components/BottomNav'
 import CategoryTabs from '@/components/CategoryTabs'
 import { useParams } from 'next/navigation'
 import { useColorTheme } from '@/hooks/useColorTheme'
+import { usePullToRefresh } from '@/hooks/usePullToRefresh'
+import PullToRefreshIndicator from '@/components/PullToRefreshIndicator'
 
 export default function TopicPage() {
   const { headerClasses } = useColorTheme()
@@ -20,9 +22,17 @@ export default function TopicPage() {
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
+    refetch,
   } = useInfiniteTopicNews(category)
 
   const loadMoreRef = useRef<HTMLDivElement>(null)
+
+  // Pull-to-Refresh
+  const pullToRefresh = usePullToRefresh({
+    onRefresh: async () => {
+      await refetch()
+    },
+  })
 
   const categoryNames: Record<string, string> = {
     general: '종합',
@@ -68,6 +78,9 @@ export default function TopicPage() {
 
   return (
     <>
+      {/* Pull-to-Refresh 인디케이터 */}
+      <PullToRefreshIndicator {...pullToRefresh} />
+
       <header className={`${headerClasses} text-white p-4`}>
         <h1 className="text-xl font-bold">
           {categoryNames[category] || category} 뉴스

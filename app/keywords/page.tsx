@@ -9,6 +9,8 @@ import BottomNav from '@/components/BottomNav'
 import KeywordTabs from '@/components/KeywordTabs'
 import KeywordManager from '@/components/KeywordManager'
 import { useColorTheme } from '@/hooks/useColorTheme'
+import { usePullToRefresh } from '@/hooks/usePullToRefresh'
+import PullToRefreshIndicator from '@/components/PullToRefreshIndicator'
 
 export default function KeywordsPage() {
   const { headerClasses } = useColorTheme()
@@ -31,7 +33,17 @@ export default function KeywordsPage() {
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
+    refetch,
   } = useInfiniteNewsSearch(activeKeyword || '')
+
+  // Pull-to-Refresh
+  const pullToRefresh = usePullToRefresh({
+    onRefresh: async () => {
+      if (activeKeyword) {
+        await refetch()
+      }
+    },
+  })
 
   // 첫 10개 로드 후 자동으로 나머지 페이지 로드 (백그라운드)
   useEffect(() => {
@@ -66,6 +78,9 @@ export default function KeywordsPage() {
 
   return (
     <>
+      {/* Pull-to-Refresh 인디케이터 */}
+      <PullToRefreshIndicator {...pullToRefresh} />
+
       {/* 헤더 */}
       <header className={`${headerClasses} text-white p-4 sticky top-0 z-50`}>
         <h1 className="text-xl font-bold">키워드 뉴스</h1>

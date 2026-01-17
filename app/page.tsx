@@ -6,6 +6,8 @@ import NewsCard from '@/components/NewsCard'
 import BottomNav from '@/components/BottomNav'
 import BreakingBanner from '@/components/BreakingBanner'
 import { useColorTheme } from '@/hooks/useColorTheme'
+import { usePullToRefresh } from '@/hooks/usePullToRefresh'
+import PullToRefreshIndicator from '@/components/PullToRefreshIndicator'
 
 export default function HomePage() {
   const { headerClasses } = useColorTheme()
@@ -16,10 +18,18 @@ export default function HomePage() {
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
+    refetch,
   } = useInfiniteLatestNews()
 
   const loadMoreRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+
+  // Pull-to-Refresh
+  const pullToRefresh = usePullToRefresh({
+    onRefresh: async () => {
+      await refetch()
+    },
+  })
 
   // 첫 10개 로드 후 자동으로 나머지 페이지 로드 (백그라운드)
   useEffect(() => {
@@ -55,6 +65,9 @@ export default function HomePage() {
 
   return (
     <>
+      {/* Pull-to-Refresh 인디케이터 */}
+      <PullToRefreshIndicator {...pullToRefresh} />
+
       <header className={`${headerClasses} text-white p-4 sticky top-0 z-50`}>
         <div>
           <h1 className="text-xl font-bold">키워드뉴스</h1>
