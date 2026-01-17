@@ -25,7 +25,7 @@ export default function BreakingTabSourceManager() {
         <div className="flex items-center gap-3 mb-3">
           <BoltIcon className="w-5 h-5 text-gray-400" />
           <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
-            종합 탭 소스 관리
+            소스 관리
           </h3>
         </div>
         <div className="text-center py-4">
@@ -49,7 +49,7 @@ export default function BreakingTabSourceManager() {
         <div className="flex items-center gap-3">
           <BoltIcon className="w-5 h-5 text-blue-500 dark:text-blue-400" />
           <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
-            종합 탭 소스 관리
+            소스 관리
           </h3>
         </div>
         <div className="flex items-center gap-2">
@@ -129,7 +129,7 @@ export default function BreakingTabSourceManager() {
           </div>
 
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            종합 탭(메인 페이지)에 표시될 전체 뉴스 소스를 선택하세요
+            뉴스 피드에 표시될 소스를 선택하세요
           </p>
         </div>
       )}

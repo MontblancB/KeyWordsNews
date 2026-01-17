@@ -2,7 +2,6 @@
 
 import BottomNav from '@/components/BottomNav'
 import BreakingTabSourceManager from '@/components/BreakingTabSourceManager'
-import CategorySourceManager from '@/components/CategorySourceManager'
 import ThemeToggle from '@/components/ThemeToggle'
 import ColorThemeSelector from '@/components/ColorThemeSelector'
 import AISummaryToggle from '@/components/AISummaryToggle'
@@ -32,11 +31,8 @@ export default function SettingsPage() {
         {/* 폰트 크기 설정 */}
         <FontSizeControl />
 
-        {/* 속보 탭 뉴스 소스 관리 */}
+        {/* 뉴스 소스 관리 */}
         <BreakingTabSourceManager />
-
-        {/* 토픽 탭 카테고리별 뉴스 소스 관리 */}
-        <CategorySourceManager />
 
         {/* 앱 정보 */}
         <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
@@ -47,7 +43,7 @@ export default function SettingsPage() {
             </h3>
           </div>
           <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
-            <p>버전: 2.15.0</p>
+            <p>버전: 2.15.1</p>
             <p>마지막 업데이트: 2026-01-18</p>
           </div>
         </div>
