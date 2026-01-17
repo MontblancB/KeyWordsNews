@@ -17,7 +17,7 @@
 ### 배포 정보
 - **배포 URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
-- **현재 버전**: 2.8.0
+- **현재 버전**: 2.9.0
 - **마지막 업데이트**: 2026-01-17
 
 ---
@@ -939,6 +939,23 @@ setTimeout(async () => {
 
 ## 최근 업데이트
 
+### v2.9.0 (2026-01-17)
+**폰트 크기 조절 기능 추가**
+
+#### 새로운 기능
+- ⚙️ **폰트 크기 조절**: 설정 페이지에서 5단계 폰트 크기 조절 (12px~20px)
+- 🔄 **실시간 적용**: +/- 버튼으로 즉시 폰트 크기 변경
+- 💾 **영구 저장**: localStorage에 설정 자동 저장
+- 🎨 **다크모드 지원**: 완전한 다크모드 UI
+
+#### 기술적 개선
+- 📄 **hooks/useFontSize.ts**: 폰트 크기 관리 Hook 추가
+- 🎨 **components/FontSizeControl.tsx**: 폰트 크기 조절 UI 컴포넌트
+- 🌐 **app/globals.css**: CSS 변수 활용한 전역 폰트 크기 적용
+- ⚡ **성능**: 실시간 적용 및 localStorage 캐싱
+
+---
+
 ### v2.8.0 (2026-01-17)
 **날씨 위젯 기능 제거**
 
@@ -1166,4 +1183,4 @@ git commit -m "fix: 버그 수정
 ---
 
 **Last Updated**: 2026-01-17
-**Version**: 2.6.0
+**Version**: 2.9.0

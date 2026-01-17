@@ -5,6 +5,7 @@ import RssSourceManager from '@/components/RssSourceManager'
 import ThemeToggle from '@/components/ThemeToggle'
 import ColorThemeSelector from '@/components/ColorThemeSelector'
 import AISummaryToggle from '@/components/AISummaryToggle'
+import FontSizeControl from '@/components/FontSizeControl'
 import { useColorTheme } from '@/hooks/useColorTheme'
 import { InformationCircleIcon } from '@heroicons/react/24/outline'
 
@@ -27,6 +28,9 @@ export default function SettingsPage() {
         {/* 색상 테마 설정 */}
         <ColorThemeSelector />
 
+        {/* 폰트 크기 설정 */}
+        <FontSizeControl />
+
         {/* 뉴스 소스 관리 */}
         <RssSourceManager />
 
@@ -39,7 +43,7 @@ export default function SettingsPage() {
             </h3>
           </div>
           <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
-            <p>버전: 2.8.0</p>
+            <p>버전: 2.9.0</p>
             <p>마지막 업데이트: 2026-01-17</p>
           </div>
         </div>
