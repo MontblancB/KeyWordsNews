@@ -94,7 +94,8 @@ export const RSS_FEED_SOURCES: RSSFeedSource[] = [
     url: 'http://rss.nocutnews.co.kr/nocutnews.xml',
     priority: 7,
     updateInterval: 10,
-    enabled: true
+    enabled: true,
+    dateIsKSTLabeledAsGMT: true  // RSS가 GMT로 표기하지만 실제로는 KST 값 사용
   },
 
   {

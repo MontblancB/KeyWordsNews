@@ -84,6 +84,13 @@ export class RSSParserService {
             publishedDate = new Date()
           }
 
+          // 시간대 보정: 일부 RSS가 GMT로 표기하지만 실제로는 KST 값을 사용하는 경우
+          // (예: 노컷뉴스) KST → UTC 변환 (9시간 빼기)
+          if (feedSource.dateIsKSTLabeledAsGMT) {
+            const KST_OFFSET_MS = 9 * 60 * 60 * 1000 // 9시간 (밀리초)
+            publishedDate = new Date(publishedDate.getTime() - KST_OFFSET_MS)
+          }
+
           // 미래 날짜 방지: 현재 시간보다 1시간 이상 미래면 현재 시간으로 조정
           const now = new Date()
           const futureThreshold = 60 * 60 * 1000 // 1시간

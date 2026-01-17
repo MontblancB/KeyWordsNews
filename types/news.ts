@@ -27,6 +27,9 @@ export interface RSSFeedSource {
   priority: number
   updateInterval: number
   enabled: boolean
+  // 시간대 보정: 일부 RSS 피드가 GMT로 표기하지만 실제로 KST 값을 사용하는 경우
+  // true로 설정하면 파싱된 날짜에서 9시간을 빼서 실제 UTC로 변환
+  dateIsKSTLabeledAsGMT?: boolean
 }
 
 export interface ParsedRSSItem {
