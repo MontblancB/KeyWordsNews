@@ -138,6 +138,10 @@ export default function EconomyPage() {
                 <IndicatorCard indicator={data.globalCrypto.totalMarketCap} />
                 <IndicatorCard indicator={data.fearGreed} />
               </div>
+              <div className="grid grid-cols-2 gap-2 mb-2">
+                <IndicatorCard indicator={data.crypto.bitcoin} />
+                <IndicatorCard indicator={data.crypto.ethereum} />
+              </div>
               <div className="grid grid-cols-2 gap-2">
                 <IndicatorCard indicator={data.globalCrypto.btcDominance} />
                 <IndicatorCard indicator={data.globalCrypto.ethDominance} />
