@@ -36,6 +36,7 @@ export function usePullToRefresh({
   const touchStartY = useRef<number>(0)
   const touchCurrentY = useRef<number>(0)
   const isPullingRef = useRef<boolean>(false)
+  const pullDistanceRef = useRef<number>(0)
 
   useEffect(() => {
     let mounted = true
@@ -62,6 +63,7 @@ export function usePullToRefresh({
           maxPullDown
         )
 
+        pullDistanceRef.current = adjustedDistance
         setState({
           isPulling: true,
           pullDistance: adjustedDistance,
@@ -79,10 +81,11 @@ export function usePullToRefresh({
       if (!isPullingRef.current) return
 
       isPullingRef.current = false
-      const { pullDistance } = state
+      const currentPullDistance = pullDistanceRef.current
+      pullDistanceRef.current = 0
 
       // 임계값 이상 당겼으면 새로고침 실행
-      if (pullDistance >= threshold) {
+      if (currentPullDistance >= threshold) {
         if (!mounted) return
 
         setState({
@@ -125,7 +128,7 @@ export function usePullToRefresh({
       window.removeEventListener('touchmove', handleTouchMove)
       window.removeEventListener('touchend', handleTouchEnd)
     }
-  }, [onRefresh, threshold, maxPullDown, resistance, state.pullDistance])
+  }, [onRefresh, threshold, maxPullDown, resistance])
 
   return {
     ...state,
