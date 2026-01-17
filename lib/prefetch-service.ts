@@ -1,5 +1,5 @@
 import { QueryClient } from '@tanstack/react-query'
-import { getEnabledRssSourceNames, getTopKeywords } from './rss-settings'
+import { getEnabledRssSourceNames, getAllKeywords } from './rss-settings'
 
 /**
  * 글로벌 프리페칭 서비스
@@ -234,15 +234,15 @@ export async function prefetchAllData(queryClient: QueryClient) {
     await prefetchEconomyIndicators(queryClient)
     await delay(150)
 
-    // Priority 4: 상위 키워드
-    console.log('[Prefetch] 🔍 Prefetching keywords...')
-    const topKeywords = getTopKeywords(3)
-    for (const keyword of topKeywords) {
+    // Priority 4: 모든 키워드 (최대 10개)
+    console.log('[Prefetch] 🔍 Prefetching all keywords...')
+    const allKeywords = getAllKeywords() // 모든 키워드 (최대 10개)
+    for (const keyword of allKeywords) {
       await prefetchKeyword(queryClient, keyword, sources)
       await delay(150)
     }
 
-    console.log('[Prefetch] ✅ Global prefetch completed!')
+    console.log(`[Prefetch] ✅ Global prefetch completed! (${allKeywords.length} keywords prefetched)`)
   } catch (error) {
     console.error('[Prefetch] ❌ Error during prefetch:', error)
   } finally {

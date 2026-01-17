@@ -44,7 +44,8 @@
       "Bash(git reset:*)",
       "WebFetch(domain:finnhub.io)",
       "WebFetch(domain:github.com)",
-      "mcp__sequential-thinking__sequentialthinking"
+      "mcp__sequential-thinking__sequentialthinking",
+      "Bash(npx next build)"
     ]
   },
   "hooks": {

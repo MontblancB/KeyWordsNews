@@ -162,3 +162,20 @@ export function getTopKeywords(limit: number = 3): string[] {
     return []
   }
 }
+
+/**
+ * 등록된 모든 키워드 가져오기 (최대 10개, 프리페칭용)
+ */
+export function getAllKeywords(maxLimit: number = 10): string[] {
+  if (typeof window === 'undefined') return []
+  const stored = localStorage.getItem('keywords')
+  if (!stored) return []
+
+  try {
+    const keywords = JSON.parse(stored)
+    // 모든 키워드를 반환하되, 최대 maxLimit개까지만
+    return keywords.slice(0, maxLimit).map((k: { keyword: string }) => k.keyword)
+  } catch {
+    return []
+  }
+}
