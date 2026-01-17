@@ -6,6 +6,8 @@
   --foreground: #000;
   --background: #fff;
   --base-font-size: 16px; /* 기본 폰트 크기 */
+  --news-title-lines: 2; /* 뉴스 제목 줄 수 */
+  --news-summary-lines: 2; /* 뉴스 요약 줄 수 */
 }
 
 * {
@@ -80,4 +82,21 @@ a {
 .text-5xl {
   font-size: calc(var(--base-font-size) * 3) !important;
   line-height: 1 !important;
+}
+
+/* 뉴스 카드 제목/요약 줄 수 동적 조절 */
+.line-clamp-2 {
+  display: -webkit-box !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+/* 제목에 사용되는 line-clamp-2 */
+h3.line-clamp-2 {
+  -webkit-line-clamp: var(--news-title-lines) !important;
+}
+
+/* 요약에 사용되는 line-clamp-2 */
+p.line-clamp-2 {
+  -webkit-line-clamp: var(--news-summary-lines) !important;
 }

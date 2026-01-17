@@ -15,6 +15,8 @@ export default function FontSizeControl() {
     if (fontSize === 16) return '보통'
     if (fontSize === 18) return '크게'
     if (fontSize === 20) return '매우 크게'
+    if (fontSize === 22) return '초대형'
+    if (fontSize === 24) return '특대형'
     return '보통'
   }
 
