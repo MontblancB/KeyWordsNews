@@ -3,9 +3,15 @@ import { RSSFeedSource } from '@/types/news'
 
 const RSS_SETTINGS_STORAGE_KEY = 'rss_source_settings'
 const BREAKING_TAB_SETTINGS_STORAGE_KEY = 'breaking_tab_source_settings'
+const CATEGORY_SOURCE_SETTINGS_STORAGE_KEY = 'category_source_settings'
 
 export interface RssSourceSettings {
   [sourceId: string]: boolean // sourceId -> enabled/disabled
+}
+
+// 카테고리별 소스 설정 (토픽 탭용)
+export interface CategorySourceSettings {
+  [category: string]: RssSourceSettings
 }
 
 /**
@@ -293,4 +299,186 @@ export function resetBreakingTabSettings(): RssSourceSettings {
   const defaultSettings = getDefaultSettings()
   saveBreakingTabSettings(defaultSettings)
   return defaultSettings
+}
+
+// ==================== 토픽 탭 카테고리별 설정 ====================
+
+/**
+ * 카테고리 목록
+ */
+export const CATEGORIES = [
+  { id: 'general', label: '종합' },
+  { id: 'politics', label: '정치' },
+  { id: 'economy', label: '경제' },
+  { id: 'society', label: '사회' },
+  { id: 'world', label: '국제' },
+  { id: 'tech', label: 'IT' },
+  { id: 'sports', label: '스포츠' },
+  { id: 'entertainment', label: '연예' },
+  { id: 'culture', label: '문화' },
+]
+
+/**
+ * 특정 카테고리의 기본 설정 생성
+ * 해당 카테고리에 속한 소스만 포함
+ */
+function getDefaultCategorySettings(category: string): RssSourceSettings {
+  const settings: RssSourceSettings = {}
+  RSS_FEED_SOURCES
+    .filter(source => source.category === category)
+    .forEach(source => {
+      settings[source.id] = source.enabled
+    })
+  return settings
+}
+
+/**
+ * 모든 카테고리의 기본 설정 생성
+ */
+function getDefaultAllCategorySettings(): CategorySourceSettings {
+  const allSettings: CategorySourceSettings = {}
+  CATEGORIES.forEach(cat => {
+    allSettings[cat.id] = getDefaultCategorySettings(cat.id)
+  })
+  return allSettings
+}
+
+/**
+ * localStorage에서 카테고리별 소스 설정 조회
+ */
+export function getCategorySourceSettings(): CategorySourceSettings {
+  if (typeof window === 'undefined') {
+    return getDefaultAllCategorySettings()
+  }
+
+  const stored = localStorage.getItem(CATEGORY_SOURCE_SETTINGS_STORAGE_KEY)
+
+  if (stored) {
+    try {
+      return JSON.parse(stored)
+    } catch (error) {
+      console.error('카테고리별 소스 설정 파싱 실패:', error)
+      return getDefaultAllCategorySettings()
+    }
+  }
+
+  return getDefaultAllCategorySettings()
+}
+
+/**
+ * 특정 카테고리의 소스 설정 조회
+ */
+export function getCategorySettings(category: string): RssSourceSettings {
+  const allSettings = getCategorySourceSettings()
+  return allSettings[category] ?? getDefaultCategorySettings(category)
+}
+
+/**
+ * 카테고리별 소스 설정 저장
+ */
+export function saveCategorySourceSettings(settings: CategorySourceSettings): void {
+  if (typeof window === 'undefined') return
+  localStorage.setItem(CATEGORY_SOURCE_SETTINGS_STORAGE_KEY, JSON.stringify(settings))
+}
+
+/**
+ * 특정 카테고리의 설정만 저장
+ */
+export function saveCategorySettings(category: string, settings: RssSourceSettings): void {
+  const allSettings = getCategorySourceSettings()
+  allSettings[category] = settings
+  saveCategorySourceSettings(allSettings)
+}
+
+/**
+ * 특정 카테고리에서 특정 소스 토글
+ */
+export function toggleCategorySource(category: string, sourceId: string): RssSourceSettings {
+  const categorySettings = getCategorySettings(category)
+  categorySettings[sourceId] = !categorySettings[sourceId]
+  saveCategorySettings(category, categorySettings)
+  return categorySettings
+}
+
+/**
+ * 특정 카테고리에서 활성화된 소스 목록 조회
+ */
+export function getEnabledCategorySources(category: string): RSSFeedSource[] {
+  const categorySettings = getCategorySettings(category)
+
+  return RSS_FEED_SOURCES.filter(source => {
+    if (source.category !== category) return false
+    return categorySettings[source.id] ?? source.enabled
+  })
+}
+
+/**
+ * 특정 카테고리에서 활성화된 소스 이름 목록 (API 쿼리용)
+ */
+export function getEnabledCategorySourceNames(category: string): string {
+  const enabledSources = getEnabledCategorySources(category)
+  return enabledSources.map(source => source.name).join(',')
+}
+
+/**
+ * 특정 카테고리의 모든 소스 활성화
+ */
+export function enableAllCategorySources(category: string): RssSourceSettings {
+  const settings: RssSourceSettings = {}
+  RSS_FEED_SOURCES
+    .filter(source => source.category === category)
+    .forEach(source => {
+      settings[source.id] = true
+    })
+  saveCategorySettings(category, settings)
+  return settings
+}
+
+/**
+ * 특정 카테고리의 모든 소스 비활성화
+ */
+export function disableAllCategorySources(category: string): RssSourceSettings {
+  const settings: RssSourceSettings = {}
+  RSS_FEED_SOURCES
+    .filter(source => source.category === category)
+    .forEach(source => {
+      settings[source.id] = false
+    })
+  saveCategorySettings(category, settings)
+  return settings
+}
+
+/**
+ * 특정 카테고리의 설정 초기화 (기본값으로)
+ */
+export function resetCategorySettings(category: string): RssSourceSettings {
+  const defaultSettings = getDefaultCategorySettings(category)
+  saveCategorySettings(category, defaultSettings)
+  return defaultSettings
+}
+
+/**
+ * 모든 카테고리의 설정 초기화
+ */
+export function resetAllCategorySettings(): CategorySourceSettings {
+  const defaultSettings = getDefaultAllCategorySettings()
+  saveCategorySourceSettings(defaultSettings)
+  return defaultSettings
+}
+
+/**
+ * 특정 카테고리의 소스 개수 통계
+ */
+export function getCategorySourceStats(category: string): { enabled: number; total: number } {
+  const categorySettings = getCategorySettings(category)
+  const categorySources = RSS_FEED_SOURCES.filter(source => source.category === category)
+
+  const enabledCount = categorySources.filter(source =>
+    categorySettings[source.id] ?? source.enabled
+  ).length
+
+  return {
+    enabled: enabledCount,
+    total: categorySources.length
+  }
 }

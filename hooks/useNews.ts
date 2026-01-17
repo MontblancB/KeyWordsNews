@@ -1,6 +1,10 @@
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query'
 import { NewsItem } from '@/types/news'
-import { getEnabledRssSourceNames, getEnabledBreakingTabSourceNames } from '@/lib/rss-settings'
+import {
+  getEnabledRssSourceNames,
+  getEnabledBreakingTabSourceNames,
+  getEnabledCategorySourceNames
+} from '@/lib/rss-settings'
 
 interface NewsResponse {
   success: boolean
@@ -48,7 +52,8 @@ export function useLatestNews() {
 }
 
 export function useTopicNews(category: string) {
-  const sources = getEnabledBreakingTabSourceNames()  // 통합된 소스 설정 사용
+  // 카테고리별 설정 사용 (토픽 탭 전용)
+  const sources = getEnabledCategorySourceNames(category)
   return useQuery({
     queryKey: ['news', 'topic', category, sources], // sources를 키에 포함
     queryFn: async () => {
@@ -147,7 +152,8 @@ export function useInfiniteLatestNews() {
 
 // 무한 스크롤용 토픽 뉴스 훅
 export function useInfiniteTopicNews(category: string) {
-  const sources = getEnabledBreakingTabSourceNames()  // 통합된 소스 설정 사용
+  // 카테고리별 설정 사용 (토픽 탭 전용)
+  const sources = getEnabledCategorySourceNames(category)
   return useInfiniteQuery({
     queryKey: ['news', 'topic-infinite', category, sources],
     queryFn: async ({ pageParam = 0 }) => {

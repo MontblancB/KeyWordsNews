@@ -17,7 +17,7 @@
 ### 배포 정보
 - **배포 URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
-- **현재 버전**: 2.13.0
+- **현재 버전**: 2.14.0
 - **마지막 업데이트**: 2026-01-18
 
 ---
@@ -941,6 +941,38 @@ setTimeout(async () => {
 
 ## 최근 업데이트
 
+### v2.14.0 (2026-01-18)
+**토픽 탭 카테고리별 소스 관리 기능 추가**
+
+#### 새로운 기능
+- 🏷️ **카테고리별 독립 설정**: 토픽 탭의 각 카테고리(종합, 정치, 경제, 사회, 국제, IT, 스포츠, 연예, 문화)별로 뉴스 소스를 독립적으로 관리
+- 📰 **속보 탭 소스 관리**: 메인 페이지(속보 탭)의 전체 뉴스 소스 관리 (기존 기능 유지)
+- 🎯 **세분화된 제어**: 정치 뉴스는 A, B 소스만, 경제 뉴스는 C, D 소스만 표시하는 등 맞춤 설정 가능
+
+#### UI/UX 개선
+- 🎨 **설정 페이지 확장**: "속보 탭 소스 관리"와 "토픽 탭 소스 관리" 두 섹션으로 분리
+- 📁 **아코디언 UI**: 각 카테고리를 펼쳐서 소스 선택 가능
+- 🔘 **빠른 제어**: 카테고리별 ON/OFF/초기화 버튼 제공
+
+#### 기술적 개선
+- 📄 **lib/rss-settings.ts**: 카테고리별 설정 저장/조회 함수 추가 (getCategorySettings, toggleCategorySource 등)
+- 🔧 **hooks/useCategorySettings.ts**: 카테고리별 설정 관리 Hook 신규 추가
+- 🎨 **components/CategorySourceManager.tsx**: 토픽 탭 카테고리별 소스 관리 UI 컴포넌트
+- 📱 **hooks/useNews.ts**: useTopicNews, useInfiniteTopicNews가 카테고리별 설정 사용
+
+#### 저장소 구조
+- `breaking_tab_source_settings`: 속보 탭 전체 소스 설정
+- `category_source_settings`: 카테고리별 소스 설정 (신규)
+  ```json
+  {
+    "general": { "donga": true, "chosun": false },
+    "politics": { "google_news_politics": true },
+    ...
+  }
+  ```
+
+---
+
 ### v2.13.0 (2026-01-18)
 **RSS 소스 관리 시스템 대폭 개선**
 
@@ -1367,4 +1399,4 @@ git commit -m "fix: 버그 수정
 ---
 
 **Last Updated**: 2026-01-18
-**Version**: 2.13.0
+**Version**: 2.14.0
