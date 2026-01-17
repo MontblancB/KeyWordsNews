@@ -47,8 +47,8 @@ export default function SettingsPage() {
             </h3>
           </div>
           <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
-            <p>버전: 2.12.2</p>
-            <p>마지막 업데이트: 2026-01-17</p>
+            <p>버전: 2.13.0</p>
+            <p>마지막 업데이트: 2026-01-18</p>
           </div>
         </div>
       </main>
