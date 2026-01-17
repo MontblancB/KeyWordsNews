@@ -115,7 +115,7 @@ export default function TopicPage() {
           <>
             <div>
               {allNews.map((item) => (
-                <NewsCard key={item.id} news={item} />
+                <NewsCard key={item.id} news={item} hideSource />
               ))}
             </div>
 

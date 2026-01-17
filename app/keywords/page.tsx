@@ -154,7 +154,7 @@ export default function KeywordsPage() {
                   <>
                     <div>
                       {allNews.map((item) => (
-                        <NewsCard key={item.id} news={item} />
+                        <NewsCard key={item.id} news={item} hideSource />
                       ))}
                     </div>
 

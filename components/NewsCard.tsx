@@ -7,9 +7,10 @@ import { useAISummarySettings } from '@/hooks/useAISummarySettings'
 
 interface NewsCardProps {
   news: NewsItem
+  hideSource?: boolean
 }
 
-export default function NewsCard({ news }: NewsCardProps) {
+export default function NewsCard({ news, hideSource = false }: NewsCardProps) {
   const { isEnabled } = useAISummarySettings()
 
   // 간단한 시간 표시 함수
@@ -55,8 +56,12 @@ export default function NewsCard({ news }: NewsCardProps) {
               {news.summary}
             </p>
             <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-              <span className="font-medium">{news.source}</span>
-              <span>•</span>
+              {!hideSource && (
+                <>
+                  <span className="font-medium">{news.source}</span>
+                  <span>•</span>
+                </>
+              )}
               <time>{timeAgo}</time>
             </div>
           </div>
