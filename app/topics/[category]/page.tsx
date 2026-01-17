@@ -7,14 +7,11 @@ import BottomNav from '@/components/BottomNav'
 import CategoryTabs from '@/components/CategoryTabs'
 import { useParams } from 'next/navigation'
 import { useColorTheme } from '@/hooks/useColorTheme'
-import { useQueryClient } from '@tanstack/react-query'
-import { getEnabledRssSourceNames, getTopKeywords } from '@/lib/rss-settings'
 
 export default function TopicPage() {
   const { headerClasses } = useColorTheme()
   const params = useParams()
   const category = params.category as string
-  const queryClient = useQueryClient()
 
   const {
     data,
@@ -38,116 +35,6 @@ export default function TopicPage() {
     entertainment: '연예',
     culture: '문화',
   }
-
-  // 전략적 프리페칭: 속보 + 모든 카테고리 + 경제지표 + 키워드 (동적 순차)
-  useEffect(() => {
-    if (!isLoading && data) {
-      const sources = getEnabledRssSourceNames()
-      const allCategories = ['politics', 'economy', 'society', 'world', 'tech', 'sports', 'entertainment', 'culture']
-
-      // 500ms 후 동적 순차 프리페칭 시작
-      setTimeout(async () => {
-        // 1. 속보 프리페칭
-        await queryClient.prefetchQuery({
-          queryKey: ['news', 'breaking', sources],
-          queryFn: async () => {
-            const url = sources
-              ? `/api/news/breaking?sources=${encodeURIComponent(sources)}`
-              : '/api/news/breaking'
-            const res = await fetch(url)
-            if (!res.ok) throw new Error('Failed to prefetch breaking news')
-            const data = await res.json()
-            return data.data
-          },
-        })
-
-        // 최소 간격 보장
-        await new Promise(resolve => setTimeout(resolve, 100))
-
-        // 2. 모든 카테고리 동적 순차 프리페칭
-        for (const cat of allCategories) {
-          // 현재 카테고리는 이미 로드되었으므로 스킵
-          if (cat === category) continue
-
-          const start = Date.now()
-
-          await queryClient.prefetchInfiniteQuery({
-            queryKey: ['news', 'topic-infinite', cat, sources],
-            queryFn: async ({ pageParam = 0 }) => {
-              const limit = pageParam === 0 ? 10 : 15
-              const offset = pageParam === 0 ? 0 : 10 + (pageParam - 1) * 15
-
-              const url = sources
-                ? `/api/news/topics/${cat}?limit=${limit}&offset=${offset}&sources=${encodeURIComponent(sources)}`
-                : `/api/news/topics/${cat}?limit=${limit}&offset=${offset}`
-              const res = await fetch(url)
-              return res.json()
-            },
-            initialPageParam: 0,
-            getNextPageParam: (lastPage, allPages) => {
-              if (lastPage.hasMore) {
-                return allPages.length
-              }
-              return undefined
-            },
-            pages: 1,
-          })
-
-          // 최소 100ms 간격 보장
-          const elapsed = Date.now() - start
-          if (elapsed < 100) {
-            await new Promise(resolve => setTimeout(resolve, 100 - elapsed))
-          }
-        }
-
-        // 3. 경제지표 프리페칭
-        await queryClient.prefetchQuery({
-          queryKey: ['economy-indicators'],
-          queryFn: async () => {
-            const res = await fetch('/api/economy/indicators')
-            if (!res.ok) throw new Error('Failed to prefetch economy indicators')
-            return res.json()
-          },
-          staleTime: 5 * 60 * 1000,
-        })
-
-        // 최소 간격 보장
-        await new Promise(resolve => setTimeout(resolve, 100))
-
-        // 4. 키워드 동적 순차 프리페칭
-        const topKeywords = getTopKeywords(3)
-        for (const keyword of topKeywords) {
-          const start = Date.now()
-
-          await queryClient.prefetchInfiniteQuery({
-            queryKey: ['news', 'search-infinite', keyword, sources],
-            queryFn: async ({ pageParam = 1 }) => {
-              const url = sources
-                ? `/api/news/search?q=${encodeURIComponent(keyword)}&page=${pageParam}&sources=${encodeURIComponent(sources)}`
-                : `/api/news/search?q=${encodeURIComponent(keyword)}&page=${pageParam}`
-              const res = await fetch(url)
-              if (!res.ok) throw new Error('Failed to prefetch keyword search')
-              return res.json()
-            },
-            initialPageParam: 1,
-            getNextPageParam: (lastPage) => {
-              if (lastPage.page < lastPage.totalPages) {
-                return lastPage.page + 1
-              }
-              return undefined
-            },
-            pages: 1,
-          })
-
-          // 최소 100ms 간격 보장
-          const elapsed = Date.now() - start
-          if (elapsed < 100) {
-            await new Promise(resolve => setTimeout(resolve, 100 - elapsed))
-          }
-        }
-      }, 500)
-    }
-  }, [isLoading, data, category, queryClient])
 
   // 첫 10개 로드 후 자동으로 나머지 페이지 로드 (백그라운드)
   useEffect(() => {

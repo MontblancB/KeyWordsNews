@@ -9,15 +9,12 @@ import BottomNav from '@/components/BottomNav'
 import KeywordTabs from '@/components/KeywordTabs'
 import KeywordManager from '@/components/KeywordManager'
 import { useColorTheme } from '@/hooks/useColorTheme'
-import { useQueryClient } from '@tanstack/react-query'
-import { getEnabledRssSourceNames } from '@/lib/rss-settings'
 
 export default function KeywordsPage() {
   const { headerClasses } = useColorTheme()
   const { keywords, addKeyword, deleteKeyword, moveKeywordUp, moveKeywordDown, hasKeywords } = useKeywords()
   const [activeKeyword, setActiveKeyword] = useState<string | null>(null)
   const loadMoreRef = useRef<HTMLDivElement>(null)
-  const queryClient = useQueryClient()
 
   // 첫 번째 키워드를 자동 선택
   useEffect(() => {
@@ -35,78 +32,6 @@ export default function KeywordsPage() {
     hasNextPage,
     fetchNextPage,
   } = useInfiniteNewsSearch(activeKeyword || '')
-
-  // 전략적 프리페칭: 속보 + 모든 카테고리 + 경제지표 (동적 순차)
-  useEffect(() => {
-    if (!isLoading && data && activeKeyword) {
-      const sources = getEnabledRssSourceNames()
-      const allCategories = ['politics', 'economy', 'society', 'world', 'tech', 'sports', 'entertainment', 'culture']
-
-      // 500ms 후 동적 순차 프리페칭 시작
-      setTimeout(async () => {
-        // 1. 속보 프리페칭
-        await queryClient.prefetchQuery({
-          queryKey: ['news', 'breaking', sources],
-          queryFn: async () => {
-            const url = sources
-              ? `/api/news/breaking?sources=${encodeURIComponent(sources)}`
-              : '/api/news/breaking'
-            const res = await fetch(url)
-            if (!res.ok) throw new Error('Failed to prefetch breaking news')
-            const data = await res.json()
-            return data.data
-          },
-        })
-
-        // 최소 간격 보장
-        await new Promise(resolve => setTimeout(resolve, 100))
-
-        // 2. 모든 카테고리 동적 순차 프리페칭
-        for (const cat of allCategories) {
-          const start = Date.now()
-
-          await queryClient.prefetchInfiniteQuery({
-            queryKey: ['news', 'topic-infinite', cat, sources],
-            queryFn: async ({ pageParam = 0 }) => {
-              const limit = pageParam === 0 ? 10 : 15
-              const offset = pageParam === 0 ? 0 : 10 + (pageParam - 1) * 15
-
-              const url = sources
-                ? `/api/news/topics/${cat}?limit=${limit}&offset=${offset}&sources=${encodeURIComponent(sources)}`
-                : `/api/news/topics/${cat}?limit=${limit}&offset=${offset}`
-              const res = await fetch(url)
-              return res.json()
-            },
-            initialPageParam: 0,
-            getNextPageParam: (lastPage, allPages) => {
-              if (lastPage.hasMore) {
-                return allPages.length
-              }
-              return undefined
-            },
-            pages: 1,
-          })
-
-          // 최소 100ms 간격 보장
-          const elapsed = Date.now() - start
-          if (elapsed < 100) {
-            await new Promise(resolve => setTimeout(resolve, 100 - elapsed))
-          }
-        }
-
-        // 3. 경제지표 프리페칭
-        await queryClient.prefetchQuery({
-          queryKey: ['economy-indicators'],
-          queryFn: async () => {
-            const res = await fetch('/api/economy/indicators')
-            if (!res.ok) throw new Error('Failed to prefetch economy indicators')
-            return res.json()
-          },
-          staleTime: 5 * 60 * 1000,
-        })
-      }, 500)
-    }
-  }, [isLoading, data, activeKeyword, queryClient])
 
   // 첫 10개 로드 후 자동으로 나머지 페이지 로드 (백그라운드)
   useEffect(() => {

@@ -104,7 +104,7 @@ export function useInfiniteNewsSearch(keyword: string) {
     },
     initialPageParam: 1,
     enabled: keyword.length > 0,
-    staleTime: 5 * 60 * 1000,         // 1분 → 5분
+    staleTime: 3 * 60 * 1000,         // 5분 → 3분
     gcTime: 10 * 60 * 1000,           // 10분 (메모리 캐시 유지)
     refetchInterval: false,           // 제거 (2분 → false, 불필요한 자동 갱신 제거)
     refetchOnMount: true,             // 마운트 시 백그라운드 갱신
@@ -137,7 +137,7 @@ export function useInfiniteLatestNews() {
       return undefined
     },
     initialPageParam: 0,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 3 * 60 * 1000,  // 5분 → 3분
     gcTime: 10 * 60 * 1000,
     refetchInterval: false,
     refetchOnMount: true,
@@ -171,7 +171,7 @@ export function useInfiniteTopicNews(category: string) {
     },
     initialPageParam: 0,
     enabled: !!category,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 3 * 60 * 1000,  // 5분 → 3분
     gcTime: 10 * 60 * 1000,
     refetchInterval: false,
     refetchOnMount: true,
