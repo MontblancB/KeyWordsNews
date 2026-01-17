@@ -307,7 +307,6 @@ export function resetBreakingTabSettings(): RssSourceSettings {
  * 카테고리 목록
  */
 export const CATEGORIES = [
-  { id: 'general', label: '종합' },
   { id: 'politics', label: '정치' },
   { id: 'economy', label: '경제' },
   { id: 'society', label: '사회' },

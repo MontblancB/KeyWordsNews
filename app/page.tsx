@@ -70,7 +70,7 @@ export default function HomePage() {
 
       <header className={`${headerClasses} text-white p-4 sticky top-0 z-50`}>
         <h1 className="text-xl font-bold">키워드뉴스</h1>
-        <p className="text-sm opacity-90">실시간 뉴스 속보</p>
+        <p className="text-sm opacity-90">종합 뉴스</p>
       </header>
 
       <BreakingBanner />

@@ -4,7 +4,6 @@ import { useRouter, usePathname } from 'next/navigation'
 import { useColorTheme } from '@/hooks/useColorTheme'
 
 const CATEGORIES = [
-  { id: 'general', label: '종합' },
   { id: 'politics', label: '정치' },
   { id: 'economy', label: '경제' },
   { id: 'society', label: '사회' },

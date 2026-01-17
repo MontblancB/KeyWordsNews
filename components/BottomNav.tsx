@@ -24,7 +24,7 @@ export default function BottomNav() {
     {
       icon: BoltIcon,
       iconSolid: BoltIconSolid,
-      label: '속보',
+      label: '종합',
       path: '/',
       color: 'text-red-500',
     },
@@ -32,7 +32,7 @@ export default function BottomNav() {
       icon: NewspaperIcon,
       iconSolid: NewspaperIconSolid,
       label: '토픽',
-      path: '/topics/general',
+      path: '/topics/politics',
       color: 'text-blue-500',
     },
     {

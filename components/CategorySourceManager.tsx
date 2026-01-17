@@ -188,7 +188,7 @@ export default function CategorySourceManager() {
           </div>
 
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            토픽 탭(종합/정치/경제 등)의 각 카테고리별로 표시될 뉴스 소스를 선택하세요
+            토픽 탭(정치/경제/사회 등)의 각 카테고리별로 표시될 뉴스 소스를 선택하세요
           </p>
         </div>
       )}
