@@ -8,7 +8,6 @@ import BreakingBanner from '@/components/BreakingBanner'
 import { useColorTheme } from '@/hooks/useColorTheme'
 import { usePullToRefresh } from '@/hooks/usePullToRefresh'
 import PullToRefreshIndicator from '@/components/PullToRefreshIndicator'
-import WeatherWidget from '@/components/WeatherWidget'
 
 export default function HomePage() {
   const { headerClasses } = useColorTheme()
@@ -70,15 +69,8 @@ export default function HomePage() {
       <PullToRefreshIndicator {...pullToRefresh} />
 
       <header className={`${headerClasses} text-white p-4 sticky top-0 z-50`}>
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold">키워드뉴스</h1>
-            <p className="text-sm opacity-90">실시간 뉴스 속보</p>
-          </div>
-
-          {/* 오른쪽 정렬된 날씨 위젯 */}
-          <WeatherWidget />
-        </div>
+        <h1 className="text-xl font-bold">키워드뉴스</h1>
+        <p className="text-sm opacity-90">실시간 뉴스 속보</p>
       </header>
 
       <BreakingBanner />
