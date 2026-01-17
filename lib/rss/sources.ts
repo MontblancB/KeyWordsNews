@@ -29,7 +29,7 @@ export const RSS_FEED_SOURCES: RSSFeedSource[] = [
     id: 'google_news_economy',
     name: 'Google News 경제',
     category: 'economy',
-    url: 'https://news.google.com/rss/search?q=%EA%B2%BD%EC%A0%9C+OR+%EC%A6%9D%EC%8B%9C+OR+%EA%B8%88%EC%9C%B5&hl=ko&gl=KR&ceid=KR:ko',
+    url: 'https://news.google.com/rss/search?q=%EA%B2%BD%EC%A0%9C+OR+%EC%A1%B1%EC%8B%9C+OR+%EA%B8%88%EC%9C%B5&hl=ko&gl=KR&ceid=KR:ko',
     priority: 9,
     updateInterval: 5,
     enabled: true
@@ -79,16 +79,6 @@ export const RSS_FEED_SOURCES: RSSFeedSource[] = [
   },
 
   {
-    id: 'joongang',
-    name: '중앙일보',
-    category: 'general',
-    url: 'http://rss.joinsmsn.com/joins_news_list.xml',
-    priority: 8,
-    updateInterval: 5,
-    enabled: true
-  },
-
-  {
     id: 'khan',
     name: '경향신문',
     category: 'general',
@@ -118,6 +108,16 @@ export const RSS_FEED_SOURCES: RSSFeedSource[] = [
     enabled: true
   },
 
+  {
+    id: 'segye',
+    name: '세계일보',
+    category: 'general',
+    url: 'http://www.segye.com/Articles/RSSList/segye_recent.xml',
+    priority: 7,
+    updateInterval: 5,
+    enabled: true
+  },
+
   // ========== 방송사 ==========
   {
     id: 'sbs',
@@ -125,16 +125,6 @@ export const RSS_FEED_SOURCES: RSSFeedSource[] = [
     category: 'general',
     url: 'https://news.sbs.co.kr/news/SectionRssFeed.do?sectionId=01',
     priority: 7,
-    updateInterval: 5,
-    enabled: true
-  },
-
-  {
-    id: 'mbc',
-    name: 'MBC',
-    category: 'general',
-    url: 'http://imnews.imbc.com/rss/news/news_00.xml',
-    priority: 8,
     updateInterval: 5,
     enabled: true
   },
@@ -155,16 +145,6 @@ export const RSS_FEED_SOURCES: RSSFeedSource[] = [
     name: 'SBS 정치',
     category: 'politics',
     url: 'https://news.sbs.co.kr/news/SectionRssFeed.do?sectionId=07',
-    priority: 7,
-    updateInterval: 10,
-    enabled: true
-  },
-
-  {
-    id: 'mbc_politics',
-    name: 'MBC 정치',
-    category: 'politics',
-    url: 'http://imnews.imbc.com/rss/news/news_01.xml',
     priority: 7,
     updateInterval: 10,
     enabled: true
@@ -212,10 +192,10 @@ export const RSS_FEED_SOURCES: RSSFeedSource[] = [
   },
 
   {
-    id: 'mbc_economy',
-    name: 'MBC 경제',
+    id: 'edaily',
+    name: '이데일리',
     category: 'economy',
-    url: 'http://imnews.imbc.com/rss/news/news_04.xml',
+    url: 'http://rss.edaily.co.kr/edaily_news.xml',
     priority: 7,
     updateInterval: 10,
     enabled: true
@@ -233,12 +213,12 @@ export const RSS_FEED_SOURCES: RSSFeedSource[] = [
   },
 
   {
-    id: 'boannews',
-    name: '보안뉴스',
+    id: 'etnews',
+    name: '전자신문',
     category: 'tech',
-    url: 'https://www.boannews.com/custom/news_rss.asp',
-    priority: 6,
-    updateInterval: 15,
+    url: 'http://rss.etnews.com/Section901.xml',
+    priority: 7,
+    updateInterval: 10,
     enabled: true
   },
 
@@ -362,169 +342,6 @@ export const RSS_FEED_SOURCES: RSSFeedSource[] = [
     name: '동아일보 문화',
     category: 'culture',
     url: 'http://rss.donga.com/culture.xml',
-    priority: 5,
-    updateInterval: 20,
-    enabled: true
-  },
-
-  // ========== 추가 종합 일간지 ==========
-  {
-    id: 'seoul',
-    name: '서울신문',
-    category: 'general',
-    url: 'http://www.seoul.co.kr/rss/rssLink.php?cate=all',
-    priority: 7,
-    updateInterval: 5,
-    enabled: true
-  },
-  {
-    id: 'kmib',
-    name: '국민일보',
-    category: 'general',
-    url: 'http://rss.kmib.co.kr/data/kmibRssAll.xml',
-    priority: 7,
-    updateInterval: 5,
-    enabled: true
-  },
-  {
-    id: 'segye',
-    name: '세계일보',
-    category: 'general',
-    url: 'http://www.segye.com/Articles/RSSList/segye_recent.xml',
-    priority: 7,
-    updateInterval: 5,
-    enabled: true
-  },
-
-  // ========== 추가 경제 전문지 ==========
-  {
-    id: 'edaily',
-    name: '이데일리',
-    category: 'economy',
-    url: 'http://rss.edaily.co.kr/edaily_news.xml',
-    priority: 7,
-    updateInterval: 10,
-    enabled: true
-  },
-  {
-    id: 'asiae',
-    name: '아시아경제',
-    category: 'economy',
-    url: 'http://rss.asiae.co.kr/rss/s00.xml',
-    priority: 7,
-    updateInterval: 10,
-    enabled: true
-  },
-  {
-    id: 'fnnews',
-    name: '파이낸셜뉴스',
-    category: 'economy',
-    url: 'https://www.fnnews.com/rss/all/',
-    priority: 7,
-    updateInterval: 10,
-    enabled: true
-  },
-  {
-    id: 'news1',
-    name: '뉴스1',
-    category: 'economy',
-    url: 'http://rss.news1.kr/rss/total_news.xml',
-    priority: 7,
-    updateInterval: 10,
-    enabled: true
-  },
-
-  // ========== IT/기술 전문 ==========
-  {
-    id: 'etnews',
-    name: '전자신문',
-    category: 'tech',
-    url: 'http://rss.etnews.com/Section901.xml',
-    priority: 7,
-    updateInterval: 10,
-    enabled: true
-  },
-  {
-    id: 'dt',
-    name: '디지털타임스',
-    category: 'tech',
-    url: 'http://www.dt.co.kr/contents/rss/all.xml',
-    priority: 7,
-    updateInterval: 10,
-    enabled: true
-  },
-  {
-    id: 'inews24',
-    name: '아이뉴스24',
-    category: 'tech',
-    url: 'http://rss.inews24.com/news_inews24.xml',
-    priority: 6,
-    updateInterval: 15,
-    enabled: true
-  },
-
-  // ========== 스포츠 전문 ==========
-  {
-    id: 'sportschosun',
-    name: '스포츠조선',
-    category: 'sports',
-    url: 'http://sports.chosun.com/rss/sports.xml',
-    priority: 6,
-    updateInterval: 15,
-    enabled: true
-  },
-  {
-    id: 'sportsseoul',
-    name: '스포츠서울',
-    category: 'sports',
-    url: 'http://www.sportsseoul.com/rss/sports.xml',
-    priority: 6,
-    updateInterval: 15,
-    enabled: true
-  },
-  {
-    id: 'isplus',
-    name: '일간스포츠',
-    category: 'sports',
-    url: 'http://isplus.live.joins.com/rss/sports.xml',
-    priority: 6,
-    updateInterval: 15,
-    enabled: true
-  },
-  {
-    id: 'xportsnews',
-    name: '엑스포츠뉴스',
-    category: 'sports',
-    url: 'http://www.xportsnews.com/rss/clicktotal.xml',
-    priority: 6,
-    updateInterval: 15,
-    enabled: true
-  },
-
-  // ========== 연예 전문 ==========
-  {
-    id: 'mydaily',
-    name: '마이데일리',
-    category: 'entertainment',
-    url: 'http://www.mydaily.co.kr/rss/clicktotal.xml',
-    priority: 6,
-    updateInterval: 15,
-    enabled: true
-  },
-  {
-    id: 'tenasia',
-    name: '텐아시아',
-    category: 'entertainment',
-    url: 'http://tenasia.hankyung.com/webservice/rss/wp-content.xml',
-    priority: 6,
-    updateInterval: 15,
-    enabled: true
-  },
-  {
-    id: 'sportsdonga',
-    name: '스포츠동아',
-    category: 'entertainment',
-    url: 'http://sports.donga.com/rss/sports.xml',
     priority: 5,
     updateInterval: 20,
     enabled: true
