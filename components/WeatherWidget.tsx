@@ -23,8 +23,8 @@ export default function WeatherWidget() {
 
   if (isLoading || !data) {
     return (
-      <div className="flex items-center gap-2.5 px-2.5 py-2">
-        <div className="w-6 h-6 border-2 border-white/50 border-t-white rounded-full animate-spin" />
+      <div className="flex items-center gap-3 px-3 py-2.5">
+        <div className="w-7 h-7 border-2 border-white/50 border-t-white rounded-full animate-spin" />
       </div>
     )
   }
@@ -38,20 +38,20 @@ export default function WeatherWidget() {
       {/* 간결한 날씨 위젯 */}
       <button
         onClick={() => setShowDetail(true)}
-        className="flex items-center gap-2.5 text-white/90 hover:text-white hover:bg-white/10 rounded-lg px-2.5 py-2 transition-all"
+        className="flex items-center gap-3 text-white/90 hover:text-white hover:bg-white/10 rounded-lg px-3 py-2.5 transition-all"
         aria-label="날씨 상세보기"
       >
         {/* 날씨 아이콘 */}
         {sky === 'clear' ? (
-          <SunIcon className="w-7 h-7" />
+          <SunIcon className="w-8 h-8" />
         ) : (
-          <CloudIcon className="w-7 h-7" />
+          <CloudIcon className="w-8 h-8" />
         )}
 
         {/* 기온 + 날씨 상태 (세로 배치) */}
-        <div className="flex flex-col items-start -my-0.5">
-          <span className="text-lg font-semibold leading-tight">{temp}°</span>
-          <span className="text-xs leading-tight opacity-80">{skyText}</span>
+        <div className="flex flex-col items-start">
+          <span className="text-xl font-semibold leading-tight">{temp}°</span>
+          <span className="text-sm leading-tight opacity-80">{skyText}</span>
         </div>
       </button>
 
