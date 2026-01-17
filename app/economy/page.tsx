@@ -52,7 +52,7 @@ export default function EconomyPage() {
         </div>
       </header>
 
-      <main className="pb-20 p-4 bg-white dark:bg-gray-900">
+      <main className="pb-16 p-3 bg-white dark:bg-gray-900">
         {isLoading && (
           <div className="flex items-center justify-center py-20">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 dark:border-green-400"></div>
@@ -66,16 +66,16 @@ export default function EconomyPage() {
         )}
 
         {data && (
-          <div className="space-y-6">
+          <div className="space-y-3">
             {/* 국내 지수 */}
             <section>
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-2 mb-2">
                 <ChartBarIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200">
                   국내 지수
                 </h2>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2">
                 <IndicatorCard indicator={data.domestic.kospi} />
                 <IndicatorCard indicator={data.domestic.kosdaq} />
               </div>
@@ -83,13 +83,13 @@ export default function EconomyPage() {
 
             {/* 해외 지수 */}
             <section>
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-2 mb-2">
                 <GlobeAltIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
                 <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200">
                   해외 지수
                 </h2>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2">
                 <IndicatorCard indicator={data.international.sp500} />
                 <IndicatorCard indicator={data.international.nasdaq} />
                 <IndicatorCard indicator={data.international.dow} />
@@ -99,13 +99,13 @@ export default function EconomyPage() {
 
             {/* 환율 */}
             <section>
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-2 mb-2">
                 <CurrencyDollarIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                 <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200">
                   환율
                 </h2>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2">
                 <IndicatorCard indicator={data.exchange.usdKrw} />
                 <IndicatorCard indicator={data.exchange.jpyKrw} />
                 <IndicatorCard indicator={data.exchange.eurKrw} />
@@ -115,26 +115,26 @@ export default function EconomyPage() {
 
             {/* 금시세 */}
             <section>
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-2 mb-2">
                 <SparklesIcon className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
                 <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200">
                   금시세
                 </h2>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2">
                 <IndicatorCard indicator={data.gold.international} />
               </div>
             </section>
 
             {/* 암호화폐 */}
             <section>
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-2 mb-2">
                 <CircleStackIcon className="w-5 h-5 text-orange-600 dark:text-orange-400" />
                 <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200">
                   암호화폐
                 </h2>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2">
                 <IndicatorCard indicator={data.crypto.bitcoin} />
                 <IndicatorCard indicator={data.crypto.ethereum} />
                 <IndicatorCard indicator={data.crypto.ripple} />
