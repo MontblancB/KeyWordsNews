@@ -47,7 +47,8 @@
       "mcp__sequential-thinking__sequentialthinking",
       "Bash(npx next build)",
       "Bash(tree:*)",
-      "Skill(automated-publishing)"
+      "Skill(automated-publishing)",
+      "Bash(git mv:*)"
     ]
   },
   "hooks": {
