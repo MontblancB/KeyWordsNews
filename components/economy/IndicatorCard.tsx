@@ -11,8 +11,9 @@ export default function IndicatorCard({ indicator }: IndicatorCardProps) {
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg p-2 border border-gray-200 dark:border-gray-700 shadow-sm">
-      <div className="flex items-start justify-between mb-1">
-        <div className="text-[10px] text-gray-500 dark:text-gray-400">{indicator.name}</div>
+      <div className="text-[10px] text-gray-500 dark:text-gray-400 mb-1">{indicator.name}</div>
+      <div className="flex items-center justify-between">
+        <div className="text-base font-bold text-gray-900 dark:text-gray-100">{indicator.value}</div>
         <div className="flex items-center gap-0.5">
           {isUp && (
             <>
@@ -35,7 +36,6 @@ export default function IndicatorCard({ indicator }: IndicatorCardProps) {
           )}
         </div>
       </div>
-      <div className="text-base font-bold text-gray-900 dark:text-gray-100">{indicator.value}</div>
     </div>
   )
 }
