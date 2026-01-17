@@ -5,7 +5,7 @@ import {
   scrapeGoldPriceV2,
 } from './naver-finance-v2'
 import { fetchInternationalIndices } from '../api/yahoo-finance'
-import { fetchCryptoPrices } from '../api/finnhub'
+import { fetchAllCoinGeckoData } from '../api/coingecko'
 
 /**
  * 하이브리드 경제 지표 수집기
@@ -14,22 +14,25 @@ import { fetchCryptoPrices } from '../api/finnhub'
  * - 환율 (USD, JPY, EUR, CNY): 네이버 금융 스크래핑
  * - 금시세: 네이버 금융 스크래핑
  * - 해외 지수 (S&P 500, NASDAQ, Dow, Nikkei): Yahoo Finance API (실제 지수 값)
- * - 암호화폐 (BTC, ETH, XRP, ADA): Finnhub API
+ * - 암호화폐 (BTC, ETH, XRP, ADA): CoinGecko API
+ * - 글로벌 암호화폐 데이터 (시총, 도미넌스): CoinGecko API
+ * - 공포 및 탐욕 지수: Alternative.me API
  */
 
 /**
  * 모든 경제 지표 수집 (하이브리드 방식)
  */
 export async function collectAllEconomyData(): Promise<EconomyData> {
-  // 네이버 금융 스크래핑 (국내 데이터)
-  const [kospi, kosdaq, exchange, gold, international, crypto] = await Promise.all([
-    scrapeDomesticIndexV2('KOSPI'),
-    scrapeDomesticIndexV2('KOSDAQ'),
-    scrapeExchangeV2(),
-    scrapeGoldPriceV2(),
-    fetchInternationalIndices(), // Yahoo Finance API
-    fetchCryptoPrices(),         // Finnhub API
-  ])
+  // 병렬 처리로 모든 데이터 수집
+  const [kospi, kosdaq, exchange, gold, international, coinGeckoData] =
+    await Promise.all([
+      scrapeDomesticIndexV2('KOSPI'),
+      scrapeDomesticIndexV2('KOSDAQ'),
+      scrapeExchangeV2(),
+      scrapeGoldPriceV2(),
+      fetchInternationalIndices(), // Yahoo Finance API
+      fetchAllCoinGeckoData(), // CoinGecko API (암호화폐 + 글로벌 데이터 + 공포탐욕지수)
+    ])
 
   return {
     domestic: {
@@ -41,9 +44,11 @@ export async function collectAllEconomyData(): Promise<EconomyData> {
     gold: {
       international: gold,
     },
-    crypto,
+    crypto: coinGeckoData.crypto,
+    globalCrypto: coinGeckoData.global,
+    fearGreed: coinGeckoData.fearGreed,
     lastUpdated: new Date().toLocaleString('ko-KR', {
-      timeZone: 'Asia/Seoul',  // 한국 시간(KST, UTC+9) 기준
+      timeZone: 'Asia/Seoul', // 한국 시간(KST, UTC+9) 기준
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',

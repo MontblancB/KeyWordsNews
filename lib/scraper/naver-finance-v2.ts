@@ -335,6 +335,12 @@ export async function scrapeAllIndicatorsV2(): Promise<EconomyData> {
       ripple: { ...fallbackIndicator, name: 'Ripple (XRP)' },
       cardano: { ...fallbackIndicator, name: 'Cardano (ADA)' },
     },
+    globalCrypto: {
+      totalMarketCap: { ...fallbackIndicator, name: '전체 시가총액' },
+      btcDominance: { ...fallbackIndicator, name: 'BTC 도미넌스' },
+      ethDominance: { ...fallbackIndicator, name: 'ETH 도미넌스' },
+    },
+    fearGreed: { ...fallbackIndicator, name: '공포·탐욕 지수' },
     lastUpdated: new Date().toLocaleString('ko-KR', {
       year: 'numeric',
       month: '2-digit',

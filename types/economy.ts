@@ -49,6 +49,13 @@ export interface CryptoPrices {
   cardano: Indicator
 }
 
+// 글로벌 암호화폐 데이터
+export interface GlobalCryptoData {
+  totalMarketCap: Indicator // 전체 시가총액
+  btcDominance: Indicator // 비트코인 도미넌스
+  ethDominance: Indicator // 이더리움 도미넌스
+}
+
 // 전체 경제 지표 데이터
 export interface EconomyData {
   domestic: DomesticIndices
@@ -56,5 +63,7 @@ export interface EconomyData {
   exchange: ExchangeRates
   gold: GoldPrice
   crypto: CryptoPrices
+  globalCrypto: GlobalCryptoData
+  fearGreed: Indicator
   lastUpdated: string
 }

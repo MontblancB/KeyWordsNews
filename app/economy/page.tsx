@@ -10,6 +10,7 @@ import {
   CurrencyDollarIcon,
   SparklesIcon,
   CircleStackIcon,
+  GlobeAsiaAustraliaIcon,
 } from '@heroicons/react/24/outline'
 import { useColorTheme } from '@/hooks/useColorTheme'
 import { usePullToRefresh } from '@/hooks/usePullToRefresh'
@@ -67,6 +68,24 @@ export default function EconomyPage() {
 
         {data && (
           <div className="space-y-3">
+            {/* 글로벌 크립토 */}
+            <section>
+              <div className="flex items-center gap-2 mb-2">
+                <GlobeAsiaAustraliaIcon className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                <h2 className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                  글로벌 크립토
+                </h2>
+              </div>
+              <div className="grid grid-cols-2 gap-2 mb-2">
+                <IndicatorCard indicator={data.globalCrypto.totalMarketCap} />
+                <IndicatorCard indicator={data.fearGreed} />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <IndicatorCard indicator={data.globalCrypto.btcDominance} />
+                <IndicatorCard indicator={data.globalCrypto.ethDominance} />
+              </div>
+            </section>
+
             {/* 국내 지수 */}
             <section>
               <div className="flex items-center gap-2 mb-2">

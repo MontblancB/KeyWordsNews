@@ -52,7 +52,17 @@
       "Bash(git fetch:*)",
       "Bash(git pull:*)",
       "Bash(git rm:*)",
-      "WebFetch(domain:console.groq.com)"
+      "WebFetch(domain:console.groq.com)",
+      "WebFetch(domain:gist.github.com)",
+      "WebFetch(domain:www.khan.co.kr)",
+      "WebFetch(domain:www.yna.co.kr)",
+      "WebFetch(domain:rss.joinsmsn.com)",
+      "WebFetch(domain:www.hani.co.kr)",
+      "WebFetch(domain:biz.heraldcorp.com)",
+      "WebFetch(domain:rss.hankooki.com)",
+      "WebFetch(domain:www.pressian.com)",
+      "WebFetch(domain:rss.nocutnews.co.kr)",
+      "WebFetch(domain:www.mediatoday.co.kr)"
     ]
   },
   "hooks": {
