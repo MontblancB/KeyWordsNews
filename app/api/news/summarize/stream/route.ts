@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
           // Groq Provider 초기화
           const provider = new GroqProvider({
             apiKey: process.env.GROQ_API_KEY || '',
-            model: 'llama-3.3-70b-specdec',
+            model: 'llama-3.3-70b-versatile',
           })
 
           let finalResult: any = null
