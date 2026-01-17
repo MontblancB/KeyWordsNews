@@ -25,7 +25,7 @@ export default function BreakingTabSourceManager() {
         <div className="flex items-center gap-3 mb-3">
           <BoltIcon className="w-5 h-5 text-gray-400" />
           <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
-            속보 탭 소스 관리
+            뉴스 소스 관리
           </h3>
         </div>
         <div className="text-center py-4">
@@ -47,9 +47,9 @@ export default function BreakingTabSourceManager() {
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center gap-3">
-          <BoltIcon className="w-5 h-5 text-red-500 dark:text-red-400" />
+          <BoltIcon className="w-5 h-5 text-blue-500 dark:text-blue-400" />
           <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
-            속보 탭 소스 관리
+            뉴스 소스 관리
           </h3>
         </div>
         <div className="flex items-center gap-2">
@@ -74,7 +74,7 @@ export default function BreakingTabSourceManager() {
               }}
               className={`flex-1 px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
                 enabledCount === totalCount
-                  ? 'bg-red-600 text-white shadow-sm'
+                  ? 'bg-blue-600 text-white shadow-sm'
                   : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
               }`}
             >
@@ -87,7 +87,7 @@ export default function BreakingTabSourceManager() {
               }}
               className={`flex-1 px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
                 enabledCount === 0
-                  ? 'bg-red-600 text-white shadow-sm'
+                  ? 'bg-blue-600 text-white shadow-sm'
                   : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
               }`}
             >
@@ -118,7 +118,7 @@ export default function BreakingTabSourceManager() {
                     type="checkbox"
                     checked={isEnabled}
                     onChange={() => toggleSource(source.id)}
-                    className="w-4 h-4 text-red-600 rounded focus:ring-2 focus:ring-red-500 cursor-pointer"
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
                   />
                   <span className="text-sm text-gray-900 dark:text-gray-100">
                     {source.name}
@@ -129,7 +129,7 @@ export default function BreakingTabSourceManager() {
           </div>
 
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            속보 탭(메인 페이지)에 표시될 뉴스 소스를 선택하세요
+            속보 탭과 토픽 탭에 표시될 뉴스 소스를 선택하세요
           </p>
         </div>
       )}

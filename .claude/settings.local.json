@@ -62,7 +62,11 @@
       "WebFetch(domain:rss.hankooki.com)",
       "WebFetch(domain:www.pressian.com)",
       "WebFetch(domain:rss.nocutnews.co.kr)",
-      "WebFetch(domain:www.mediatoday.co.kr)"
+      "WebFetch(domain:www.mediatoday.co.kr)",
+      "Bash(npx vercel ls --token=$VERCEL_TOKEN)",
+      "WebFetch(domain:key-words-news.vercel.app)",
+      "Bash(gh run list:*)",
+      "Bash(vercel:*)"
     ]
   },
   "hooks": {

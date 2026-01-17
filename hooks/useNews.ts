@@ -48,7 +48,7 @@ export function useLatestNews() {
 }
 
 export function useTopicNews(category: string) {
-  const sources = getEnabledRssSourceNames()
+  const sources = getEnabledBreakingTabSourceNames()  // 통합된 소스 설정 사용
   return useQuery({
     queryKey: ['news', 'topic', category, sources], // sources를 키에 포함
     queryFn: async () => {
@@ -66,7 +66,7 @@ export function useTopicNews(category: string) {
 }
 
 export function useNewsSearch(keyword: string, page: number = 1) {
-  const sources = getEnabledRssSourceNames()
+  const sources = getEnabledBreakingTabSourceNames()  // 통합된 소스 설정 사용
   return useQuery({
     queryKey: ['news', 'search', keyword, page, sources], // sources를 키에 포함
     queryFn: async () => {
@@ -84,7 +84,7 @@ export function useNewsSearch(keyword: string, page: number = 1) {
 
 // 무한 스크롤용 검색 훅
 export function useInfiniteNewsSearch(keyword: string) {
-  const sources = getEnabledRssSourceNames()
+  const sources = getEnabledBreakingTabSourceNames()  // 통합된 소스 설정 사용
   return useInfiniteQuery({
     queryKey: ['news', 'search-infinite', keyword, sources],
     queryFn: async ({ pageParam = 1 }) => {
@@ -147,7 +147,7 @@ export function useInfiniteLatestNews() {
 
 // 무한 스크롤용 토픽 뉴스 훅
 export function useInfiniteTopicNews(category: string) {
-  const sources = getEnabledRssSourceNames()
+  const sources = getEnabledBreakingTabSourceNames()  // 통합된 소스 설정 사용
   return useInfiniteQuery({
     queryKey: ['news', 'topic-infinite', category, sources],
     queryFn: async ({ pageParam = 0 }) => {

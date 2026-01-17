@@ -83,6 +83,14 @@ export class RSSParserService {
             console.warn(`⚠️ ${feedSource.name}: 잘못된 날짜 형식, 현재 시간 사용`)
             publishedDate = new Date()
           }
+
+          // 미래 날짜 방지: 현재 시간보다 1시간 이상 미래면 현재 시간으로 조정
+          const now = new Date()
+          const futureThreshold = 60 * 60 * 1000 // 1시간
+          if (publishedDate.getTime() - now.getTime() > futureThreshold) {
+            console.warn(`⚠️ ${feedSource.name}: 미래 날짜 감지 (${publishedDate.toISOString()}), 현재 시간으로 조정`)
+            publishedDate = now
+          }
         } catch (error) {
           console.warn(`⚠️ ${feedSource.name}: 날짜 파싱 실패, 현재 시간 사용`)
           publishedDate = new Date()

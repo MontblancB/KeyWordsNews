@@ -1,17 +1,6 @@
 import { RSSFeedSource } from '@/types/news'
 
 export const RSS_FEED_SOURCES: RSSFeedSource[] = [
-  // ========== 속보 ==========
-  {
-    id: 'google_news_breaking',
-    name: 'Google News 속보',
-    category: 'breaking',
-    url: 'https://news.google.com/rss/search?q=%EC%86%8D%EB%B3%B4+OR+%EA%B8%B4%EA%B8%89&hl=ko&gl=KR&ceid=KR:ko',
-    priority: 10,
-    updateInterval: 3,
-    enabled: true
-  },
-
   // ========== Google News 카테고리별 ==========
   // 정치
   {
