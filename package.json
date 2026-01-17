@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma migrate deploy && prisma generate && next build",
+    "build": "prisma generate && next build",
+    "build:local": "prisma migrate deploy && prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "collect": "tsx --env-file=.env.local scripts/collect-rss.ts",
