@@ -24,6 +24,9 @@ export function useFontSize() {
 
   const applyFontSize = (index: number) => {
     const size = FONT_SIZES[index]
+    // html 요소의 font-size를 변경하여 rem 기반 Tailwind 클래스에 영향
+    document.documentElement.style.fontSize = `${size}px`
+    // CSS 변수도 함께 설정 (선택적)
     document.documentElement.style.setProperty('--base-font-size', `${size}px`)
   }
 
