@@ -10,6 +10,8 @@ export class NewsService {
         update: {
           title: input.title,
           summary: input.summary,
+          publishedAt: input.publishedAt,  // 날짜 필드 업데이트 추가
+          imageUrl: input.imageUrl,         // 이미지 URL 업데이트 추가
           isBreaking: input.isBreaking || false,
           updatedAt: new Date()
         },
