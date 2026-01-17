@@ -35,3 +35,49 @@ a {
   color: inherit;
   text-decoration: none;
 }
+
+/* Tailwind 텍스트 클래스를 CSS 변수 기반으로 재정의 */
+.text-xs {
+  font-size: calc(var(--base-font-size) * 0.75) !important;
+  line-height: 1rem !important;
+}
+
+.text-sm {
+  font-size: calc(var(--base-font-size) * 0.875) !important;
+  line-height: 1.25rem !important;
+}
+
+.text-base {
+  font-size: var(--base-font-size) !important;
+  line-height: 1.5rem !important;
+}
+
+.text-lg {
+  font-size: calc(var(--base-font-size) * 1.125) !important;
+  line-height: 1.75rem !important;
+}
+
+.text-xl {
+  font-size: calc(var(--base-font-size) * 1.25) !important;
+  line-height: 1.75rem !important;
+}
+
+.text-2xl {
+  font-size: calc(var(--base-font-size) * 1.5) !important;
+  line-height: 2rem !important;
+}
+
+.text-3xl {
+  font-size: calc(var(--base-font-size) * 1.875) !important;
+  line-height: 2.25rem !important;
+}
+
+.text-4xl {
+  font-size: calc(var(--base-font-size) * 2.25) !important;
+  line-height: 2.5rem !important;
+}
+
+.text-5xl {
+  font-size: calc(var(--base-font-size) * 3) !important;
+  line-height: 1 !important;
+}
