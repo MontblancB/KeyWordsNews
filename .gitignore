@@ -41,5 +41,6 @@ next-env.d.ts
 # prisma
 /generated/prisma
 
-# claude
-.claude/
+# claude (로컬 설정만 제외, skills는 팀과 공유)
+.claude/*
+!.claude/skills/
