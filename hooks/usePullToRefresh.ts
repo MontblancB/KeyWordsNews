@@ -37,13 +37,19 @@ export function usePullToRefresh({
   const touchCurrentY = useRef<number>(0)
   const isPullingRef = useRef<boolean>(false)
   const pullDistanceRef = useRef<number>(0)
+  const onRefreshRef = useRef(onRefresh)
+
+  // onRefresh 함수 최신 상태 유지
+  useEffect(() => {
+    onRefreshRef.current = onRefresh
+  }, [onRefresh])
 
   useEffect(() => {
     let mounted = true
 
     const handleTouchStart = (e: TouchEvent) => {
-      // 페이지가 스크롤 최상단에 있을 때만 활성화
-      if (window.scrollY === 0) {
+      // 페이지가 스크롤 최상단 근처에 있을 때만 활성화 (5px 여유)
+      if (window.scrollY <= 5) {
         touchStartY.current = e.touches[0].clientY
         isPullingRef.current = true
       }
@@ -95,7 +101,7 @@ export function usePullToRefresh({
         })
 
         try {
-          await onRefresh()
+          await onRefreshRef.current()
         } catch (error) {
           console.error('[PullToRefresh] Refresh failed:', error)
         } finally {
@@ -128,7 +134,7 @@ export function usePullToRefresh({
       window.removeEventListener('touchmove', handleTouchMove)
       window.removeEventListener('touchend', handleTouchEnd)
     }
-  }, [onRefresh, threshold, maxPullDown, resistance])
+  }, [threshold, maxPullDown, resistance])
 
   return {
     ...state,
