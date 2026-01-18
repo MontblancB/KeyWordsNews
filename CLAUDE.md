@@ -964,6 +964,38 @@ setTimeout(async () => {
 
 ## 최근 업데이트
 
+### v2.18.0 (2026-01-19)
+**TrendNow 기능 추가 - 뉴스 트렌드 분석**
+
+#### 새로운 기능
+- 📈 **TrendNow 버튼**: InsightNow 옆에 트렌드 분석 버튼 추가
+  - 종합 탭, 토픽 탭, 키워드 탭 모두 적용
+  - 현재 로드된 뉴스들의 트렌드를 AI로 분석
+
+- 🔥 **트렌드 분석 기능**:
+  - **현재 화제 TOP 5**: 가장 많이 언급되는 주제 순위
+  - **트렌드 분석**: 상승/지속/주목할 신호 트렌드
+  - **키워드 맵**: 주요 키워드와 맥락 분석
+  - **트렌드 요약**: 한 줄로 정리하는 오늘의 뉴스 흐름
+
+#### 기술적 개선
+- 📄 **components/TrendButton.tsx**: 트렌드 분석 버튼 (teal 색상)
+- 📄 **components/TrendModal.tsx**: 트렌드 결과 표시 모달
+- 📄 **app/api/trend/now/route.ts**: TrendNow API (Groq → Gemini → OpenRouter 폴백)
+- 📄 **app/page.tsx**: 메인 페이지에 TrendNow 추가
+- 📄 **app/topics/[category]/page.tsx**: 토픽 페이지에 TrendNow 추가
+- 📄 **app/keywords/page.tsx**: 키워드 페이지에 TrendNow 추가
+
+#### InsightNow vs TrendNow
+| 기능 | InsightNow | TrendNow |
+|------|------------|----------|
+| 목적 | 전문가 관점의 인사이트 | 트렌드 흐름 분석 |
+| 분석 | 의미, 영향, 전망 | 순위, 빈도, 방향성 |
+| 색상 | amber (노란색) | teal (청록색) |
+| 아이콘 | LightBulbIcon | ArrowTrendingUpIcon |
+
+---
+
 ### v2.17.0 (2026-01-18)
 **Gemini AI Provider 추가 & InsightNow 전문가 프롬프트 시스템**
 

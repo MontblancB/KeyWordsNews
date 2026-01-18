@@ -66,7 +66,11 @@
       "Bash(npx vercel ls --token=$VERCEL_TOKEN)",
       "WebFetch(domain:key-words-news.vercel.app)",
       "Bash(gh run list:*)",
-      "Bash(vercel:*)"
+      "Bash(vercel:*)",
+      "WebFetch(domain:openrouter.ai)",
+      "mcp__plugin_playwright_playwright__browser_close",
+      "mcp__plugin_playwright_playwright__browser_navigate",
+      "WebFetch(domain:groq.com)"
     ]
   },
   "hooks": {

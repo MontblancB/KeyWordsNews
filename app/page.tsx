@@ -13,10 +13,18 @@ import PullToRefreshIndicator from '@/components/PullToRefreshIndicator'
 import { FEATURE_FLAGS } from '@/lib/feature-flags'
 import InsightButton from '@/components/InsightButton'
 import InsightModal from '@/components/InsightModal'
+import TrendButton from '@/components/TrendButton'
+import TrendModal from '@/components/TrendModal'
 
 // 인사이트 데이터 타입
 interface InsightData {
   insights: string
+  keywords: string[]
+}
+
+// 트렌드 데이터 타입
+interface TrendData {
+  trends: string
   keywords: string[]
 }
 
@@ -43,6 +51,14 @@ export default function HomePage() {
   const [isInsightLoading, setIsInsightLoading] = useState(false)
   const [insightData, setInsightData] = useState<InsightData | null>(null)
   const [insightError, setInsightError] = useState<string | null>(null)
+
+  // ==========================================
+  // TrendNow 기능 (Feature Flag로 제어)
+  // ==========================================
+  const [isTrendModalOpen, setIsTrendModalOpen] = useState(false)
+  const [isTrendLoading, setIsTrendLoading] = useState(false)
+  const [trendData, setTrendData] = useState<TrendData | null>(null)
+  const [trendError, setTrendError] = useState<string | null>(null)
 
   // 인사이트 모달 열기 및 API 호출
   const handleOpenInsight = useCallback(async () => {
@@ -91,6 +107,54 @@ export default function HomePage() {
     if (isInsightLoading) return // 로딩 중에는 닫지 않음
     setIsInsightModalOpen(false)
   }, [isInsightLoading])
+
+  // 트렌드 모달 열기 및 API 호출
+  const handleOpenTrend = useCallback(async () => {
+    if (!FEATURE_FLAGS.ENABLE_DAILY_INSIGHT) return
+
+    const allNewsForTrend = data?.pages.flatMap((page) => page.data) || []
+    if (allNewsForTrend.length < 5) return
+
+    // 상태 초기화
+    setIsTrendModalOpen(true)
+    setIsTrendLoading(true)
+    setTrendData(null)
+    setTrendError(null)
+
+    try {
+      // 현재 로드된 모든 뉴스 사용
+      const newsForApi = allNewsForTrend.map((news) => ({
+        title: news.title,
+        summary: news.summary || '',
+        source: news.source,
+        category: news.category,
+      }))
+
+      const response = await fetch('/api/trend/now', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newsList: newsForApi }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || `HTTP ${response.status}`)
+      }
+
+      setTrendData(result.data)
+    } catch (error) {
+      setTrendError(error instanceof Error ? error.message : '알 수 없는 오류')
+    } finally {
+      setIsTrendLoading(false)
+    }
+  }, [data])
+
+  // 트렌드 모달 닫기
+  const handleCloseTrend = useCallback(() => {
+    if (isTrendLoading) return // 로딩 중에는 닫지 않음
+    setIsTrendModalOpen(false)
+  }, [isTrendLoading])
 
   // Pull-to-Refresh: 쿼리 리셋으로 완전히 새로 가져오기
   const pullToRefresh = usePullToRefresh({
@@ -147,13 +211,18 @@ export default function HomePage() {
 
         <BreakingBanner />
 
-        {/* InsightNow 버튼 (Feature Flag로 제어) */}
+        {/* InsightNow & TrendNow 버튼 (Feature Flag로 제어) */}
         {FEATURE_FLAGS.ENABLE_DAILY_INSIGHT && allNews.length >= 5 && (
           <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
             <div className="flex gap-2 p-3 overflow-x-auto">
               <InsightButton
                 onClick={handleOpenInsight}
                 isLoading={isInsightLoading}
+                disabled={allNews.length < 5}
+              />
+              <TrendButton
+                onClick={handleOpenTrend}
+                isLoading={isTrendLoading}
                 disabled={allNews.length < 5}
               />
             </div>
@@ -220,6 +289,18 @@ export default function HomePage() {
           isLoading={isInsightLoading}
           insightData={insightData}
           error={insightError}
+          newsCount={allNews.length}
+        />
+      )}
+
+      {/* TrendNow 모달 (Feature Flag로 제어) */}
+      {FEATURE_FLAGS.ENABLE_DAILY_INSIGHT && (
+        <TrendModal
+          isOpen={isTrendModalOpen}
+          onClose={handleCloseTrend}
+          isLoading={isTrendLoading}
+          trendData={trendData}
+          error={trendError}
           newsCount={allNews.length}
         />
       )}
