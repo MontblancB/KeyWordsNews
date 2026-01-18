@@ -175,7 +175,7 @@ export default function HomePage() {
   const allNews = data?.pages.flatMap((page) => page.data) || []
 
   return (
-    <>
+    <div className="min-h-screen flex flex-col">
       {/* Pull-to-Refresh 인디케이터 */}
       <PullToRefreshIndicator {...pullToRefresh} />
 
@@ -265,6 +265,6 @@ export default function HomePage() {
           newsCount={Math.min(allNews.length, 30)}
         />
       )}
-    </>
+    </div>
   )
 }

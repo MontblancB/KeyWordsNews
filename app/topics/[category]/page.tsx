@@ -82,17 +82,20 @@ export default function TopicPage() {
   const allNews = data?.pages.flatMap((page) => page.data) || []
 
   return (
-    <>
+    <div className="min-h-screen flex flex-col">
       {/* Pull-to-Refresh 인디케이터 */}
       <PullToRefreshIndicator {...pullToRefresh} />
 
-      <header className={`${headerClasses} text-white p-4`}>
-        <h1 className="text-xl font-bold">
-          {categoryNames[category] || category} 뉴스
-        </h1>
-      </header>
+      {/* 상단 고정 영역: 헤더 + 카테고리 탭 */}
+      <div className="sticky top-0 z-50">
+        <header className={`${headerClasses} text-white p-4`}>
+          <h1 className="text-xl font-bold">
+            {categoryNames[category] || category} 뉴스
+          </h1>
+        </header>
 
-      <CategoryTabs />
+        <CategoryTabs />
+      </div>
 
       <main className="pb-20 bg-white dark:bg-gray-900 relative">
         {/* 백그라운드 갱신 인디케이터 (캐시가 있을 때) */}
@@ -143,6 +146,6 @@ export default function TopicPage() {
       </main>
 
       <BottomNav />
-    </>
+    </div>
   )
 }

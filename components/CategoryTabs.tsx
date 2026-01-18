@@ -22,7 +22,7 @@ export default function CategoryTabs() {
   const currentCategory = pathname.split('/').pop() || 'politics'
 
   return (
-    <div className="sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
+    <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
       <div className="flex gap-2 p-2">
         {CATEGORIES.map((category) => (
           <button
