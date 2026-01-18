@@ -17,7 +17,7 @@
 ### 배포 정보
 - **배포 URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
-- **현재 버전**: 2.15.6
+- **현재 버전**: 2.16.0
 - **마지막 업데이트**: 2026-01-18
 
 ---
@@ -941,6 +941,33 @@ setTimeout(async () => {
 
 ## 최근 업데이트
 
+### v2.16.0 (2026-01-18)
+**오늘의 Insight 기능 추가**
+
+#### 새로운 기능
+- 💡 **오늘의 Insight**: 종합탭에서 현재 로드된 뉴스(최대 30개)를 AI로 종합 분석
+  - Groq AI (Llama 3.3 70B) 활용
+  - SSE 스트리밍으로 실시간 타이핑 효과
+  - 주요 이슈 분류 (3-5개 카테고리)
+  - 종합 인사이트 (트렌드, 주목할 점, 전망)
+  - 핵심 키워드 5개 추출
+
+#### 기술적 개선
+- 🚩 **Feature Flag 시스템**: `lib/feature-flags.ts`로 기능 ON/OFF 제어 가능
+  - `ENABLE_DAILY_INSIGHT: false`로 설정 시 기존 상태로 즉시 복원
+  - 기존 코드 영향 최소화
+
+#### 추가된 파일
+- 📄 `lib/feature-flags.ts`: Feature Flag 설정 파일
+- 📄 `app/api/insight/daily/route.ts`: 인사이트 API (SSE 스트리밍)
+- 📄 `components/InsightButton.tsx`: 인사이트 버튼 컴포넌트
+- 📄 `components/InsightModal.tsx`: 인사이트 모달 컴포넌트
+
+#### 수정된 파일
+- 📄 `app/page.tsx`: 조건부 렌더링으로 인사이트 기능 통합
+
+---
+
 ### v2.15.6 (2026-01-18)
 **Pull-to-Refresh 완전 개선 및 UI 최적화**
 
@@ -1442,4 +1469,4 @@ git commit -m "fix: 버그 수정
 ---
 
 **Last Updated**: 2026-01-18
-**Version**: 2.15.6
+**Version**: 2.16.0
