@@ -51,11 +51,12 @@ ${content}
 
     try {
       const response = await fetch(
-        `${this.baseUrl}/models/${this.model}:generateContent?key=${this.apiKey}`,
+        `${this.baseUrl}/models/${this.model}:generateContent`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'x-goog-api-key': this.apiKey,
           },
           body: JSON.stringify({
             contents: [
@@ -71,6 +72,21 @@ ${content}
               temperature: this.temperature,
               maxOutputTokens: this.maxTokens,
               responseMimeType: 'application/json',
+              responseJsonSchema: {
+                type: 'object',
+                properties: {
+                  summary: {
+                    type: 'string',
+                    description: '뉴스 요약 (불릿 포인트 형식)',
+                  },
+                  keywords: {
+                    type: 'array',
+                    items: { type: 'string' },
+                    description: '핵심 키워드 3-5개',
+                  },
+                },
+                required: ['summary', 'keywords'],
+              },
             },
           }),
         }
@@ -139,8 +155,13 @@ ${content}
   async isAvailable(): Promise<boolean> {
     try {
       const response = await fetch(
-        `${this.baseUrl}/models?key=${this.apiKey}`,
-        { method: 'GET' }
+        `${this.baseUrl}/models`,
+        {
+          method: 'GET',
+          headers: {
+            'x-goog-api-key': this.apiKey,
+          },
+        }
       )
       return response.ok
     } catch {

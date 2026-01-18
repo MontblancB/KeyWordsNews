@@ -104,11 +104,12 @@ async function generateWithGemini(prompt: string): Promise<SummaryResult> {
   const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash'
 
   const response = await fetch(
-    `${baseUrl}/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`,
+    `${baseUrl}/models/${model}:generateContent`,
     {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'x-goog-api-key': process.env.GEMINI_API_KEY || '',
       },
       body: JSON.stringify({
         contents: [
@@ -124,6 +125,21 @@ async function generateWithGemini(prompt: string): Promise<SummaryResult> {
           temperature: 0.3,
           maxOutputTokens: 2500,
           responseMimeType: 'application/json',
+          responseJsonSchema: {
+            type: 'object',
+            properties: {
+              summary: {
+                type: 'string',
+                description: '뉴스 종합 요약 텍스트 (마크다운 형식)',
+              },
+              keywords: {
+                type: 'array',
+                items: { type: 'string' },
+                description: '핵심 키워드 5개',
+              },
+            },
+            required: ['summary', 'keywords'],
+          },
         },
       }),
     }
