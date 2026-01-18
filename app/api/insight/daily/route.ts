@@ -74,7 +74,61 @@ async function generateWithGroq(prompt: string): Promise<InsightResult> {
   return result
 }
 
-// OpenRouter API 호출 함수 (폴백)
+// Gemini API 호출 함수 (2nd 폴백)
+async function generateWithGemini(prompt: string): Promise<InsightResult> {
+  const baseUrl = 'https://generativelanguage.googleapis.com/v1beta'
+  const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash'
+
+  const response = await fetch(
+    `${baseUrl}/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: `${SYSTEM_PROMPT}\n\n${prompt}`,
+              },
+            ],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.4,
+          maxOutputTokens: 2500,
+          responseMimeType: 'application/json',
+        },
+      }),
+    }
+  )
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    throw new Error(`Gemini API error: ${response.status} - ${JSON.stringify(errorData)}`)
+  }
+
+  const data = await response.json()
+  const content = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+
+  // JSON 추출
+  const jsonMatch = content.match(/\{[\s\S]*\}/)
+  if (!jsonMatch) {
+    throw new Error('No JSON found in response')
+  }
+
+  const result = JSON.parse(jsonMatch[0]) as InsightResult
+  if (!result.insights || !Array.isArray(result.keywords)) {
+    throw new Error('Invalid response format')
+  }
+  result.keywords = result.keywords.slice(0, 5)
+
+  return result
+}
+
+// OpenRouter API 호출 함수 (3rd 폴백)
 async function generateWithOpenRouter(prompt: string): Promise<InsightResult> {
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
@@ -122,7 +176,7 @@ async function generateWithOpenRouter(prompt: string): Promise<InsightResult> {
  *
  * InsightNow API (일반 JSON 응답)
  * 현재 로드된 뉴스들을 종합 분석하여 인사이트를 생성합니다.
- * Groq 실패 시 OpenRouter로 자동 폴백됩니다.
+ * Fallback 순서: Groq -> Gemini -> OpenRouter
  *
  * @feature ENABLE_DAILY_INSIGHT
  */
@@ -176,7 +230,24 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 2차 시도: OpenRouter (폴백)
+    // 2차 시도: Gemini (2nd 폴백)
+    if (process.env.GEMINI_API_KEY) {
+      try {
+        console.log('[InsightNow] Falling back to Gemini...')
+        provider = 'gemini'
+        result = await generateWithGemini(prompt)
+        return NextResponse.json({
+          success: true,
+          data: result,
+          provider,
+        })
+      } catch (error) {
+        console.error('[InsightNow] Gemini failed:', error)
+        // 다음 폴백으로 진행
+      }
+    }
+
+    // 3차 시도: OpenRouter (3rd 폴백)
     if (process.env.OPENROUTER_API_KEY) {
       try {
         console.log('[InsightNow] Falling back to OpenRouter...')
@@ -199,7 +270,7 @@ export async function POST(request: NextRequest) {
 
     // 모든 프로바이더 사용 불가
     return NextResponse.json(
-      { error: 'AI API 키가 설정되지 않았습니다. GROQ_API_KEY 또는 OPENROUTER_API_KEY를 설정해주세요.' },
+      { error: 'AI API 키가 설정되지 않았습니다. GROQ_API_KEY, GEMINI_API_KEY 또는 OPENROUTER_API_KEY를 설정해주세요.' },
       { status: 500 }
     )
   } catch (error) {

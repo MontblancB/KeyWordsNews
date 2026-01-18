@@ -1,5 +1,6 @@
 import { AIProvider, AIProviderType } from './types'
 import { GroqProvider } from './providers/groq'
+import { GeminiProvider } from './providers/gemini'
 import { OpenRouterProvider } from './providers/openrouter'
 
 /**
@@ -35,13 +36,18 @@ export class AIProviderFactory {
         }
         break
 
+      case 'gemini':
+        if (process.env.GEMINI_API_KEY) {
+          return new GeminiProvider({
+            apiKey: process.env.GEMINI_API_KEY,
+            model: process.env.GEMINI_MODEL,
+          })
+        }
+        break
+
       // 향후 추가 프로바이더는 여기에 구현
       case 'openai':
         // TODO: OpenAI Provider 구현
-        break
-
-      case 'gemini':
-        // TODO: Gemini Provider 구현
         break
     }
 
@@ -50,9 +56,18 @@ export class AIProviderFactory {
 
   /**
    * Fallback Provider 생성 (Primary 실패 시 사용)
+   * 순서: Gemini (2nd) -> OpenRouter (3rd)
    */
   static createFallbackProvider(): AIProvider | null {
-    // OpenRouter를 fallback으로 사용
+    // Gemini를 2번째 fallback으로 사용
+    if (process.env.GEMINI_API_KEY) {
+      return new GeminiProvider({
+        apiKey: process.env.GEMINI_API_KEY,
+        model: process.env.GEMINI_MODEL,
+      })
+    }
+
+    // OpenRouter를 3번째 fallback으로 사용
     if (process.env.OPENROUTER_API_KEY) {
       return new OpenRouterProvider({
         apiKey: process.env.OPENROUTER_API_KEY,
@@ -60,7 +75,7 @@ export class AIProviderFactory {
       })
     }
 
-    // Groq을 fallback으로 사용
+    // Groq을 fallback으로 사용 (Primary가 다른 경우)
     if (process.env.GROQ_API_KEY) {
       return new GroqProvider({
         apiKey: process.env.GROQ_API_KEY,
@@ -73,10 +88,12 @@ export class AIProviderFactory {
 
   /**
    * 모든 사용 가능한 Provider 목록 반환
+   * 순서: Groq (1st) -> Gemini (2nd) -> OpenRouter (3rd)
    */
   static getAvailableProviders(): AIProvider[] {
     const providers: AIProvider[] = []
 
+    // 1. Groq (Primary)
     if (process.env.GROQ_API_KEY) {
       providers.push(
         new GroqProvider({
@@ -86,6 +103,17 @@ export class AIProviderFactory {
       )
     }
 
+    // 2. Gemini (2nd Fallback)
+    if (process.env.GEMINI_API_KEY) {
+      providers.push(
+        new GeminiProvider({
+          apiKey: process.env.GEMINI_API_KEY,
+          model: process.env.GEMINI_MODEL,
+        })
+      )
+    }
+
+    // 3. OpenRouter (3rd Fallback)
     if (process.env.OPENROUTER_API_KEY) {
       providers.push(
         new OpenRouterProvider({

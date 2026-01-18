@@ -17,7 +17,7 @@
 ### 배포 정보
 - **배포 URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
-- **현재 버전**: 2.16.1
+- **현재 버전**: 2.17.0
 - **마지막 업데이트**: 2026-01-18
 
 ---
@@ -964,6 +964,42 @@ setTimeout(async () => {
 
 ## 최근 업데이트
 
+### v2.17.0 (2026-01-18)
+**Gemini AI Provider 추가 (3단계 Fallback 시스템)**
+
+#### 새로운 기능
+- 🤖 **Gemini Provider 추가**: Google Gemini 2.5 Flash 모델 지원
+  - Groq → Gemini → OpenRouter 3단계 fallback 시스템
+  - Groq 실패 시 Gemini로 자동 전환
+  - Gemini 실패 시 OpenRouter로 자동 전환
+
+#### 기술적 개선
+- 📄 **lib/ai/providers/gemini.ts**: Gemini Provider 신규 추가
+- 📄 **lib/ai/factory.ts**: 3단계 fallback 순서 설정
+- 📄 **app/api/insight/daily/route.ts**: InsightNow API에 Gemini fallback 추가
+
+#### Fallback 순서
+1. **Groq** (Primary) - Llama 3.3 70B, 초고속 응답
+2. **Gemini** (2nd Fallback) - Gemini 2.5 Flash, 1M 토큰 컨텍스트
+3. **OpenRouter** (3rd Fallback) - Llama 3.1 70B, 무료 플랜
+
+#### 환경 변수
+```env
+# AI Provider 설정
+AI_PROVIDER="groq"
+GROQ_API_KEY="..."
+
+# Gemini (2nd Fallback)
+GEMINI_API_KEY="..."
+GEMINI_MODEL="gemini-2.5-flash"
+
+# OpenRouter (3rd Fallback)
+OPENROUTER_API_KEY="..."
+OPENROUTER_MODEL="meta-llama/llama-3.1-70b-instruct:free"
+```
+
+---
+
 ### v2.16.1 (2026-01-18)
 **AI 기능 안정성 개선**
 
@@ -1515,4 +1551,4 @@ git commit -m "fix: 버그 수정
 ---
 
 **Last Updated**: 2026-01-18
-**Version**: 2.16.1
+**Version**: 2.17.0
