@@ -135,12 +135,32 @@ async function generateWithGemini(prompt: string): Promise<SummaryResult> {
   }
 
   const data = await response.json()
+
+  // 디버깅: 전체 응답 구조 확인
+  console.log('[Gemini] Response structure:', JSON.stringify(data, null, 2).slice(0, 500))
+
+  // 응답에서 텍스트 추출
   const content = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+
+  // 응답이 비어있는 경우 상세 에러
+  if (!content) {
+    const finishReason = data.candidates?.[0]?.finishReason
+    const safetyRatings = data.candidates?.[0]?.safetyRatings
+    const blockReason = data.promptFeedback?.blockReason
+
+    let errorDetail = 'Empty response from Gemini'
+    if (blockReason) errorDetail += ` (blockReason: ${blockReason})`
+    if (finishReason) errorDetail += ` (finishReason: ${finishReason})`
+    if (safetyRatings) errorDetail += ` (safety: ${JSON.stringify(safetyRatings)})`
+
+    throw new Error(errorDetail)
+  }
 
   // JSON 추출
   const jsonMatch = content.match(/\{[\s\S]*\}/)
   if (!jsonMatch) {
-    throw new Error('No JSON found in response')
+    // 실제 응답 내용 일부를 에러에 포함
+    throw new Error(`No JSON found in response. Content preview: "${content.slice(0, 200)}..."`)
   }
 
   const result = JSON.parse(jsonMatch[0]) as SummaryResult
