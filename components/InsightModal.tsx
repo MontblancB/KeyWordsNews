@@ -1,7 +1,14 @@
 'use client'
 
 import { useEffect, useCallback } from 'react'
-import { XMarkIcon, LightBulbIcon } from '@heroicons/react/24/outline'
+import {
+  XMarkIcon,
+  LightBulbIcon,
+  ExclamationCircleIcon,
+  SparklesIcon,
+  TagIcon,
+  CheckIcon,
+} from '@heroicons/react/24/outline'
 
 interface InsightData {
   insights: string
@@ -107,13 +114,20 @@ export default function InsightModal({
           {/* 에러 상태 */}
           {error && (
             <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-4">
-              <p className="text-red-600 dark:text-red-400 text-sm">
-                오류가 발생했습니다: {error}
+              <div className="flex items-center gap-2 mb-2">
+                <ExclamationCircleIcon className="w-5 h-5 text-red-500 dark:text-red-400" />
+                <p className="text-red-600 dark:text-red-400 text-sm font-medium">
+                  오류가 발생했습니다
+                </p>
+              </div>
+              <p className="text-red-600 dark:text-red-400 text-sm ml-7">
+                {error}
               </p>
               <button
                 onClick={onClose}
-                className="mt-3 px-4 py-2 bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-200 rounded-lg text-sm hover:bg-red-200 dark:hover:bg-red-700 transition-colors"
+                className="mt-3 px-4 py-2 bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-200 rounded-lg text-sm hover:bg-red-200 dark:hover:bg-red-700 transition-colors flex items-center gap-2"
               >
+                <XMarkIcon className="w-4 h-4" />
                 닫기
               </button>
             </div>
@@ -133,7 +147,7 @@ export default function InsightModal({
                   />
                 ) : (
                   <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-amber-500" />
+                    <SparklesIcon className="w-5 h-5 text-amber-500 animate-pulse" />
                     <span>AI가 뉴스를 분석하고 있습니다...</span>
                   </div>
                 )}
@@ -147,9 +161,12 @@ export default function InsightModal({
               {/* 키워드 배지 (완료 후) */}
               {insightData?.keywords && insightData.keywords.length > 0 && (
                 <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 font-medium">
-                    핵심 키워드
-                  </p>
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <TagIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                      핵심 키워드
+                    </p>
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     {insightData.keywords.map((keyword, index) => (
                       <span
@@ -171,8 +188,9 @@ export default function InsightModal({
           <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
             <button
               onClick={onClose}
-              className="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg transition-colors"
+              className="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
             >
+              <CheckIcon className="w-5 h-5" />
               확인
             </button>
           </div>
