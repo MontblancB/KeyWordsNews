@@ -17,7 +17,7 @@
 ### 배포 정보
 - **배포 URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
-- **현재 버전**: 2.15.1
+- **현재 버전**: 2.15.6
 - **마지막 업데이트**: 2026-01-18
 
 ---
@@ -941,6 +941,30 @@ setTimeout(async () => {
 
 ## 최근 업데이트
 
+### v2.15.6 (2026-01-18)
+**Pull-to-Refresh 완전 개선 및 UI 최적화**
+
+#### 버그 수정
+- 🔄 **Pull-to-Refresh 데이터 갱신**: `refetch()` → `queryClient.resetQueries()` 변경으로 새 데이터 즉시 반영
+- 🔧 **Pull-to-Refresh 안정성**: `onRefresh`를 `useRef`로 감싸서 이벤트 리스너 재등록 방지
+- 📍 **scrollY 조건 완화**: `=== 0` → `<= 5`로 변경하여 미세 스크롤 허용
+- 🔗 **클로저 문제 수정**: `pullDistanceRef` 추가로 최신 당김 거리 값 정확히 추적
+- 🔑 **프리페칭 queryKey 일치**: 카테고리별/키워드별 올바른 소스 설정 사용
+
+#### UI/UX 개선
+- 👁️ **출처 정보 숨김**: 토픽, 키워드 탭에서 뉴스 출처(언론사명) 숨김
+- 🚫 **스와이프 비활성화**: 좌우 스와이프로 탭 이동 기능 제거
+- 📋 **설정 UI 단순화**: "소스 관리"로 명칭 변경, 토픽 탭 소스 관리 제거
+
+#### 수정된 파일
+- `hooks/usePullToRefresh.ts`: 클로저 문제 수정, 안정성 개선
+- `lib/prefetch-service.ts`: queryKey 일치 수정
+- `app/page.tsx`, `app/topics/[category]/page.tsx`, `app/keywords/page.tsx`: resetQueries 적용
+- `components/NewsCard.tsx`: hideSource prop 추가
+- `app/layout.tsx`: SwipeableLayout 제거
+
+---
+
 ### v2.15.0 (2026-01-18)
 **UI 구조 개선: 속보 탭 → 종합 탭, 토픽 탭 종합 카테고리 제거**
 
@@ -1418,4 +1442,4 @@ git commit -m "fix: 버그 수정
 ---
 
 **Last Updated**: 2026-01-18
-**Version**: 2.15.1
+**Version**: 2.15.6
