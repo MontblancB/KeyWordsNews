@@ -103,7 +103,11 @@ export default function KeywordsPage() {
       const result = await response.json()
 
       if (!response.ok) {
-        throw new Error(result.error || `HTTP ${response.status}`)
+        // 상세 에러 정보가 있으면 함께 표시
+        const errorMsg = result.details
+          ? `${result.error}\n\n상세: ${result.details}`
+          : (result.error || `HTTP ${response.status}`)
+        throw new Error(errorMsg)
       }
 
       setInsightData(result.data)
@@ -151,7 +155,11 @@ export default function KeywordsPage() {
       const result = await response.json()
 
       if (!response.ok) {
-        throw new Error(result.error || `HTTP ${response.status}`)
+        // 상세 에러 정보가 있으면 함께 표시
+        const errorMsg = result.details
+          ? `${result.error}\n\n상세: ${result.details}`
+          : (result.error || `HTTP ${response.status}`)
+        throw new Error(errorMsg)
       }
 
       setSummaryData(result.data)

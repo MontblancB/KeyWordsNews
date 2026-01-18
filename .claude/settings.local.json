@@ -70,7 +70,8 @@
       "WebFetch(domain:openrouter.ai)",
       "mcp__plugin_playwright_playwright__browser_close",
       "mcp__plugin_playwright_playwright__browser_navigate",
-      "WebFetch(domain:groq.com)"
+      "WebFetch(domain:groq.com)",
+      "Skill(compact)"
     ]
   },
   "hooks": {

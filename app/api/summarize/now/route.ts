@@ -240,6 +240,9 @@ export async function POST(request: NextRequest) {
     let result: SummaryResult
     let provider: string = 'groq'
 
+    // 각 프로바이더의 시도 결과 및 에러 수집
+    const providerAttempts: { provider: string; error: string }[] = []
+
     // 1차 시도: Groq
     if (process.env.GROQ_API_KEY) {
       try {
@@ -251,9 +254,13 @@ export async function POST(request: NextRequest) {
           provider,
         })
       } catch (error) {
-        console.error('[SummarizeNow] Groq failed:', error)
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error'
+        console.error('[SummarizeNow] Groq failed:', errorMsg)
+        providerAttempts.push({ provider: 'Groq', error: errorMsg })
         // 폴백으로 진행
       }
+    } else {
+      providerAttempts.push({ provider: 'Groq', error: 'API 키 미설정' })
     }
 
     // 2차 시도: Gemini (2nd 폴백)
@@ -268,9 +275,13 @@ export async function POST(request: NextRequest) {
           provider,
         })
       } catch (error) {
-        console.error('[SummarizeNow] Gemini failed:', error)
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error'
+        console.error('[SummarizeNow] Gemini failed:', errorMsg)
+        providerAttempts.push({ provider: 'Gemini', error: errorMsg })
         // 다음 폴백으로 진행
       }
+    } else {
+      providerAttempts.push({ provider: 'Gemini', error: 'API 키 미설정' })
     }
 
     // 3차 시도: OpenRouter (3rd 폴백)
@@ -285,18 +296,27 @@ export async function POST(request: NextRequest) {
           provider,
         })
       } catch (error) {
-        console.error('[SummarizeNow] OpenRouter failed:', error)
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-        return NextResponse.json(
-          { error: `모든 AI 프로바이더 실패: ${errorMessage}` },
-          { status: 500 }
-        )
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error'
+        console.error('[SummarizeNow] OpenRouter failed:', errorMsg)
+        providerAttempts.push({ provider: 'OpenRouter', error: errorMsg })
       }
+    } else {
+      providerAttempts.push({ provider: 'OpenRouter', error: 'API 키 미설정' })
     }
 
-    // 모든 프로바이더 사용 불가
+    // 모든 프로바이더 실패 - 상세 에러 메시지 생성
+    const errorDetails = providerAttempts
+      .map((attempt) => `[${attempt.provider}] ${attempt.error}`)
+      .join(' → ')
+
+    console.error('[SummarizeNow] All providers failed:', errorDetails)
+
     return NextResponse.json(
-      { error: 'AI API 키가 설정되지 않았습니다. GROQ_API_KEY, GEMINI_API_KEY 또는 OPENROUTER_API_KEY를 설정해주세요.' },
+      {
+        error: `모든 AI 프로바이더 실패`,
+        details: errorDetails,
+        attempts: providerAttempts
+      },
       { status: 500 }
     )
   } catch (error) {
