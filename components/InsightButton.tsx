@@ -1,6 +1,6 @@
 'use client'
 
-import { LightBulbIcon } from '@heroicons/react/24/solid'
+import { LightBulbIcon } from '@heroicons/react/24/outline'
 
 interface InsightButtonProps {
   onClick: () => void
