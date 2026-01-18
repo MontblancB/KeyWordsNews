@@ -69,10 +69,11 @@ export default function TopicPage() {
         category: news.category,
       }))
 
+      // 카테고리 정보를 함께 전달하여 전문가 관점의 인사이트 생성
       const response = await fetch('/api/insight/daily', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ newsList: newsForApi }),
+        body: JSON.stringify({ newsList: newsForApi, category }),
       })
 
       const result = await response.json()
@@ -87,7 +88,7 @@ export default function TopicPage() {
     } finally {
       setIsInsightLoading(false)
     }
-  }, [data])
+  }, [data, category])
 
   // 인사이트 모달 닫기
   const handleCloseInsight = useCallback(() => {

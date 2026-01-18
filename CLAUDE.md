@@ -965,7 +965,7 @@ setTimeout(async () => {
 ## 최근 업데이트
 
 ### v2.17.0 (2026-01-18)
-**Gemini AI Provider 추가 (3단계 Fallback 시스템)**
+**Gemini AI Provider 추가 & InsightNow 전문가 프롬프트 시스템**
 
 #### 새로운 기능
 - 🤖 **Gemini Provider 추가**: Google Gemini 2.5 Flash 모델 지원
@@ -973,10 +973,31 @@ setTimeout(async () => {
   - Groq 실패 시 Gemini로 자동 전환
   - Gemini 실패 시 OpenRouter로 자동 전환
 
+- 🎯 **InsightNow 전문가 프롬프트 시스템**
+  - **종합 탭**: 수석 뉴스 애널리스트 관점 (멀티 분야 전문가)
+    - 다양한 분야를 아우르는 통찰력 제공
+    - 뉴스 간 연관성과 상호작용 분석
+    - 테마별 그룹화 및 종합 인사이트
+  - **토픽 탭**: 카테고리별 전문가 관점 (8개 분야)
+    - 정치: 정치학 박사, 정치 기자 관점
+    - 경제: 경제학 박사, 월가 투자은행 관점
+    - 사회: 사회학 박사, 시민단체 관점
+    - 국제: 국제관계학 박사, 외교부 관점
+    - IT/과학: 컴퓨터공학 박사, 실리콘밸리 관점
+    - 스포츠: 체육학 박사, 전직 프로선수 관점
+    - 연예: 문화콘텐츠학 박사, 엔터 업계 관점
+    - 문화: 문화인류학 박사, 문화재단 관점
+
 #### 기술적 개선
 - 📄 **lib/ai/providers/gemini.ts**: Gemini Provider 신규 추가
 - 📄 **lib/ai/factory.ts**: 3단계 fallback 순서 설정
-- 📄 **app/api/insight/daily/route.ts**: InsightNow API에 Gemini fallback 추가
+- 📄 **app/api/insight/daily/route.ts**:
+  - InsightNow API에 Gemini fallback 추가
+  - `CATEGORY_EXPERTS` 카테고리별 전문가 설정
+  - `GENERAL_SYSTEM_PROMPT` 종합 탭용 수석 애널리스트 프롬프트
+  - `getSystemPrompt()` 카테고리별 시스템 프롬프트 선택
+  - `createGeneralPrompt()` / `createCategoryPrompt()` 분리
+- 📄 **app/topics/[category]/page.tsx**: 카테고리 정보를 API에 전달
 
 #### Fallback 순서
 1. **Groq** (Primary) - Llama 3.3 70B, 초고속 응답
