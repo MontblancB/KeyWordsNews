@@ -11,15 +11,17 @@
 
 export const FEATURE_FLAGS = {
   /**
-   * 오늘의 Insight 기능
-   * - 종합탭에서 현재 로드된 뉴스들을 AI로 종합 분석
+   * InsightNow 기능
+   * - 종합탭, 토픽탭, 키워드탭에서 현재 로드된 뉴스들을 AI로 종합 분석
    * - false로 설정 시 버튼과 모달이 표시되지 않음
    *
    * 관련 파일:
    * - components/InsightButton.tsx
    * - components/InsightModal.tsx
    * - app/api/insight/daily/route.ts
-   * - app/page.tsx (조건부 렌더링)
+   * - app/page.tsx (종합탭)
+   * - app/topics/[category]/page.tsx (토픽탭)
+   * - app/keywords/page.tsx (키워드탭)
    *
    * @version 2.16.0
    * @default true

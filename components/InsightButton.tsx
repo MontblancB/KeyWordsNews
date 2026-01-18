@@ -11,7 +11,7 @@ interface InsightButtonProps {
 /**
  * InsightButton
  *
- * "오늘의 Insight" 버튼 컴포넌트입니다.
+ * "InsightNow" 버튼 컴포넌트입니다.
  * 현재 로드된 뉴스를 AI로 종합 분석합니다.
  *
  * @feature ENABLE_DAILY_INSIGHT
@@ -36,7 +36,7 @@ export default function InsightButton({
             : 'bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white shadow-sm hover:shadow'
         }
       `}
-      title={disabled ? '뉴스가 5개 이상 필요합니다' : '오늘의 뉴스를 AI로 종합 분석합니다'}
+      title={disabled ? '뉴스가 5개 이상 필요합니다' : '현재 로드된 뉴스를 AI로 종합 분석합니다'}
     >
       {isLoading ? (
         <>
@@ -46,7 +46,7 @@ export default function InsightButton({
       ) : (
         <>
           <LightBulbIcon className="w-4 h-4" />
-          <span>오늘의 Insight</span>
+          <span>InsightNow</span>
         </>
       )}
     </button>

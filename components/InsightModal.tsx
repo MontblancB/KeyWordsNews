@@ -21,7 +21,7 @@ interface InsightModalProps {
 /**
  * InsightModal
  *
- * 오늘의 Insight를 표시하는 풀스크린 모달 컴포넌트입니다.
+ * InsightNow를 표시하는 풀스크린 모달 컴포넌트입니다.
  * SSE 스트리밍을 통해 실시간으로 인사이트가 생성되는 것을 보여줍니다.
  *
  * @feature ENABLE_DAILY_INSIGHT
@@ -84,7 +84,7 @@ export default function InsightModal({
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-amber-500 to-orange-500">
           <div className="flex items-center gap-2">
             <LightBulbIcon className="w-6 h-6 text-white" />
-            <h2 className="text-lg font-bold text-white">오늘의 Insight</h2>
+            <h2 className="text-lg font-bold text-white">InsightNow</h2>
           </div>
           <div className="flex items-center gap-3">
             <span className="text-sm text-white/80">{newsCount}개 뉴스 분석</span>

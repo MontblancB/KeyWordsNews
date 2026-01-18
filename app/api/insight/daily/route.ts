@@ -43,8 +43,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 최대 30개로 제한
-    const limitedNews = newsList.slice(0, 30)
+    // 현재 로드된 모든 뉴스 사용 (제한 없음)
+    const limitedNews = newsList
 
     // Groq 클라이언트 초기화
     const groq = new Groq({

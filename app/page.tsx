@@ -37,7 +37,7 @@ export default function HomePage() {
   const scrollRef = useRef<HTMLDivElement>(null)
 
   // ==========================================
-  // 오늘의 Insight 기능 (Feature Flag로 제어)
+  // InsightNow 기능 (Feature Flag로 제어)
   // ==========================================
   const [isInsightModalOpen, setIsInsightModalOpen] = useState(false)
   const [isInsightLoading, setIsInsightLoading] = useState(false)
@@ -62,8 +62,8 @@ export default function HomePage() {
     setInsightError(null)
 
     try {
-      // 최대 30개 뉴스 추출
-      const newsForApi = allNewsForInsight.slice(0, 30).map((news) => ({
+      // 현재 로드된 모든 뉴스 사용
+      const newsForApi = allNewsForInsight.map((news) => ({
         title: news.title,
         summary: news.summary || '',
         source: news.source,
@@ -188,7 +188,7 @@ export default function HomePage() {
 
         <BreakingBanner />
 
-        {/* 오늘의 Insight 버튼 (Feature Flag로 제어) */}
+        {/* InsightNow 버튼 (Feature Flag로 제어) */}
         {FEATURE_FLAGS.ENABLE_DAILY_INSIGHT && allNews.length >= 5 && (
           <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
             <div className="flex gap-2 p-3 overflow-x-auto">
@@ -253,7 +253,7 @@ export default function HomePage() {
 
       <BottomNav />
 
-      {/* 오늘의 Insight 모달 (Feature Flag로 제어) */}
+      {/* InsightNow 모달 (Feature Flag로 제어) */}
       {FEATURE_FLAGS.ENABLE_DAILY_INSIGHT && (
         <InsightModal
           isOpen={isInsightModalOpen}
@@ -262,7 +262,7 @@ export default function HomePage() {
           streamingContent={insightStreamingContent}
           insightData={insightData}
           error={insightError}
-          newsCount={Math.min(allNews.length, 30)}
+          newsCount={allNews.length}
         />
       )}
     </div>
