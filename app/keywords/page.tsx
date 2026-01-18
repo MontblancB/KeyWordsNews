@@ -2,7 +2,9 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useInfiniteNewsSearch } from '@/hooks/useNews'
+import { getEnabledBreakingTabSourceNames } from '@/lib/rss-settings'
 import { useKeywords } from '@/hooks/useKeywords'
 import NewsCard from '@/components/NewsCard'
 import BottomNav from '@/components/BottomNav'
@@ -14,6 +16,8 @@ import PullToRefreshIndicator from '@/components/PullToRefreshIndicator'
 
 export default function KeywordsPage() {
   const { headerClasses } = useColorTheme()
+  const queryClient = useQueryClient()
+  const sources = getEnabledBreakingTabSourceNames()
   const { keywords, addKeyword, deleteKeyword, moveKeywordUp, moveKeywordDown, hasKeywords } = useKeywords()
   const [activeKeyword, setActiveKeyword] = useState<string | null>(null)
   const loadMoreRef = useRef<HTMLDivElement>(null)
@@ -33,14 +37,15 @@ export default function KeywordsPage() {
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
-    refetch,
   } = useInfiniteNewsSearch(activeKeyword || '')
 
-  // Pull-to-Refresh
+  // Pull-to-Refresh: 쿼리 리셋으로 완전히 새로 가져오기
   const pullToRefresh = usePullToRefresh({
     onRefresh: async () => {
       if (activeKeyword) {
-        await refetch()
+        await queryClient.resetQueries({
+          queryKey: ['news', 'search-infinite', activeKeyword, sources],
+        })
       }
     },
   })

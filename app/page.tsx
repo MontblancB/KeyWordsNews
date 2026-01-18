@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useInfiniteLatestNews } from '@/hooks/useNews'
+import { getEnabledBreakingTabSourceNames } from '@/lib/rss-settings'
 import NewsCard from '@/components/NewsCard'
 import BottomNav from '@/components/BottomNav'
 import BreakingBanner from '@/components/BreakingBanner'
@@ -11,6 +13,8 @@ import PullToRefreshIndicator from '@/components/PullToRefreshIndicator'
 
 export default function HomePage() {
   const { headerClasses } = useColorTheme()
+  const queryClient = useQueryClient()
+  const sources = getEnabledBreakingTabSourceNames()
   const {
     data,
     isLoading,
@@ -18,16 +22,17 @@ export default function HomePage() {
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
-    refetch,
   } = useInfiniteLatestNews()
 
   const loadMoreRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  // Pull-to-Refresh
+  // Pull-to-Refresh: 쿼리 리셋으로 완전히 새로 가져오기
   const pullToRefresh = usePullToRefresh({
     onRefresh: async () => {
-      await refetch()
+      await queryClient.resetQueries({
+        queryKey: ['news', 'latest-infinite', sources],
+      })
     },
   })
 

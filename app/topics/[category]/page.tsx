@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useInfiniteTopicNews } from '@/hooks/useNews'
+import { getEnabledCategorySourceNames } from '@/lib/rss-settings'
 import NewsCard from '@/components/NewsCard'
 import BottomNav from '@/components/BottomNav'
 import CategoryTabs from '@/components/CategoryTabs'
@@ -12,8 +14,10 @@ import PullToRefreshIndicator from '@/components/PullToRefreshIndicator'
 
 export default function TopicPage() {
   const { headerClasses } = useColorTheme()
+  const queryClient = useQueryClient()
   const params = useParams()
   const category = params.category as string
+  const sources = getEnabledCategorySourceNames(category)
 
   const {
     data,
@@ -22,15 +26,16 @@ export default function TopicPage() {
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
-    refetch,
   } = useInfiniteTopicNews(category)
 
   const loadMoreRef = useRef<HTMLDivElement>(null)
 
-  // Pull-to-Refresh
+  // Pull-to-Refresh: 쿼리 리셋으로 완전히 새로 가져오기
   const pullToRefresh = usePullToRefresh({
     onRefresh: async () => {
-      await refetch()
+      await queryClient.resetQueries({
+        queryKey: ['news', 'topic-infinite', category, sources],
+      })
     },
   })
 
