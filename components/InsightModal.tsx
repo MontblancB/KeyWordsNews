@@ -100,20 +100,7 @@ export default function InsightModal({
             <LightBulbIcon className="w-6 h-6 text-white" />
             <h2 className="text-lg font-bold text-white">InsightNow</h2>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-white/80">{newsCount}개 뉴스 분석</span>
-            <button
-              onClick={onClose}
-              disabled={isStreaming}
-              className={`p-1 rounded-full transition-colors ${
-                isStreaming
-                  ? 'text-white/40 cursor-not-allowed'
-                  : 'text-white/80 hover:text-white hover:bg-white/20'
-              }`}
-            >
-              <XMarkIcon className="w-6 h-6" />
-            </button>
-          </div>
+          <span className="text-sm text-white/80">{newsCount}개 뉴스 분석</span>
         </div>
 
         {/* 콘텐츠 영역 */}
