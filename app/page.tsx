@@ -179,25 +179,28 @@ export default function HomePage() {
       {/* Pull-to-Refresh 인디케이터 */}
       <PullToRefreshIndicator {...pullToRefresh} />
 
-      <header className={`${headerClasses} text-white p-4 sticky top-0 z-50`}>
-        <h1 className="text-xl font-bold">키워드뉴스</h1>
-        <p className="text-sm opacity-90">종합 뉴스</p>
-      </header>
+      {/* 상단 고정 영역: 헤더 + 속보 + 인사이트 버튼 */}
+      <div className="sticky top-0 z-50">
+        <header className={`${headerClasses} text-white p-4`}>
+          <h1 className="text-xl font-bold">키워드뉴스</h1>
+          <p className="text-sm opacity-90">종합 뉴스</p>
+        </header>
 
-      <BreakingBanner />
+        <BreakingBanner />
 
-      {/* 오늘의 Insight 버튼 (Feature Flag로 제어) */}
-      {FEATURE_FLAGS.ENABLE_DAILY_INSIGHT && allNews.length >= 5 && (
-        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex gap-2 p-3 overflow-x-auto">
-            <InsightButton
-              onClick={handleOpenInsight}
-              isLoading={isInsightLoading}
-              disabled={allNews.length < 5}
-            />
+        {/* 오늘의 Insight 버튼 (Feature Flag로 제어) */}
+        {FEATURE_FLAGS.ENABLE_DAILY_INSIGHT && allNews.length >= 5 && (
+          <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex gap-2 p-3 overflow-x-auto">
+              <InsightButton
+                onClick={handleOpenInsight}
+                isLoading={isInsightLoading}
+                disabled={allNews.length < 5}
+              />
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       <main ref={scrollRef} className="pb-20 bg-white dark:bg-gray-900 relative">
         {/* 백그라운드 갱신 인디케이터 (캐시가 있을 때) */}

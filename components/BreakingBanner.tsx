@@ -17,7 +17,7 @@ export default function BreakingBanner() {
       href={latestBreaking.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="block bg-red-600 text-white p-3 sticky top-0 z-40"
+      className="block bg-red-600 text-white p-3"
     >
       <div className="flex items-center gap-2">
         <span className="text-xs font-bold flex-shrink-0">🚨 속보</span>
