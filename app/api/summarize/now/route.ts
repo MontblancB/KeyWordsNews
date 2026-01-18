@@ -172,14 +172,30 @@ async function generateWithGemini(prompt: string): Promise<SummaryResult> {
     throw new Error(errorDetail)
   }
 
-  // JSON 추출
-  const jsonMatch = content.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) {
-    // 실제 응답 내용 일부를 에러에 포함
-    throw new Error(`No JSON found in response. Content preview: "${content.slice(0, 200)}..."`)
-  }
+  // JSON 파싱 (여러 방식 시도)
+  let result: SummaryResult
 
-  const result = JSON.parse(jsonMatch[0]) as SummaryResult
+  // 1. 먼저 직접 파싱 시도 (responseMimeType이 적용된 경우)
+  try {
+    result = JSON.parse(content) as SummaryResult
+  } catch {
+    // 2. 문자열로 감싸진 JSON인 경우 (따옴표 제거 후 시도)
+    let cleanContent = content.trim()
+    if (cleanContent.startsWith('"') && cleanContent.endsWith('"')) {
+      cleanContent = cleanContent.slice(1, -1).replace(/\\"/g, '"').replace(/\\n/g, '\n')
+    }
+
+    try {
+      result = JSON.parse(cleanContent) as SummaryResult
+    } catch {
+      // 3. 정규식으로 JSON 추출 시도
+      const jsonMatch = cleanContent.match(/\{[\s\S]*\}/)
+      if (!jsonMatch) {
+        throw new Error(`No JSON found in response. Content preview: "${content.slice(0, 200)}..."`)
+      }
+      result = JSON.parse(jsonMatch[0]) as SummaryResult
+    }
+  }
   if (!result.summary || !Array.isArray(result.keywords)) {
     throw new Error('Invalid response format')
   }

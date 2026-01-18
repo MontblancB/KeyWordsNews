@@ -106,13 +106,30 @@ ${content}
         throw new Error('Empty response from Gemini API')
       }
 
-      // JSON 파싱
-      const jsonMatch = textContent.match(/\{[\s\S]*\}/)
-      if (!jsonMatch) {
-        throw new Error('No JSON found in response')
-      }
+      // JSON 파싱 (여러 방식 시도)
+      let result: SummaryResult
 
-      const result = JSON.parse(jsonMatch[0]) as SummaryResult
+      // 1. 먼저 직접 파싱 시도 (responseMimeType이 적용된 경우)
+      try {
+        result = JSON.parse(textContent) as SummaryResult
+      } catch {
+        // 2. 문자열로 감싸진 JSON인 경우 (따옴표 제거 후 시도)
+        let cleanContent = textContent.trim()
+        if (cleanContent.startsWith('"') && cleanContent.endsWith('"')) {
+          cleanContent = cleanContent.slice(1, -1).replace(/\\"/g, '"').replace(/\\n/g, '\n')
+        }
+
+        try {
+          result = JSON.parse(cleanContent) as SummaryResult
+        } catch {
+          // 3. 정규식으로 JSON 추출 시도
+          const jsonMatch = cleanContent.match(/\{[\s\S]*\}/)
+          if (!jsonMatch) {
+            throw new Error('No JSON found in response')
+          }
+          result = JSON.parse(jsonMatch[0]) as SummaryResult
+        }
+      }
 
       // 검증
       if (!result.summary || !Array.isArray(result.keywords)) {
