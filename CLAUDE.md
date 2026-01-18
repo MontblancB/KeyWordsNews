@@ -964,29 +964,27 @@ setTimeout(async () => {
 
 ## 최근 업데이트
 
-### v2.19.0 (2026-01-19)
-**TrendNow → SummarizeNow 기능 변경**
+### v2.18.0 (2026-01-19)
+**SummarizeNow 기능 추가 - 뉴스 종합 정리**
 
-#### 변경 사항
-- 🔄 **TrendNow → SummarizeNow**: 기능명 및 목적 변경
-  - 트렌드 분석에서 **뉴스 종합 정리 및 핵심 파악**으로 초점 변경
-  - 더 높은 퀄리티의 요약 및 인사이트 제공
+#### 새로운 기능
+- 📋 **SummarizeNow 버튼**: InsightNow 옆에 종합 정리 버튼 추가
+  - 종합 탭, 토픽 탭, 키워드 탭 모두 적용
+  - 현재 로드된 뉴스들을 AI로 종합 정리
 
-- 📋 **SummarizeNow 기능**:
+- 📝 **SummarizeNow 기능**:
   - **📋 주요 뉴스 종합**: 현재 로드된 뉴스를 주제별로 분류하고 핵심 내용 정리
   - **💡 핵심 포인트**: 독자가 반드시 알아야 할 가장 중요한 사항 3-5개
   - **📊 전체 요약**: 전체 뉴스를 아우르는 2-3문장 요약
   - **🏷️ 핵심 키워드**: 5개 키워드 자동 추출
-  - **🎨 Heroicons 아이콘**: 모달 결과에 Heroicons outline 아이콘 적용
-    - 📋 → ClipboardDocumentListIcon
-    - 💡 → LightBulbIcon
-    - 📊 → GlobeAltIcon
 
-#### 기술적 변경
-- 📄 **components/SummarizeButton.tsx**: 새 버튼 컴포넌트 (DocumentTextIcon 아이콘)
+#### 기술적 개선
+- 📄 **components/SummarizeButton.tsx**: 종합 정리 버튼 (teal 색상, DocumentTextIcon)
 - 📄 **components/SummarizeModal.tsx**: 종합 요약 결과 표시 모달
 - 📄 **app/api/summarize/now/route.ts**: SummarizeNow API (Groq → Gemini → OpenRouter 폴백)
-- 🗑️ **삭제된 파일**: TrendButton.tsx, TrendModal.tsx, app/api/trend/
+- 📄 **app/page.tsx**: 메인 페이지에 SummarizeNow 추가
+- 📄 **app/topics/[category]/page.tsx**: 토픽 페이지에 SummarizeNow 추가
+- 📄 **app/keywords/page.tsx**: 키워드 페이지에 SummarizeNow 추가
 
 #### InsightNow vs SummarizeNow
 | 기능 | InsightNow | SummarizeNow |
@@ -995,30 +993,6 @@ setTimeout(async () => {
 | 분석 | 의미, 영향, 전망 | 주제별 정리, 핵심 포인트, 전체 요약 |
 | 색상 | amber (노란색) | teal (청록색) |
 | 아이콘 | LightBulbIcon | DocumentTextIcon |
-
----
-
-### v2.18.0 (2026-01-19)
-**TrendNow 기능 추가 - 뉴스 트렌드 분석**
-
-#### 새로운 기능
-- 📈 **TrendNow 버튼**: InsightNow 옆에 트렌드 분석 버튼 추가
-  - 종합 탭, 토픽 탭, 키워드 탭 모두 적용
-  - 현재 로드된 뉴스들의 트렌드를 AI로 분석
-
-- 🔥 **트렌드 분석 기능**:
-  - **현재 화제 TOP 5**: 가장 많이 언급되는 주제 순위
-  - **트렌드 분석**: 상승/지속/주목할 신호 트렌드
-  - **키워드 맵**: 주요 키워드와 맥락 분석
-  - **트렌드 요약**: 한 줄로 정리하는 오늘의 뉴스 흐름
-
-#### 기술적 개선
-- 📄 **components/TrendButton.tsx**: 트렌드 분석 버튼 (teal 색상)
-- 📄 **components/TrendModal.tsx**: 트렌드 결과 표시 모달
-- 📄 **app/api/trend/now/route.ts**: TrendNow API (Groq → Gemini → OpenRouter 폴백)
-- 📄 **app/page.tsx**: 메인 페이지에 TrendNow 추가
-- 📄 **app/topics/[category]/page.tsx**: 토픽 페이지에 TrendNow 추가
-- 📄 **app/keywords/page.tsx**: 키워드 페이지에 TrendNow 추가
 
 ---
 
