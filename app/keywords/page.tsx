@@ -16,8 +16,8 @@ import PullToRefreshIndicator from '@/components/PullToRefreshIndicator'
 import { FEATURE_FLAGS } from '@/lib/feature-flags'
 import InsightButton from '@/components/InsightButton'
 import InsightModal from '@/components/InsightModal'
-import TrendButton from '@/components/TrendButton'
-import TrendModal from '@/components/TrendModal'
+import SummarizeButton from '@/components/SummarizeButton'
+import SummarizeModal from '@/components/SummarizeModal'
 
 // 인사이트 데이터 타입
 interface InsightData {
@@ -25,9 +25,9 @@ interface InsightData {
   keywords: string[]
 }
 
-// 트렌드 데이터 타입
-interface TrendData {
-  trends: string
+// 종합 요약 데이터 타입
+interface SummaryData {
+  summary: string
   keywords: string[]
 }
 
@@ -65,12 +65,12 @@ export default function KeywordsPage() {
   const [insightError, setInsightError] = useState<string | null>(null)
 
   // ==========================================
-  // TrendNow 기능 (Feature Flag로 제어)
+  // SummarizeNow 기능 (Feature Flag로 제어)
   // ==========================================
-  const [isTrendModalOpen, setIsTrendModalOpen] = useState(false)
-  const [isTrendLoading, setIsTrendLoading] = useState(false)
-  const [trendData, setTrendData] = useState<TrendData | null>(null)
-  const [trendError, setTrendError] = useState<string | null>(null)
+  const [isSummarizeModalOpen, setIsSummarizeModalOpen] = useState(false)
+  const [isSummarizeLoading, setIsSummarizeLoading] = useState(false)
+  const [summaryData, setSummaryData] = useState<SummaryData | null>(null)
+  const [summarizeError, setSummarizeError] = useState<string | null>(null)
 
   // 인사이트 모달 열기 및 API 호출
   const handleOpenInsight = useCallback(async () => {
@@ -120,29 +120,29 @@ export default function KeywordsPage() {
     setIsInsightModalOpen(false)
   }, [isInsightLoading])
 
-  // 트렌드 모달 열기 및 API 호출
-  const handleOpenTrend = useCallback(async () => {
+  // 종합 요약 모달 열기 및 API 호출
+  const handleOpenSummarize = useCallback(async () => {
     if (!FEATURE_FLAGS.ENABLE_DAILY_INSIGHT) return
 
-    const allNewsForTrend = data?.pages.flatMap((page) => page.data) || []
-    if (allNewsForTrend.length < 5) return
+    const allNewsForSummarize = data?.pages.flatMap((page) => page.data) || []
+    if (allNewsForSummarize.length < 5) return
 
     // 상태 초기화
-    setIsTrendModalOpen(true)
-    setIsTrendLoading(true)
-    setTrendData(null)
-    setTrendError(null)
+    setIsSummarizeModalOpen(true)
+    setIsSummarizeLoading(true)
+    setSummaryData(null)
+    setSummarizeError(null)
 
     try {
       // 현재 로드된 모든 뉴스 사용
-      const newsForApi = allNewsForTrend.map((news) => ({
+      const newsForApi = allNewsForSummarize.map((news) => ({
         title: news.title,
         summary: news.summary || '',
         source: news.source,
         category: news.category,
       }))
 
-      const response = await fetch('/api/trend/now', {
+      const response = await fetch('/api/summarize/now', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ newsList: newsForApi }),
@@ -154,19 +154,19 @@ export default function KeywordsPage() {
         throw new Error(result.error || `HTTP ${response.status}`)
       }
 
-      setTrendData(result.data)
+      setSummaryData(result.data)
     } catch (error) {
-      setTrendError(error instanceof Error ? error.message : '알 수 없는 오류')
+      setSummarizeError(error instanceof Error ? error.message : '알 수 없는 오류')
     } finally {
-      setIsTrendLoading(false)
+      setIsSummarizeLoading(false)
     }
   }, [data])
 
-  // 트렌드 모달 닫기
-  const handleCloseTrend = useCallback(() => {
-    if (isTrendLoading) return // 로딩 중에는 닫지 않음
-    setIsTrendModalOpen(false)
-  }, [isTrendLoading])
+  // 종합 요약 모달 닫기
+  const handleCloseSummarize = useCallback(() => {
+    if (isSummarizeLoading) return // 로딩 중에는 닫지 않음
+    setIsSummarizeModalOpen(false)
+  }, [isSummarizeLoading])
 
   // Pull-to-Refresh: 쿼리 리셋으로 완전히 새로 가져오기
   const pullToRefresh = usePullToRefresh({
@@ -239,7 +239,7 @@ export default function KeywordsPage() {
           />
         )}
 
-        {/* InsightNow & TrendNow 버튼 (Feature Flag로 제어) */}
+        {/* InsightNow & SummarizeNow 버튼 (Feature Flag로 제어) */}
         {FEATURE_FLAGS.ENABLE_DAILY_INSIGHT && hasKeywords && activeKeyword && allNews.length >= 5 && (
           <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
             <div className="flex gap-2 p-3 overflow-x-auto">
@@ -248,9 +248,9 @@ export default function KeywordsPage() {
                 isLoading={isInsightLoading}
                 disabled={allNews.length < 5}
               />
-              <TrendButton
-                onClick={handleOpenTrend}
-                isLoading={isTrendLoading}
+              <SummarizeButton
+                onClick={handleOpenSummarize}
+                isLoading={isSummarizeLoading}
                 disabled={allNews.length < 5}
               />
             </div>
@@ -351,14 +351,14 @@ export default function KeywordsPage() {
         />
       )}
 
-      {/* TrendNow 모달 (Feature Flag로 제어) */}
+      {/* SummarizeNow 모달 (Feature Flag로 제어) */}
       {FEATURE_FLAGS.ENABLE_DAILY_INSIGHT && (
-        <TrendModal
-          isOpen={isTrendModalOpen}
-          onClose={handleCloseTrend}
-          isLoading={isTrendLoading}
-          trendData={trendData}
-          error={trendError}
+        <SummarizeModal
+          isOpen={isSummarizeModalOpen}
+          onClose={handleCloseSummarize}
+          isLoading={isSummarizeLoading}
+          summaryData={summaryData}
+          error={summarizeError}
           newsCount={allNews.length}
         />
       )}

@@ -1,26 +1,26 @@
 'use client'
 
-import { ArrowTrendingUpIcon } from '@heroicons/react/24/outline'
+import { DocumentTextIcon } from '@heroicons/react/24/outline'
 
-interface TrendButtonProps {
+interface SummarizeButtonProps {
   onClick: () => void
   isLoading: boolean
   disabled?: boolean
 }
 
 /**
- * TrendButton
+ * SummarizeButton
  *
- * "TrendNow" 버튼 컴포넌트입니다.
- * 현재 로드된 뉴스의 트렌드를 AI로 분석합니다.
+ * "SummarizeNow" 버튼 컴포넌트입니다.
+ * 현재 로드된 뉴스들을 AI로 종합 정리합니다.
  *
  * @feature ENABLE_DAILY_INSIGHT
  */
-export default function TrendButton({
+export default function SummarizeButton({
   onClick,
   isLoading,
   disabled = false,
-}: TrendButtonProps) {
+}: SummarizeButtonProps) {
   const isDisabled = disabled || isLoading
 
   return (
@@ -36,17 +36,17 @@ export default function TrendButton({
             : 'bg-teal-500 hover:bg-teal-600 active:bg-teal-700 text-white shadow-sm hover:shadow'
         }
       `}
-      title={disabled ? '뉴스가 5개 이상 필요합니다' : '현재 뉴스의 트렌드를 AI로 분석합니다'}
+      title={disabled ? '뉴스가 5개 이상 필요합니다' : '현재 뉴스들을 AI로 종합 정리합니다'}
     >
       {isLoading ? (
         <>
           <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-          <span>분석 중...</span>
+          <span>요약 중...</span>
         </>
       ) : (
         <>
-          <ArrowTrendingUpIcon className="w-4 h-4" />
-          <span>TrendNow</span>
+          <DocumentTextIcon className="w-4 h-4" />
+          <span>SummarizeNow</span>
         </>
       )}
     </button>
