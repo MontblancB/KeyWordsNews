@@ -2,7 +2,6 @@
 
 import { useEffect, useCallback } from 'react'
 import {
-  XMarkIcon,
   LightBulbIcon,
   ExclamationCircleIcon,
   SparklesIcon,
@@ -18,8 +17,7 @@ interface InsightData {
 interface InsightModalProps {
   isOpen: boolean
   onClose: () => void
-  isStreaming: boolean
-  streamingContent: string
+  isLoading: boolean
   insightData: InsightData | null
   error: string | null
   newsCount: number
@@ -29,15 +27,13 @@ interface InsightModalProps {
  * InsightModal
  *
  * InsightNow를 표시하는 풀스크린 모달 컴포넌트입니다.
- * SSE 스트리밍을 통해 실시간으로 인사이트가 생성되는 것을 보여줍니다.
  *
  * @feature ENABLE_DAILY_INSIGHT
  */
 export default function InsightModal({
   isOpen,
   onClose,
-  isStreaming,
-  streamingContent,
+  isLoading,
   insightData,
   error,
   newsCount,
@@ -45,11 +41,11 @@ export default function InsightModal({
   // ESC 키로 닫기
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !isStreaming) {
+      if (e.key === 'Escape' && !isLoading) {
         onClose()
       }
     },
-    [onClose, isStreaming]
+    [onClose, isLoading]
   )
 
   useEffect(() => {
@@ -66,9 +62,6 @@ export default function InsightModal({
   }, [isOpen, handleKeyDown])
 
   if (!isOpen) return null
-
-  // 표시할 콘텐츠 결정
-  const displayContent = insightData?.insights || streamingContent
 
   // Heroicons outline SVG (인라인)
   const chartBarIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="inline-block w-5 h-5 mr-1 text-amber-600 dark:text-amber-400 align-text-bottom"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" /></svg>`
@@ -89,7 +82,7 @@ export default function InsightModal({
       {/* 배경 오버레이 */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={() => !isStreaming && onClose()}
+        onClick={() => !isLoading && onClose()}
       />
 
       {/* 모달 박스 */}
@@ -121,39 +114,39 @@ export default function InsightModal({
                 onClick={onClose}
                 className="mt-3 px-4 py-2 bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-200 rounded-lg text-sm hover:bg-red-200 dark:hover:bg-red-700 transition-colors flex items-center gap-2"
               >
-                <XMarkIcon className="w-4 h-4" />
                 닫기
               </button>
             </div>
           )}
 
-          {/* 스트리밍/완료 상태 */}
-          {!error && (
+          {/* 로딩 상태 */}
+          {!error && isLoading && (
+            <div className="flex flex-col items-center justify-center py-12">
+              <SparklesIcon className="w-12 h-12 text-amber-500 animate-pulse mb-4" />
+              <p className="text-gray-600 dark:text-gray-400 text-center">
+                AI가 뉴스를 분석하고 있습니다...
+              </p>
+              <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
+                잠시만 기다려주세요
+              </p>
+            </div>
+          )}
+
+          {/* 결과 표시 */}
+          {!error && !isLoading && insightData && (
             <>
               {/* 인사이트 콘텐츠 */}
               <div className="prose prose-sm dark:prose-invert max-w-none">
-                {displayContent ? (
-                  <div
-                    className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap"
-                    dangerouslySetInnerHTML={{
-                      __html: formatContent(displayContent),
-                    }}
-                  />
-                ) : (
-                  <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
-                    <SparklesIcon className="w-5 h-5 text-amber-500 animate-pulse" />
-                    <span>AI가 뉴스를 분석하고 있습니다...</span>
-                  </div>
-                )}
-
-                {/* 스트리밍 중 커서 */}
-                {isStreaming && displayContent && (
-                  <span className="inline-block w-2 h-4 bg-amber-500 animate-pulse ml-0.5" />
-                )}
+                <div
+                  className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap"
+                  dangerouslySetInnerHTML={{
+                    __html: formatContent(insightData.insights),
+                  }}
+                />
               </div>
 
-              {/* 키워드 배지 (완료 후) */}
-              {insightData?.keywords && insightData.keywords.length > 0 && (
+              {/* 키워드 배지 */}
+              {insightData.keywords && insightData.keywords.length > 0 && (
                 <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
                   <div className="flex items-center gap-1.5 mb-2">
                     <TagIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
@@ -178,7 +171,7 @@ export default function InsightModal({
         </div>
 
         {/* 푸터 (완료 후) */}
-        {!isStreaming && !error && insightData && (
+        {!isLoading && !error && insightData && (
           <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
             <button
               onClick={onClose}

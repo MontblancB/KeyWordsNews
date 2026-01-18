@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import Groq from 'groq-sdk'
 import { FEATURE_FLAGS } from '@/lib/feature-flags'
 
@@ -46,10 +46,8 @@ ${newsText}
 }`
 }
 
-// Groq 스트리밍 함수
-async function* streamWithGroq(
-  prompt: string
-): AsyncGenerator<{ type: string; content?: string; result?: InsightResult; error?: string }> {
+// Groq API 호출 함수
+async function generateWithGroq(prompt: string): Promise<InsightResult> {
   const groq = new Groq({
     apiKey: process.env.GROQ_API_KEY,
   })
@@ -63,40 +61,21 @@ async function* streamWithGroq(
     temperature: 0.4,
     max_tokens: 2500,
     response_format: { type: 'json_object' },
-    stream: true,
   })
 
-  let fullContent = ''
+  const content = response.choices[0]?.message?.content || ''
 
-  for await (const chunk of response) {
-    const delta = chunk.choices[0]?.delta?.content
-
-    if (delta) {
-      fullContent += delta
-      yield { type: 'token', content: delta }
-    }
+  const result = JSON.parse(content) as InsightResult
+  if (!result.insights || !Array.isArray(result.keywords)) {
+    throw new Error('Invalid response format')
   }
+  result.keywords = result.keywords.slice(0, 5)
 
-  // 최종 결과 파싱
-  try {
-    const result = JSON.parse(fullContent) as InsightResult
-    if (!result.insights || !Array.isArray(result.keywords)) {
-      throw new Error('Invalid response format')
-    }
-    result.keywords = result.keywords.slice(0, 5)
-    yield { type: 'done', result }
-  } catch {
-    yield {
-      type: 'done',
-      result: { insights: fullContent, keywords: [] },
-    }
-  }
+  return result
 }
 
-// OpenRouter 스트리밍 함수 (폴백)
-async function* streamWithOpenRouter(
-  prompt: string
-): AsyncGenerator<{ type: string; content?: string; result?: InsightResult; error?: string }> {
+// OpenRouter API 호출 함수 (폴백)
+async function generateWithOpenRouter(prompt: string): Promise<InsightResult> {
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -113,7 +92,6 @@ async function* streamWithOpenRouter(
       ],
       temperature: 0.4,
       max_tokens: 2500,
-      stream: true,
     }),
   })
 
@@ -121,69 +99,28 @@ async function* streamWithOpenRouter(
     throw new Error(`OpenRouter API error: ${response.status}`)
   }
 
-  const reader = response.body?.getReader()
-  if (!reader) {
-    throw new Error('No response body from OpenRouter')
+  const data = await response.json()
+  const content = data.choices?.[0]?.message?.content || ''
+
+  // JSON 추출 (마크다운 코드 블록 처리)
+  const jsonMatch = content.match(/\{[\s\S]*\}/)
+  if (!jsonMatch) {
+    throw new Error('No JSON found in response')
   }
 
-  const decoder = new TextDecoder()
-  let buffer = ''
-  let fullContent = ''
-
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-
-    buffer += decoder.decode(value, { stream: true })
-    const lines = buffer.split('\n')
-    buffer = lines.pop() || ''
-
-    for (const line of lines) {
-      if (line.startsWith('data: ')) {
-        const data = line.slice(6)
-        if (data === '[DONE]') continue
-
-        try {
-          const parsed = JSON.parse(data)
-          const delta = parsed.choices?.[0]?.delta?.content
-
-          if (delta) {
-            fullContent += delta
-            yield { type: 'token', content: delta }
-          }
-        } catch {
-          // JSON 파싱 실패 무시
-        }
-      }
-    }
+  const result = JSON.parse(jsonMatch[0]) as InsightResult
+  if (!result.insights || !Array.isArray(result.keywords)) {
+    throw new Error('Invalid response format')
   }
+  result.keywords = result.keywords.slice(0, 5)
 
-  // 최종 결과 파싱
-  try {
-    // JSON 추출 (마크다운 코드 블록 처리)
-    const jsonMatch = fullContent.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) {
-      throw new Error('No JSON found')
-    }
-
-    const result = JSON.parse(jsonMatch[0]) as InsightResult
-    if (!result.insights || !Array.isArray(result.keywords)) {
-      throw new Error('Invalid response format')
-    }
-    result.keywords = result.keywords.slice(0, 5)
-    yield { type: 'done', result }
-  } catch {
-    yield {
-      type: 'done',
-      result: { insights: fullContent, keywords: [] },
-    }
-  }
+  return result
 }
 
 /**
  * POST /api/insight/daily
  *
- * InsightNow API (SSE 스트리밍)
+ * InsightNow API (일반 JSON 응답)
  * 현재 로드된 뉴스들을 종합 분석하여 인사이트를 생성합니다.
  * Groq 실패 시 OpenRouter로 자동 폴백됩니다.
  *
@@ -192,9 +129,9 @@ async function* streamWithOpenRouter(
 export async function POST(request: NextRequest) {
   // Feature Flag 체크
   if (!FEATURE_FLAGS.ENABLE_DAILY_INSIGHT) {
-    return new Response(
-      JSON.stringify({ error: 'Daily Insight feature is disabled' }),
-      { status: 403, headers: { 'Content-Type': 'application/json' } }
+    return NextResponse.json(
+      { error: 'Daily Insight feature is disabled' },
+      { status: 403 }
     )
   }
 
@@ -204,9 +141,9 @@ export async function POST(request: NextRequest) {
 
     // 유효성 검사
     if (!Array.isArray(newsList) || newsList.length < 5) {
-      return new Response(
-        JSON.stringify({ error: '최소 5개의 뉴스가 필요합니다.' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      return NextResponse.json(
+        { error: '최소 5개의 뉴스가 필요합니다.' },
+        { status: 400 }
       )
     }
 
@@ -220,84 +157,56 @@ export async function POST(request: NextRequest) {
 
     const prompt = createPrompt(newsText, newsList.length)
 
-    // SSE 스트리밍 응답
-    const encoder = new TextEncoder()
-    const stream = new ReadableStream({
-      async start(controller) {
-        let useOpenRouter = false
+    let result: InsightResult
+    let provider: string = 'groq'
 
-        // 1차 시도: Groq
-        if (process.env.GROQ_API_KEY) {
-          try {
-            console.log('[InsightNow] Trying Groq...')
-            for await (const chunk of streamWithGroq(prompt)) {
-              if (chunk.type === 'token') {
-                const data = JSON.stringify({ type: 'token', content: chunk.content })
-                controller.enqueue(encoder.encode(`data: ${data}\n\n`))
-              } else if (chunk.type === 'done') {
-                const doneData = JSON.stringify({ type: 'done', result: chunk.result })
-                controller.enqueue(encoder.encode(`data: ${doneData}\n\n`))
-              }
-            }
-            controller.close()
-            return
-          } catch (error) {
-            console.error('[InsightNow] Groq failed:', error)
-            useOpenRouter = true
-          }
-        } else {
-          useOpenRouter = true
-        }
-
-        // 2차 시도: OpenRouter (폴백)
-        if (useOpenRouter && process.env.OPENROUTER_API_KEY) {
-          try {
-            console.log('[InsightNow] Falling back to OpenRouter...')
-            for await (const chunk of streamWithOpenRouter(prompt)) {
-              if (chunk.type === 'token') {
-                const data = JSON.stringify({ type: 'token', content: chunk.content })
-                controller.enqueue(encoder.encode(`data: ${data}\n\n`))
-              } else if (chunk.type === 'done') {
-                const doneData = JSON.stringify({ type: 'done', result: chunk.result })
-                controller.enqueue(encoder.encode(`data: ${doneData}\n\n`))
-              }
-            }
-            controller.close()
-            return
-          } catch (error) {
-            console.error('[InsightNow] OpenRouter failed:', error)
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-            const errorData = JSON.stringify({ type: 'error', error: `모든 AI 프로바이더 실패: ${errorMessage}` })
-            controller.enqueue(encoder.encode(`data: ${errorData}\n\n`))
-            controller.close()
-            return
-          }
-        }
-
-        // 모든 프로바이더 사용 불가
-        const errorData = JSON.stringify({
-          type: 'error',
-          error: 'AI API 키가 설정되지 않았습니다. GROQ_API_KEY 또는 OPENROUTER_API_KEY를 설정해주세요.',
+    // 1차 시도: Groq
+    if (process.env.GROQ_API_KEY) {
+      try {
+        console.log('[InsightNow] Trying Groq...')
+        result = await generateWithGroq(prompt)
+        return NextResponse.json({
+          success: true,
+          data: result,
+          provider,
         })
-        controller.enqueue(encoder.encode(`data: ${errorData}\n\n`))
-        controller.close()
-      },
-    })
+      } catch (error) {
+        console.error('[InsightNow] Groq failed:', error)
+        // 폴백으로 진행
+      }
+    }
 
-    return new Response(stream, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        Connection: 'keep-alive',
-      },
-    })
+    // 2차 시도: OpenRouter (폴백)
+    if (process.env.OPENROUTER_API_KEY) {
+      try {
+        console.log('[InsightNow] Falling back to OpenRouter...')
+        provider = 'openrouter'
+        result = await generateWithOpenRouter(prompt)
+        return NextResponse.json({
+          success: true,
+          data: result,
+          provider,
+        })
+      } catch (error) {
+        console.error('[InsightNow] OpenRouter failed:', error)
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+        return NextResponse.json(
+          { error: `모든 AI 프로바이더 실패: ${errorMessage}` },
+          { status: 500 }
+        )
+      }
+    }
+
+    // 모든 프로바이더 사용 불가
+    return NextResponse.json(
+      { error: 'AI API 키가 설정되지 않았습니다. GROQ_API_KEY 또는 OPENROUTER_API_KEY를 설정해주세요.' },
+      { status: 500 }
+    )
   } catch (error) {
     console.error('[Daily Insight API Error]', error)
-    return new Response(
-      JSON.stringify({
-        error: error instanceof Error ? error.message : 'Unknown error',
-      }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
     )
   }
 }

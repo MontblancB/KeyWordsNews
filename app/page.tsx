@@ -41,8 +41,6 @@ export default function HomePage() {
   // ==========================================
   const [isInsightModalOpen, setIsInsightModalOpen] = useState(false)
   const [isInsightLoading, setIsInsightLoading] = useState(false)
-  const [isInsightStreaming, setIsInsightStreaming] = useState(false)
-  const [insightStreamingContent, setInsightStreamingContent] = useState('')
   const [insightData, setInsightData] = useState<InsightData | null>(null)
   const [insightError, setInsightError] = useState<string | null>(null)
 
@@ -56,8 +54,6 @@ export default function HomePage() {
     // 상태 초기화
     setIsInsightModalOpen(true)
     setIsInsightLoading(true)
-    setIsInsightStreaming(true)
-    setInsightStreamingContent('')
     setInsightData(null)
     setInsightError(null)
 
@@ -76,62 +72,25 @@ export default function HomePage() {
         body: JSON.stringify({ newsList: newsForApi }),
       })
 
+      const result = await response.json()
+
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`)
+        throw new Error(result.error || `HTTP ${response.status}`)
       }
 
-      const reader = response.body?.getReader()
-      if (!reader) {
-        throw new Error('No response body')
-      }
-
-      const decoder = new TextDecoder()
-      let buffer = ''
-
-      setIsInsightLoading(false)
-
-      // SSE 스트리밍 처리
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n\n')
-        buffer = lines.pop() || ''
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6))
-
-              if (data.type === 'token') {
-                setInsightStreamingContent((prev) => prev + data.content)
-              } else if (data.type === 'done') {
-                setInsightData(data.result)
-                setIsInsightStreaming(false)
-              } else if (data.type === 'error') {
-                setInsightError(data.error)
-                setIsInsightStreaming(false)
-              }
-            } catch {
-              // JSON 파싱 실패 무시
-            }
-          }
-        }
-      }
+      setInsightData(result.data)
     } catch (error) {
       setInsightError(error instanceof Error ? error.message : '알 수 없는 오류')
+    } finally {
       setIsInsightLoading(false)
-      setIsInsightStreaming(false)
     }
   }, [data])
 
   // 인사이트 모달 닫기
   const handleCloseInsight = useCallback(() => {
-    if (isInsightStreaming) return // 스트리밍 중에는 닫지 않음
+    if (isInsightLoading) return // 로딩 중에는 닫지 않음
     setIsInsightModalOpen(false)
-    // 다음 열기를 위해 상태 초기화는 열 때 수행
-  }, [isInsightStreaming])
+  }, [isInsightLoading])
 
   // Pull-to-Refresh: 쿼리 리셋으로 완전히 새로 가져오기
   const pullToRefresh = usePullToRefresh({
@@ -258,8 +217,7 @@ export default function HomePage() {
         <InsightModal
           isOpen={isInsightModalOpen}
           onClose={handleCloseInsight}
-          isStreaming={isInsightStreaming}
-          streamingContent={insightStreamingContent}
+          isLoading={isInsightLoading}
           insightData={insightData}
           error={insightError}
           newsCount={allNews.length}
