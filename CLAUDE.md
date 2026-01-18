@@ -17,7 +17,7 @@
 ### 배포 정보
 - **배포 URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
-- **현재 버전**: 2.16.0
+- **현재 버전**: 2.16.1
 - **마지막 업데이트**: 2026-01-18
 
 ---
@@ -964,13 +964,36 @@ setTimeout(async () => {
 
 ## 최근 업데이트
 
+### v2.16.1 (2026-01-18)
+**AI 기능 안정성 개선**
+
+#### 버그 수정
+- 🔧 **AI 요약 폴백 로직 수정**: 스트리밍 API → 일반 API로 변경
+  - 기존: `/api/news/summarize/stream` (Groq만 사용, 폴백 없음)
+  - 변경: `/api/news/summarize` (Groq → OpenRouter 폴백 지원)
+  - Groq API 오류 시 OpenRouter로 자동 전환
+
+#### 리팩토링
+- 🔄 **InsightNow 스트리밍 제거**: SSE → 일반 JSON 응답으로 변경
+  - 응답 안정성 향상
+  - 코드 복잡도 감소
+  - OpenRouter 폴백 정상 동작
+
+#### 수정된 파일
+- 📄 `components/AISummary.tsx`: 스트리밍 API → 일반 API 사용
+- 📄 `app/api/insight/daily/route.ts`: SSE → JSON 응답
+- 📄 `components/InsightModal.tsx`: 스트리밍 UI 제거
+- 📄 `app/page.tsx`, `app/topics/[category]/page.tsx`, `app/keywords/page.tsx`: 스트리밍 상태 제거
+
+---
+
 ### v2.16.0 (2026-01-18)
 **오늘의 Insight 기능 추가**
 
 #### 새로운 기능
 - 💡 **오늘의 Insight**: 종합탭에서 현재 로드된 뉴스(최대 30개)를 AI로 종합 분석
   - Groq AI (Llama 3.3 70B) 활용
-  - SSE 스트리밍으로 실시간 타이핑 효과
+  - OpenRouter 폴백 지원
   - 주요 이슈 분류 (3-5개 카테고리)
   - 종합 인사이트 (트렌드, 주목할 점, 전망)
   - 핵심 키워드 5개 추출
@@ -982,7 +1005,7 @@ setTimeout(async () => {
 
 #### 추가된 파일
 - 📄 `lib/feature-flags.ts`: Feature Flag 설정 파일
-- 📄 `app/api/insight/daily/route.ts`: 인사이트 API (SSE 스트리밍)
+- 📄 `app/api/insight/daily/route.ts`: 인사이트 API
 - 📄 `components/InsightButton.tsx`: 인사이트 버튼 컴포넌트
 - 📄 `components/InsightModal.tsx`: 인사이트 모달 컴포넌트
 
@@ -1492,4 +1515,4 @@ git commit -m "fix: 버그 수정
 ---
 
 **Last Updated**: 2026-01-18
-**Version**: 2.16.0
+**Version**: 2.16.1
