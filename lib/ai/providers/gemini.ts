@@ -109,25 +109,32 @@ ${content}
       // JSON 파싱 (여러 방식 시도)
       let result: SummaryResult
 
-      // 1. 먼저 직접 파싱 시도 (responseMimeType이 적용된 경우)
+      // 1. 먼저 직접 파싱 시도
       try {
         result = JSON.parse(textContent) as SummaryResult
       } catch {
-        // 2. 문자열로 감싸진 JSON인 경우 (따옴표 제거 후 시도)
-        let cleanContent = textContent.trim()
-        if (cleanContent.startsWith('"') && cleanContent.endsWith('"')) {
-          cleanContent = cleanContent.slice(1, -1).replace(/\\"/g, '"').replace(/\\n/g, '\n')
-        }
+        // 2. 개행 문자가 이스케이프되지 않은 경우 처리
+        let cleanContent = textContent
+          .replace(/\n/g, '\\n')
+          .replace(/\r/g, '\\r')
+          .replace(/\t/g, '\\t')
 
         try {
           result = JSON.parse(cleanContent) as SummaryResult
         } catch {
           // 3. 정규식으로 JSON 추출 시도
-          const jsonMatch = cleanContent.match(/\{[\s\S]*\}/)
+          const jsonMatch = textContent.match(/\{[\s\S]*\}/)
           if (!jsonMatch) {
             throw new Error('No JSON found in response')
           }
-          result = JSON.parse(jsonMatch[0]) as SummaryResult
+
+          // 추출된 JSON에 대해 개행 문자 처리
+          let extractedJson = jsonMatch[0]
+            .replace(/\n/g, '\\n')
+            .replace(/\r/g, '\\r')
+            .replace(/\t/g, '\\t')
+
+          result = JSON.parse(extractedJson) as SummaryResult
         }
       }
 

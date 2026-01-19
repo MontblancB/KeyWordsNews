@@ -174,26 +174,48 @@ async function generateWithGemini(prompt: string): Promise<SummaryResult> {
 
   // JSON 파싱 (여러 방식 시도)
   let result: SummaryResult
+  let parseError: string = ''
 
-  // 1. 먼저 직접 파싱 시도 (responseMimeType이 적용된 경우)
+  // 디버깅: content 시작/끝 확인
+  console.log('[Gemini] Content length:', content.length)
+  console.log('[Gemini] Content start:', content.slice(0, 100))
+  console.log('[Gemini] Content end:', content.slice(-100))
+
+  // 1. 먼저 직접 파싱 시도
   try {
     result = JSON.parse(content) as SummaryResult
-  } catch {
-    // 2. 문자열로 감싸진 JSON인 경우 (따옴표 제거 후 시도)
-    let cleanContent = content.trim()
-    if (cleanContent.startsWith('"') && cleanContent.endsWith('"')) {
-      cleanContent = cleanContent.slice(1, -1).replace(/\\"/g, '"').replace(/\\n/g, '\n')
-    }
+  } catch (e1) {
+    parseError = `Direct parse failed: ${e1 instanceof Error ? e1.message : 'unknown'}`
+
+    // 2. 개행 문자가 이스케이프되지 않은 경우 처리
+    let cleanContent = content
+      .replace(/\n/g, '\\n')  // 실제 개행을 이스케이프된 개행으로
+      .replace(/\r/g, '\\r')  // 캐리지 리턴 처리
+      .replace(/\t/g, '\\t')  // 탭 처리
 
     try {
       result = JSON.parse(cleanContent) as SummaryResult
-    } catch {
+    } catch (e2) {
+      parseError += ` | Escaped parse failed: ${e2 instanceof Error ? e2.message : 'unknown'}`
+
       // 3. 정규식으로 JSON 추출 시도
-      const jsonMatch = cleanContent.match(/\{[\s\S]*\}/)
+      const jsonMatch = content.match(/\{[\s\S]*\}/)
       if (!jsonMatch) {
-        throw new Error(`No JSON found in response. Content preview: "${content.slice(0, 200)}..."`)
+        throw new Error(`No JSON found in response. Content preview: "${content.slice(0, 200)}..." | Errors: ${parseError}`)
       }
-      result = JSON.parse(jsonMatch[0]) as SummaryResult
+
+      // 추출된 JSON에 대해 개행 문자 처리
+      let extractedJson = jsonMatch[0]
+        .replace(/\n/g, '\\n')
+        .replace(/\r/g, '\\r')
+        .replace(/\t/g, '\\t')
+
+      try {
+        result = JSON.parse(extractedJson) as SummaryResult
+      } catch (e3) {
+        parseError += ` | Regex parse failed: ${e3 instanceof Error ? e3.message : 'unknown'}`
+        throw new Error(`JSON parse failed. Content preview: "${content.slice(0, 200)}..." | Errors: ${parseError}`)
+      }
     }
   }
   if (!result.summary || !Array.isArray(result.keywords)) {
