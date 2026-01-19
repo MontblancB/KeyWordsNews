@@ -127,12 +127,12 @@ export default function SummarizeModal({
 
           {/* 로딩 상태 */}
           {!error && isLoading && (
-            <div className="flex flex-col items-center justify-center py-12">
-              <SparklesIcon className="w-12 h-12 text-teal-500 animate-pulse mb-4" />
-              <p className="text-gray-600 dark:text-gray-400 text-center">
+            <div className="flex flex-col items-center justify-center py-6">
+              <SparklesIcon className="w-10 h-10 text-teal-500 animate-pulse mb-3" />
+              <p className="text-gray-600 dark:text-gray-400 text-center text-sm">
                 AI가 뉴스를 종합 정리하고 있습니다...
               </p>
-              <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
+              <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">
                 잠시만 기다려주세요
               </p>
             </div>
