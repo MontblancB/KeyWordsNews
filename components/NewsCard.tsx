@@ -86,32 +86,35 @@ export default function NewsCard({ news, hideSource = false }: NewsCardProps) {
       {/* AI 기능 (링크 밖에 배치) */}
       {hasAIFeatures && news.id && (
         <div className="px-4 pb-4">
-          {/* AI 요약 */}
-          {isAISummaryEnabled && (
-            <AISummary
-              newsId={news.id}
-              url={news.url}
-              title={news.title}
-              summary={news.summary}
-              initialSummary={news.aiSummary}
-              initialKeywords={news.aiKeywords}
-              initialProvider={news.aiProvider}
-            />
-          )}
+          {/* AI 버튼들을 가로로 배치 */}
+          <div className="flex gap-2 mt-3">
+            {/* AI 요약 */}
+            {isAISummaryEnabled && (
+              <AISummary
+                newsId={news.id}
+                url={news.url}
+                title={news.title}
+                summary={news.summary}
+                initialSummary={news.aiSummary}
+                initialKeywords={news.aiKeywords}
+                initialProvider={news.aiProvider}
+              />
+            )}
 
-          {/* 전문가 의견 */}
-          {isNewsInsightEnabled && (
-            <NewsInsight
-              newsId={news.id}
-              url={news.url}
-              title={news.title}
-              summary={news.summary}
-              category={news.category}
-              initialInsight={news.aiInsight}
-              initialExpert={news.aiInsightExpert}
-              initialProvider={news.aiInsightProvider}
-            />
-          )}
+            {/* 전문가 의견 */}
+            {isNewsInsightEnabled && (
+              <NewsInsight
+                newsId={news.id}
+                url={news.url}
+                title={news.title}
+                summary={news.summary}
+                category={news.category}
+                initialInsight={news.aiInsight}
+                initialExpert={news.aiInsightExpert}
+                initialProvider={news.aiInsightProvider}
+              />
+            )}
+          </div>
         </div>
       )}
     </article>

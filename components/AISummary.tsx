@@ -92,7 +92,7 @@ export default function AISummary({
   // 완료된 요약 표시
   if (summaryData) {
     return (
-      <div className="mt-3">
+      <div>
         {/* 토글 버튼 */}
         <button
           onClick={() => setIsExpanded(!isExpanded)}
@@ -174,7 +174,7 @@ export default function AISummary({
 
   // 요약 버튼
   return (
-    <div className="mt-3">
+    <div>
       <button
         onClick={handleSummarize}
         disabled={loading}
