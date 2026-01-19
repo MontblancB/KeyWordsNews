@@ -9,6 +9,46 @@ interface TradingViewChartProps {
   dateRange?: '1D' | '1W' | '1M' | '3M' | '12M' | '60M' | 'ALL'
 }
 
+// dateRange를 TradingView interval로 변환
+function getIntervalFromDateRange(dateRange: string): string {
+  switch (dateRange) {
+    case '1D':
+      return '15' // 15분봉
+    case '1W':
+      return '60' // 1시간봉
+    case '1M':
+      return 'D' // 일봉
+    case '3M':
+      return 'D' // 일봉
+    case '12M':
+      return 'W' // 주봉
+    case '60M':
+      return 'M' // 월봉
+    default:
+      return 'D'
+  }
+}
+
+// dateRange를 TradingView range로 변환
+function getRangeFromDateRange(dateRange: string): string {
+  switch (dateRange) {
+    case '1D':
+      return '1D'
+    case '1W':
+      return '5D'
+    case '1M':
+      return '1M'
+    case '3M':
+      return '3M'
+    case '12M':
+      return '12M'
+    case '60M':
+      return '60M'
+    default:
+      return '3M'
+  }
+}
+
 function TradingViewChartComponent({
   symbol,
   height = 400,
@@ -32,10 +72,12 @@ function TradingViewChartComponent({
 
     // 테마 결정 (기본값: light)
     const colorTheme = resolvedTheme === 'dark' ? 'dark' : 'light'
+    const interval = getIntervalFromDateRange(dateRange)
+    const range = getRangeFromDateRange(dateRange)
 
-    // TradingView 위젯 스크립트 생성
+    // TradingView Advanced Chart 위젯 스크립트 생성
     const script = document.createElement('script')
-    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js'
+    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js'
     script.type = 'text/javascript'
     script.async = true
     script.innerHTML = JSON.stringify({
@@ -43,13 +85,19 @@ function TradingViewChartComponent({
       width: '100%',
       height: height,
       locale: 'kr',
-      dateRange: dateRange,
-      colorTheme: colorTheme,
-      isTransparent: true,
-      autosize: false,
-      largeChartUrl: '',
-      chartOnly: false,
-      noTimeScale: false,
+      interval: interval,
+      range: range,
+      timezone: 'Asia/Seoul',
+      theme: colorTheme,
+      style: '1', // 1 = 캔들차트
+      enable_publishing: false,
+      hide_top_toolbar: false,
+      hide_legend: false,
+      hide_side_toolbar: true,
+      allow_symbol_change: false,
+      save_image: false,
+      calendar: false,
+      support_host: 'https://www.tradingview.com',
     })
 
     containerRef.current.appendChild(script)
