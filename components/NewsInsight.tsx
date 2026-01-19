@@ -130,87 +130,87 @@ export default function NewsInsight({
   // 완료된 인사이트 표시
   if (insightData) {
     return (
-      <div>
-        {/* 토글 버튼 */}
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="flex items-center justify-between w-full px-3 py-1.5 text-sm font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 rounded-lg transition-colors"
-        >
-          <div className="flex items-center gap-1.5">
+      <>
+        {/* 버튼 (order: 2) */}
+        <div style={{ order: 2 }}>
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 rounded-lg transition-colors"
+          >
             <LightBulbIconSolid className="w-4 h-4" />
             <span>전문가 의견</span>
-            {insightData.expert && (
-              <span className="text-xs text-amber-500 dark:text-amber-400">
-                ({insightData.expert})
-              </span>
-            )}
             {insightData.cached && (
               <span className="text-xs text-amber-500 dark:text-amber-400">(캐시)</span>
             )}
-          </div>
-          {isExpanded ? (
-            <ChevronUpIcon className="w-4 h-4" />
-          ) : (
-            <ChevronDownIcon className="w-4 h-4" />
-          )}
-        </button>
+            {isExpanded ? (
+              <ChevronUpIcon className="w-4 h-4" />
+            ) : (
+              <ChevronDownIcon className="w-4 h-4" />
+            )}
+          </button>
+        </div>
 
-        {/* 인사이트 내용 (토글) */}
+        {/* 내용 (order: 4, 전문가 의견은 AI 요약 아래) */}
         {isExpanded && (
-          <div className="mt-2 p-3 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-            {/* 전문가 배지 */}
-            {insightData.expert && (
-              <div className="flex items-center gap-2 mb-3 pb-2 border-b border-amber-200 dark:border-amber-700">
-                <LightBulbIconSolid className="w-4 h-4 text-amber-500 dark:text-amber-400" />
-                <span className="text-xs font-medium text-amber-700 dark:text-amber-300">
-                  {insightData.expert}의 분석
-                </span>
-              </div>
-            )}
+          <div style={{ order: 4 }} className="w-full">
+            <div className="mt-2 p-3 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+              {/* 전문가 배지 */}
+              {insightData.expert && (
+                <div className="flex items-center gap-2 mb-3 pb-2 border-b border-amber-200 dark:border-amber-700">
+                  <LightBulbIconSolid className="w-4 h-4 text-amber-500 dark:text-amber-400" />
+                  <span className="text-xs font-medium text-amber-700 dark:text-amber-300">
+                    {insightData.expert}의 분석
+                  </span>
+                </div>
+              )}
 
-            {/* 인사이트 내용 */}
-            {renderInsight(insightData.insight)}
+              {/* 인사이트 내용 */}
+              {renderInsight(insightData.insight)}
 
-            {/* Provider 정보 (디버그용) */}
-            {process.env.NODE_ENV === 'development' && (
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-3 pt-2 border-t border-amber-200 dark:border-amber-700">
-                AI: {insightData.provider}
-                {insightData.cached && ' (cached)'}
-              </p>
-            )}
+              {/* Provider 정보 (디버그용) */}
+              {process.env.NODE_ENV === 'development' && (
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-3 pt-2 border-t border-amber-200 dark:border-amber-700">
+                  AI: {insightData.provider}
+                  {insightData.cached && ' (cached)'}
+                </p>
+              )}
+            </div>
           </div>
         )}
-      </div>
+      </>
     )
   }
 
   // 인사이트 버튼
   return (
-    <div>
-      <button
-        onClick={handleGetInsight}
-        disabled={loading}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {loading ? (
-          <>
-            <div className="w-4 h-4 border-2 border-amber-600 dark:border-amber-400 border-t-transparent rounded-full animate-spin" />
-            <span>전문가 의견 생성 중...</span>
-          </>
-        ) : (
-          <>
-            <LightBulbIcon className="w-4 h-4" />
-            <span>전문가 의견</span>
-          </>
-        )}
-      </button>
+    <>
+      {/* 버튼 (order: 2) */}
+      <div style={{ order: 2 }}>
+        <button
+          onClick={handleGetInsight}
+          disabled={loading}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {loading ? (
+            <>
+              <div className="w-4 h-4 border-2 border-amber-600 dark:border-amber-400 border-t-transparent rounded-full animate-spin" />
+              <span>전문가 의견 생성 중...</span>
+            </>
+          ) : (
+            <>
+              <LightBulbIcon className="w-4 h-4" />
+              <span>전문가 의견</span>
+            </>
+          )}
+        </button>
 
-      {/* 에러 메시지 */}
-      {error && (
-        <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-xs text-red-600 dark:text-red-400">
-          {error}
-        </div>
-      )}
-    </div>
+        {/* 에러 메시지 */}
+        {error && (
+          <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-xs text-red-600 dark:text-red-400">
+            {error}
+          </div>
+        )}
+      </div>
+    </>
   )
 }

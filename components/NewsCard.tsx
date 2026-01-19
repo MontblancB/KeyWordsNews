@@ -86,8 +86,8 @@ export default function NewsCard({ news, hideSource = false }: NewsCardProps) {
       {/* AI 기능 (링크 밖에 배치) */}
       {hasAIFeatures && news.id && (
         <div className="px-4 pb-4">
-          {/* AI 버튼들을 가로로 배치 */}
-          <div className="flex gap-2 mt-3">
+          {/* AI 버튼들을 가로로 배치, 내용은 아래에 순서대로 */}
+          <div className="flex flex-wrap gap-2 mt-3">
             {/* AI 요약 */}
             {isAISummaryEnabled && (
               <AISummary
