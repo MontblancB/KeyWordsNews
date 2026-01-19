@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTheme } from 'next-themes'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/solid'
 import { TradingViewChart } from './TradingViewChart'
@@ -31,6 +32,7 @@ export default function TradingViewModal({
 }: TradingViewModalProps) {
   const [dateRange, setDateRange] = useState<DateRange>('3M')
   const [mounted, setMounted] = useState(false)
+  const { resolvedTheme } = useTheme()
 
   // 클라이언트 마운트 확인
   useEffect(() => {
@@ -148,6 +150,7 @@ export default function TradingViewModal({
         <div className="p-2">
           {chartSupported && symbolInfo ? (
             <TradingViewChart
+              key={`${symbolInfo.symbol}-${resolvedTheme}`}
               symbol={symbolInfo.symbol}
               height={350}
               dateRange={dateRange}
