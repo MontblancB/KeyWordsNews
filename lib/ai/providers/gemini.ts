@@ -14,7 +14,7 @@ export class GeminiProvider implements AIProvider {
 
   constructor(config: AIProviderConfig) {
     this.apiKey = config.apiKey
-    this.model = config.model || 'gemini-2.5-flash'
+    this.model = config.model || 'gemini-3.0-flash'  // gemini-2.5-flash → gemini-3.0-flash (응답 잘림 방지)
     this.temperature = config.temperature ?? 0.3
     this.maxTokens = config.maxTokens ?? 2400  // 응답 잘림 방지를 위해 2배 증가 (1200 → 2400)
   }
