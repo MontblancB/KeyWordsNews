@@ -18,7 +18,7 @@
 ### 배포 정보
 - **배포 URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
-- **현재 버전**: 2.20.2
+- **현재 버전**: 2.20.3
 - **마지막 업데이트**: 2026-01-19
 
 ---
@@ -964,6 +964,26 @@ setTimeout(async () => {
 ---
 
 ## 최근 업데이트
+
+### v2.20.3 (2026-01-19)
+**은 시세 원화 표시 및 KOSPI/KOSDAQ 차트 개선**
+
+#### 기능 개선
+- 🥈 **은 시세 원화 표시**: USD/oz → 원/g 단위로 변환
+  - Yahoo Finance에서 은 가격(SI=F)과 환율(KRW=X)을 가져와 변환
+  - 변환 공식: KRW/g = (USD/oz × USD_KRW) / 31.1035
+  - 금 시세와 동일한 단위(원/g)로 표시
+
+- 📈 **KOSPI/KOSDAQ TradingView 심볼 변경**: KRX → TVC
+  - `KRX:KOSPI` → `TVC:KOSPI`
+  - `KRX:KOSDAQ` → `TVC:KOSDAQ`
+  - TVC 심볼이 외부 위젯에서 더 안정적으로 작동
+
+#### 수정된 파일
+- 📄 `lib/api/yahoo-finance.ts`: 은 시세 원화 변환 로직 추가
+- 📄 `lib/tradingview/symbols.ts`: KOSPI/KOSDAQ 심볼을 TVC로 변경
+
+---
 
 ### v2.20.2 (2026-01-19)
 **은 시세 데이터 소스 변경 및 차트 지원 확대**
