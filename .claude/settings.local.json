@@ -75,7 +75,8 @@
       "Bash(상세: [Groq] Rate limit exceeded → [Gemini] API 키 미설정 → [OpenRouter] 402 Payment Required\"\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "WebFetch(domain:ai.google.dev)",
       "mcp__plugin_context7_context7__resolve-library-id",
-      "mcp__plugin_context7_context7__query-docs"
+      "mcp__plugin_context7_context7__query-docs",
+      "Bash(git checkout:*)"
     ]
   },
   "hooks": {
