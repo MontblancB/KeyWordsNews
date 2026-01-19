@@ -130,7 +130,7 @@ export default function NewsInsight({
   // 완료된 인사이트 표시
   if (insightData) {
     return (
-      <div className="mt-2">
+      <div>
         {/* 토글 버튼 */}
         <button
           onClick={() => setIsExpanded(!isExpanded)}
@@ -186,7 +186,7 @@ export default function NewsInsight({
 
   // 인사이트 버튼
   return (
-    <div className="mt-2">
+    <div>
       <button
         onClick={handleGetInsight}
         disabled={loading}
