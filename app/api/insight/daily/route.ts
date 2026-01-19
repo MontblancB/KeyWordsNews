@@ -305,7 +305,7 @@ async function generateWithGroq(prompt: string, systemPrompt: string): Promise<I
 // Gemini API 호출 함수 (2nd 폴백)
 async function generateWithGemini(prompt: string, systemPrompt: string): Promise<InsightResult> {
   const baseUrl = 'https://generativelanguage.googleapis.com/v1beta'
-  const model = process.env.GEMINI_MODEL || 'gemini-3.0-flash'
+  const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash'
 
   const response = await fetch(
     `${baseUrl}/models/${model}:generateContent`,
