@@ -212,13 +212,85 @@ async function generateWithGroq(prompt: string, systemPrompt: string): Promise<I
       { role: 'user', content: prompt },
     ],
     temperature: 0.4,
-    max_tokens: 2500,
+    max_tokens: 4000,  // 2500 → 4000 (긴 인사이트 잘림 방지)
     response_format: { type: 'json_object' },
   })
 
   const content = response.choices[0]?.message?.content || ''
+  const finishReason = response.choices[0]?.finish_reason
 
-  const result = JSON.parse(content) as InsightResult
+  // 디버깅
+  console.log('[Groq] finishReason:', finishReason)
+  console.log('[Groq] Content length:', content.length)
+
+  // finishReason이 length면 응답이 잘렸을 가능성
+  const isTruncated = finishReason === 'length'
+
+  // JSON 파싱 헬퍼 함수
+  function tryParseJson(jsonStr: string): InsightResult | null {
+    try {
+      return JSON.parse(jsonStr) as InsightResult
+    } catch {
+      return null
+    }
+  }
+
+  // 잘린 JSON 복구 시도 함수
+  function tryRepairJson(jsonStr: string): InsightResult | null {
+    const insightsMatch = jsonStr.match(/"insights"\s*:\s*"((?:[^"\\]|\\.)*)/)
+    if (insightsMatch) {
+      const insightsContent = insightsMatch[1]
+      const repairedJson = `{"insights": "${insightsContent}", "keywords": []}`
+      const parsed = tryParseJson(repairedJson)
+      if (parsed) {
+        console.log('[Groq] JSON repaired successfully')
+        return parsed
+      }
+    }
+    return null
+  }
+
+  let result: InsightResult | null = null
+
+  // 1. 직접 파싱 시도
+  result = tryParseJson(content)
+
+  // 2. 실패 시 - 잘린 JSON 복구 시도
+  if (!result && isTruncated) {
+    console.log('[Groq] Response truncated, attempting repair...')
+    result = tryRepairJson(content)
+  }
+
+  // 3. 여전히 실패 - 정규식으로 insights 추출
+  if (!result) {
+    console.log('[Groq] Direct parse failed, trying regex extraction...')
+
+    const insightsRegex = /"insights"\s*:\s*"((?:[^"\\]|\\["\\nrt])*)"/
+    const match = content.match(insightsRegex)
+
+    if (match) {
+      const extractedInsights = match[1]
+        .replace(/\\n/g, '\n')
+        .replace(/\\"/g, '"')
+        .replace(/\\\\/g, '\\')
+
+      const keywordsMatch = content.match(/"keywords"\s*:\s*\[([\s\S]*?)\]/)
+      let keywords: string[] = []
+      if (keywordsMatch) {
+        const keywordsStr = keywordsMatch[1]
+        keywords = keywordsStr.match(/"([^"]+)"/g)?.map((k: string) => k.replace(/"/g, '')) || []
+      }
+
+      result = { insights: extractedInsights, keywords }
+      console.log('[Groq] Extracted via regex, insights length:', extractedInsights.length)
+    }
+  }
+
+  // 4. 최종 실패
+  if (!result) {
+    throw new Error(`JSON parse failed. finishReason: ${finishReason}, Content preview: "${content.slice(0, 200)}..."`)
+  }
+
   if (!result.insights || !Array.isArray(result.keywords)) {
     throw new Error('Invalid response format')
   }
@@ -393,24 +465,94 @@ async function generateWithOpenRouter(prompt: string, systemPrompt: string): Pro
         { role: 'user', content: prompt },
       ],
       temperature: 0.4,
-      max_tokens: 2500,
+      max_tokens: 4000,  // 2500 → 4000 (긴 인사이트 잘림 방지)
     }),
   })
 
   if (!response.ok) {
-    throw new Error(`OpenRouter API error: ${response.status}`)
+    const errorData = await response.json().catch(() => ({}))
+    throw new Error(`OpenRouter API error: ${response.status} - ${JSON.stringify(errorData)}`)
   }
 
   const data = await response.json()
   const content = data.choices?.[0]?.message?.content || ''
+  const finishReason = data.choices?.[0]?.finish_reason
 
-  // JSON 추출 (마크다운 코드 블록 처리)
-  const jsonMatch = content.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) {
-    throw new Error('No JSON found in response')
+  // 디버깅
+  console.log('[OpenRouter] finishReason:', finishReason)
+  console.log('[OpenRouter] Content length:', content.length)
+
+  // finishReason이 length면 응답이 잘렸을 가능성
+  const isTruncated = finishReason === 'length'
+
+  // JSON 파싱 헬퍼 함수
+  function tryParseJson(jsonStr: string): InsightResult | null {
+    try {
+      return JSON.parse(jsonStr) as InsightResult
+    } catch {
+      return null
+    }
   }
 
-  const result = JSON.parse(jsonMatch[0]) as InsightResult
+  // 잘린 JSON 복구 시도 함수
+  function tryRepairJson(jsonStr: string): InsightResult | null {
+    const insightsMatch = jsonStr.match(/"insights"\s*:\s*"((?:[^"\\]|\\.)*)/)
+    if (insightsMatch) {
+      const insightsContent = insightsMatch[1]
+      const repairedJson = `{"insights": "${insightsContent}", "keywords": []}`
+      const parsed = tryParseJson(repairedJson)
+      if (parsed) {
+        console.log('[OpenRouter] JSON repaired successfully')
+        return parsed
+      }
+    }
+    return null
+  }
+
+  let result: InsightResult | null = null
+
+  // 1. JSON 추출 (마크다운 코드 블록 처리)
+  const jsonMatch = content.match(/\{[\s\S]*\}/)
+  if (jsonMatch) {
+    result = tryParseJson(jsonMatch[0])
+  }
+
+  // 2. 실패 시 - 잘린 JSON 복구 시도
+  if (!result && isTruncated) {
+    console.log('[OpenRouter] Response truncated, attempting repair...')
+    result = tryRepairJson(content)
+  }
+
+  // 3. 여전히 실패 - 정규식으로 insights 추출
+  if (!result) {
+    console.log('[OpenRouter] Direct parse failed, trying regex extraction...')
+
+    const insightsRegex = /"insights"\s*:\s*"((?:[^"\\]|\\["\\nrt])*)"/
+    const match = content.match(insightsRegex)
+
+    if (match) {
+      const extractedInsights = match[1]
+        .replace(/\\n/g, '\n')
+        .replace(/\\"/g, '"')
+        .replace(/\\\\/g, '\\')
+
+      const keywordsMatch = content.match(/"keywords"\s*:\s*\[([\s\S]*?)\]/)
+      let keywords: string[] = []
+      if (keywordsMatch) {
+        const keywordsStr = keywordsMatch[1]
+        keywords = keywordsStr.match(/"([^"]+)"/g)?.map((k: string) => k.replace(/"/g, '')) || []
+      }
+
+      result = { insights: extractedInsights, keywords }
+      console.log('[OpenRouter] Extracted via regex, insights length:', extractedInsights.length)
+    }
+  }
+
+  // 4. 최종 실패
+  if (!result) {
+    throw new Error(`JSON parse failed. finishReason: ${finishReason}, Content preview: "${content.slice(0, 200)}..."`)
+  }
+
   if (!result.insights || !Array.isArray(result.keywords)) {
     throw new Error('Invalid response format')
   }

@@ -17,7 +17,7 @@
 ### 배포 정보
 - **배포 URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
-- **현재 버전**: 2.19.0
+- **현재 버전**: 2.19.1
 - **마지막 업데이트**: 2026-01-19
 
 ---
@@ -964,6 +964,23 @@ setTimeout(async () => {
 
 ## 최근 업데이트
 
+### v2.19.1 (2026-01-19)
+**Gemini AI Provider 안정성 개선**
+
+#### 버그 수정
+- 🔧 **JSON 파싱 완전 재구현**: 다중 파싱 전략으로 안정성 대폭 향상
+  - 직접 파싱 → 이스케이프 처리 → 정규식 추출 순차 시도
+  - 잘린 JSON 자동 복구 로직 추가
+- 📈 **maxOutputTokens 증가**: 2500 → 4000 (JSON 잘림 방지)
+- 🔍 **finishReason 감지**: MAX_TOKENS/LENGTH 감지하여 잘린 응답 처리
+- 📝 **상세 에러 메시지**: 파싱 실패 시 디버깅 정보 제공
+
+#### 수정된 파일
+- 📄 `app/api/summarize/now/route.ts`: SummarizeNow API JSON 파싱 개선
+- 📄 `app/api/insight/daily/route.ts`: InsightNow API 동일 수정 적용
+
+---
+
 ### v2.18.0 (2026-01-19)
 **SummarizeNow 기능 추가 - 뉴스 종합 정리**
 
@@ -1604,4 +1621,4 @@ git commit -m "fix: 버그 수정
 ---
 
 **Last Updated**: 2026-01-19
-**Version**: 2.19.0
+**Version**: 2.19.1
