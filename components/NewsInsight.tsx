@@ -1,8 +1,22 @@
 'use client'
 
 import { useState } from 'react'
-import { LightBulbIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline'
-import { LightBulbIcon as LightBulbIconSolid } from '@heroicons/react/24/solid'
+import {
+  LightBulbIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  BookmarkIcon,
+  ChartBarIcon,
+  BoltIcon,
+  EyeIcon,
+} from '@heroicons/react/24/outline'
+import {
+  LightBulbIcon as LightBulbIconSolid,
+  BookmarkIcon as BookmarkIconSolid,
+  ChartBarIcon as ChartBarIconSolid,
+  BoltIcon as BoltIconSolid,
+  EyeIcon as EyeIconSolid,
+} from '@heroicons/react/24/solid'
 
 interface NewsInsightProps {
   newsId: string
@@ -92,6 +106,31 @@ export default function NewsInsight({
     }
   }
 
+  // 섹션 아이콘 매핑
+  const getSectionIcon = (line: string) => {
+    if (line.includes('📌') || line.includes('배경') || line.includes('맥락')) {
+      return <BookmarkIconSolid className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+    }
+    if (line.includes('📊') || line.includes('분석')) {
+      return <ChartBarIconSolid className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+    }
+    if (line.includes('⚡') || line.includes('시사점') || line.includes('핵심')) {
+      return <BoltIconSolid className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+    }
+    if (line.includes('🔮') || line.includes('전망')) {
+      return <EyeIconSolid className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+    }
+    if (line.includes('💡')) {
+      return <LightBulbIconSolid className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+    }
+    return null
+  }
+
+  // 이모지 제거
+  const removeEmoji = (text: string) => {
+    return text.replace(/[📌📊⚡🔮💡]/g, '').replace(/\*\*/g, '').trim()
+  }
+
   // 인사이트 내용 파싱 및 렌더링
   const renderInsight = (insight: string) => {
     const lines = insight.split('\n').filter((line) => line.trim())
@@ -100,10 +139,12 @@ export default function NewsInsight({
       <div className="space-y-3">
         {lines.map((line, index) => {
           // 섹션 헤더 (📌, 📊, ⚡, 🔮 등)
-          if (line.match(/^[📌📊⚡🔮💡]/)) {
+          if (line.match(/^[📌📊⚡🔮💡]/) || line.match(/^(배경|맥락|분석|시사점|핵심|전망)/)) {
+            const icon = getSectionIcon(line)
             return (
-              <div key={index} className="font-semibold text-amber-700 dark:text-amber-300 text-sm">
-                {line.replace(/\*\*/g, '')}
+              <div key={index} className="flex items-center gap-1.5 font-semibold text-amber-700 dark:text-amber-300 text-sm">
+                {icon}
+                <span>{removeEmoji(line)}</span>
               </div>
             )
           }
