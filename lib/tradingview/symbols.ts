@@ -14,27 +14,27 @@ export interface TradingViewSymbol {
 export const TRADINGVIEW_SYMBOLS: Record<string, TradingViewSymbol> = {
   // 국내 지수
   'KOSPI': {
-    symbol: 'KRX:KOSPI',
+    symbol: 'TVC:KOSPI',
     name: 'KOSPI',
-    exchange: 'KRX',
+    exchange: 'TVC',
     description: '한국종합주가지수',
   },
   '코스피': {
-    symbol: 'KRX:KOSPI',
+    symbol: 'TVC:KOSPI',
     name: 'KOSPI',
-    exchange: 'KRX',
+    exchange: 'TVC',
     description: '한국종합주가지수',
   },
   'KOSDAQ': {
-    symbol: 'KRX:KOSDAQ',
+    symbol: 'TVC:KOSDAQ',
     name: 'KOSDAQ',
-    exchange: 'KRX',
+    exchange: 'TVC',
     description: '코스닥지수',
   },
   '코스닥': {
-    symbol: 'KRX:KOSDAQ',
+    symbol: 'TVC:KOSDAQ',
     name: 'KOSDAQ',
-    exchange: 'KRX',
+    exchange: 'TVC',
     description: '코스닥지수',
   },
 
@@ -81,6 +81,12 @@ export const TRADINGVIEW_SYMBOLS: Record<string, TradingViewSymbol> = {
     exchange: 'TVC',
     description: '일본 니케이 225 지수',
   },
+  '니케이': {
+    symbol: 'TVC:NI225',
+    name: 'Nikkei 225',
+    exchange: 'TVC',
+    description: '일본 니케이 225 지수',
+  },
 
   // 환율
   'USD/KRW': {
@@ -94,6 +100,12 @@ export const TRADINGVIEW_SYMBOLS: Record<string, TradingViewSymbol> = {
     name: 'USD/KRW',
     exchange: 'FX_IDC',
     description: '미국 달러/원화 환율',
+  },
+  'JPY(100)/KRW': {
+    symbol: 'FX_IDC:JPYKRW',
+    name: 'JPY/KRW',
+    exchange: 'FX_IDC',
+    description: '일본 엔/원화 환율 (100엔)',
   },
   'JPY/KRW': {
     symbol: 'FX_IDC:JPYKRW',
@@ -147,6 +159,12 @@ export const TRADINGVIEW_SYMBOLS: Record<string, TradingViewSymbol> = {
   },
 
   // 암호화폐
+  'Bitcoin (BTC)': {
+    symbol: 'BINANCE:BTCUSDT',
+    name: 'Bitcoin',
+    exchange: 'BINANCE',
+    description: '비트코인/USDT',
+  },
   'Bitcoin': {
     symbol: 'BINANCE:BTCUSDT',
     name: 'Bitcoin',
@@ -165,6 +183,12 @@ export const TRADINGVIEW_SYMBOLS: Record<string, TradingViewSymbol> = {
     exchange: 'BINANCE',
     description: '비트코인/USDT',
   },
+  'Ethereum (ETH)': {
+    symbol: 'BINANCE:ETHUSDT',
+    name: 'Ethereum',
+    exchange: 'BINANCE',
+    description: '이더리움/USDT',
+  },
   'Ethereum': {
     symbol: 'BINANCE:ETHUSDT',
     name: 'Ethereum',
@@ -182,6 +206,20 @@ export const TRADINGVIEW_SYMBOLS: Record<string, TradingViewSymbol> = {
     name: 'Ethereum',
     exchange: 'BINANCE',
     description: '이더리움/USDT',
+  },
+
+  // 암호화폐 도미넌스
+  'BTC 도미넌스': {
+    symbol: 'CRYPTOCAP:BTC.D',
+    name: 'BTC Dominance',
+    exchange: 'CRYPTOCAP',
+    description: '비트코인 시장 점유율',
+  },
+  'ETH 도미넌스': {
+    symbol: 'CRYPTOCAP:ETH.D',
+    name: 'ETH Dominance',
+    exchange: 'CRYPTOCAP',
+    description: '이더리움 시장 점유율',
   },
 }
 
@@ -208,15 +246,12 @@ export function getTradingViewSymbol(indicatorName: string): TradingViewSymbol |
 
 /**
  * 차트 지원 여부 확인
- * 일부 지표(시가총액, 도미넌스, 공포탐욕지수 등)는 차트 미지원
+ * 일부 지표(시가총액, 공포탐욕지수 등)는 차트 미지원
  */
 export function isChartSupported(indicatorName: string): boolean {
   const unsupportedIndicators = [
     '전체 시가총액',
     '시가총액',
-    'BTC 도미넌스',
-    'ETH 도미넌스',
-    '도미넌스',
     '공포·탐욕 지수',
     '공포탐욕',
   ]
