@@ -12,29 +12,29 @@ export interface TradingViewSymbol {
 
 // 지표 이름 → TradingView 심볼 매핑
 export const TRADINGVIEW_SYMBOLS: Record<string, TradingViewSymbol> = {
-  // 국내 지수
+  // 국내 지수 (KRX 사용 - 한국거래소 공식)
   'KOSPI': {
-    symbol: 'TVC:KOSPI',
+    symbol: 'KRX:KOSPI',
     name: 'KOSPI',
-    exchange: 'TVC',
+    exchange: 'KRX',
     description: '한국종합주가지수',
   },
   '코스피': {
-    symbol: 'TVC:KOSPI',
+    symbol: 'KRX:KOSPI',
     name: 'KOSPI',
-    exchange: 'TVC',
+    exchange: 'KRX',
     description: '한국종합주가지수',
   },
   'KOSDAQ': {
-    symbol: 'TVC:KOSDAQ',
+    symbol: 'KRX:KOSDAQ',
     name: 'KOSDAQ',
-    exchange: 'TVC',
+    exchange: 'KRX',
     description: '코스닥지수',
   },
   '코스닥': {
-    symbol: 'TVC:KOSDAQ',
+    symbol: 'KRX:KOSDAQ',
     name: 'KOSDAQ',
-    exchange: 'TVC',
+    exchange: 'KRX',
     description: '코스닥지수',
   },
 
@@ -69,22 +69,23 @@ export const TRADINGVIEW_SYMBOLS: Record<string, TradingViewSymbol> = {
     exchange: 'FOREXCOM',
     description: '미국 다우존스 산업평균지수',
   },
+  // 니케이 225 (INDEX:NKY 사용)
   'Nikkei 225': {
-    symbol: 'TVC:NI225',
+    symbol: 'INDEX:NKY',
     name: 'Nikkei 225',
-    exchange: 'TVC',
+    exchange: 'INDEX',
     description: '일본 니케이 225 지수',
   },
   '니케이225': {
-    symbol: 'TVC:NI225',
+    symbol: 'INDEX:NKY',
     name: 'Nikkei 225',
-    exchange: 'TVC',
+    exchange: 'INDEX',
     description: '일본 니케이 225 지수',
   },
   '니케이': {
-    symbol: 'TVC:NI225',
+    symbol: 'INDEX:NKY',
     name: 'Nikkei 225',
-    exchange: 'TVC',
+    exchange: 'INDEX',
     description: '일본 니케이 225 지수',
   },
 
@@ -208,7 +209,13 @@ export const TRADINGVIEW_SYMBOLS: Record<string, TradingViewSymbol> = {
     description: '이더리움/USDT',
   },
 
-  // 암호화폐 도미넌스
+  // 암호화폐 시가총액 및 도미넌스
+  '전체 시가총액': {
+    symbol: 'CRYPTOCAP:TOTAL',
+    name: 'Total Crypto Market Cap',
+    exchange: 'CRYPTOCAP',
+    description: '암호화폐 전체 시가총액',
+  },
   'BTC 도미넌스': {
     symbol: 'CRYPTOCAP:BTC.D',
     name: 'BTC Dominance',
@@ -246,12 +253,10 @@ export function getTradingViewSymbol(indicatorName: string): TradingViewSymbol |
 
 /**
  * 차트 지원 여부 확인
- * 일부 지표(시가총액, 공포탐욕지수 등)는 차트 미지원
+ * 공포·탐욕 지수는 TradingView에 공식 심볼이 없어서 미지원
  */
 export function isChartSupported(indicatorName: string): boolean {
   const unsupportedIndicators = [
-    '전체 시가총액',
-    '시가총액',
     '공포·탐욕 지수',
     '공포탐욕',
   ]
