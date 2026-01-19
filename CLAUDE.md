@@ -18,7 +18,7 @@
 ### 배포 정보
 - **배포 URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
-- **현재 버전**: 2.20.1
+- **현재 버전**: 2.20.2
 - **마지막 업데이트**: 2026-01-19
 
 ---
@@ -965,36 +965,58 @@ setTimeout(async () => {
 
 ## 최근 업데이트
 
-### v2.20.1 (2026-01-19)
-**TradingView 차트 심볼 및 다크모드 수정**
+### v2.20.2 (2026-01-19)
+**은 시세 데이터 소스 변경 및 차트 지원 확대**
 
 #### 버그 수정
-- 📈 **TradingView 심볼 수정**: 외부 위젯 라이선스 제한 대응
-  - Nikkei 225: `TVC:NI225` → `OANDA:JP225USD` (CFD 심볼, 위젯 지원)
-  - KOSPI/KOSDAQ: KRX 데이터 라이선스 제한으로 **차트 미지원** 처리
-  - 전체 시가총액: CRYPTOCAP:TOTAL 외부 위젯 미지원으로 **차트 미지원** 처리
+- 🥈 **은 시세 데이터 소스 변경**: 네이버 금융 → Yahoo Finance API
+  - 네이버 금융 은 시세 페이지가 응답하지 않아 Yahoo Finance API로 전환
+  - `SI=F` (Silver Futures) 심볼 사용
+  - 안정적인 USD/oz 가격 데이터 제공
 
-- 🌙 **다크모드 차트 수정**: 테마 변경 시 차트가 업데이트되지 않던 문제 해결
-  - `mounted` 상태 추가로 클라이언트 렌더링 후 차트 표시
-  - `key` prop에 테마 포함하여 테마 변경 시 차트 재생성
-  - 로딩 상태 UI 추가
+#### 기능 개선
+- 📈 **차트 지원 확대**: Advanced Chart 위젯으로 전환 후 더 많은 지표 지원
+  - KOSPI/KOSDAQ: KRX:KOSPI, KRX:KOSDAQ (Advanced Chart에서 지원)
+  - 전체 시가총액: CRYPTOCAP:TOTAL (Advanced Chart에서 지원)
+  - 은 시세: TVC:SILVER 차트 지원
 
-#### 차트 지원 현황
+#### 수정된 파일
+- 📄 `lib/api/yahoo-finance.ts`: fetchSilverPrice() 함수 추가
+- 📄 `lib/scraper/hybrid-economy.ts`: 은 데이터 소스를 Yahoo Finance로 변경
+
+#### 차트 지원 현황 (업데이트)
 | 지표 | 지원 | 비고 |
 |------|------|------|
+| KOSPI, KOSDAQ | ✅ | KRX (Advanced Chart) |
 | S&P 500, NASDAQ, Dow Jones | ✅ | FOREXCOM CFD |
 | Nikkei 225 | ✅ | OANDA CFD |
 | 환율 (USD, JPY, EUR, CNY) | ✅ | FX_IDC |
 | 금시세 | ✅ | TVC:GOLD |
+| 은시세 | ✅ | TVC:SILVER |
 | BTC, ETH | ✅ | BINANCE |
 | BTC/ETH 도미넌스 | ✅ | CRYPTOCAP |
-| KOSPI, KOSDAQ | ❌ | KRX 라이선스 제한 |
-| 전체 시가총액 | ❌ | 외부 위젯 미지원 |
+| 전체 시가총액 | ✅ | CRYPTOCAP:TOTAL |
 | 공포탐욕지수 | ❌ | TradingView 미제공 |
 
+---
+
+### v2.20.1 (2026-01-19)
+**TradingView Advanced Chart로 변경 (캔들차트 + 다크모드)**
+
+#### 기능 변경
+- 📈 **Advanced Chart 위젯**: mini-symbol-overview → advanced-chart 위젯으로 변경
+  - 캔들차트 스타일 지원 (style: '1')
+  - 다크모드 완벽 지원 (theme 옵션)
+  - 더 많은 심볼 지원 (KRX, CRYPTOCAP 등)
+
+#### 버그 수정
+- 🌙 **다크모드 차트 수정**: 테마 변경 시 차트가 업데이트되지 않던 문제 해결
+  - `mounted` 상태 추가로 클라이언트 렌더링 후 차트 표시
+  - `key` prop에 테마 포함하여 테마 변경 시 차트 재생성
+
 #### 수정된 파일
-- 📄 `lib/tradingview/symbols.ts`: Nikkei 심볼 수정, 미지원 지표 목록 업데이트
-- 📄 `components/economy/TradingViewChart.tsx`: 다크모드 지원 개선
+- 📄 `components/economy/TradingViewChart.tsx`: Advanced Chart 위젯으로 변경
+- 📄 `components/economy/TradingViewModal.tsx`: 테마 변경 시 재렌더링 지원
 
 ---
 
