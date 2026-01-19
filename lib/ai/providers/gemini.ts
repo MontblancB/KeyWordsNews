@@ -101,41 +101,91 @@ ${content}
 
       const data = await response.json()
       const textContent = data.candidates?.[0]?.content?.parts?.[0]?.text
+      const finishReason = data.candidates?.[0]?.finishReason
+
+      // 디버깅
+      console.log('[Gemini] finishReason:', finishReason)
+      console.log('[Gemini] Content length:', textContent?.length || 0)
 
       if (!textContent) {
         throw new Error('Empty response from Gemini API')
       }
 
-      // JSON 파싱 (여러 방식 시도)
-      let result: SummaryResult
+      // finishReason이 MAX_TOKENS면 응답이 잘렸을 가능성
+      const isTruncated = finishReason === 'MAX_TOKENS' || finishReason === 'LENGTH'
 
-      // 1. 먼저 직접 파싱 시도
-      try {
-        result = JSON.parse(textContent) as SummaryResult
-      } catch {
-        // 2. 개행 문자가 이스케이프되지 않은 경우 처리
-        let cleanContent = textContent
+      // JSON 파싱 헬퍼 함수
+      function tryParseJson(jsonStr: string): SummaryResult | null {
+        try {
+          return JSON.parse(jsonStr) as SummaryResult
+        } catch {
+          return null
+        }
+      }
+
+      // 잘린 JSON 복구 시도 함수
+      function tryRepairJson(jsonStr: string): SummaryResult | null {
+        const summaryMatch = jsonStr.match(/"summary"\s*:\s*"((?:[^"\\]|\\.)*)/)
+        if (summaryMatch) {
+          const summaryContent = summaryMatch[1]
+          const repairedJson = `{"summary": "${summaryContent}", "keywords": []}`
+          const parsed = tryParseJson(repairedJson)
+          if (parsed) {
+            console.log('[Gemini] JSON repaired successfully')
+            return parsed
+          }
+        }
+        return null
+      }
+
+      let result: SummaryResult | null = null
+
+      // 1. 직접 파싱 시도
+      result = tryParseJson(textContent)
+
+      // 2. 실패 시 - 개행 문자 이스케이프 후 파싱
+      if (!result) {
+        const cleanContent = textContent
           .replace(/\n/g, '\\n')
           .replace(/\r/g, '\\r')
           .replace(/\t/g, '\\t')
+        result = tryParseJson(cleanContent)
+      }
 
-        try {
-          result = JSON.parse(cleanContent) as SummaryResult
-        } catch {
-          // 3. 정규식으로 JSON 추출 시도
-          const jsonMatch = textContent.match(/\{[\s\S]*\}/)
-          if (!jsonMatch) {
-            throw new Error('No JSON found in response')
+      // 3. 실패 시 - 잘린 JSON 복구 시도
+      if (!result && isTruncated) {
+        console.log('[Gemini] Response truncated, attempting repair...')
+        result = tryRepairJson(textContent)
+      }
+
+      // 4. 여전히 실패 - 정규식으로 summary 추출
+      if (!result) {
+        console.log('[Gemini] Direct parse failed, trying regex extraction...')
+
+        const summaryRegex = /"summary"\s*:\s*"((?:[^"\\]|\\["\\nrt])*)"/
+        const match = textContent.match(summaryRegex)
+
+        if (match) {
+          const extractedSummary = match[1]
+            .replace(/\\n/g, '\n')
+            .replace(/\\"/g, '"')
+            .replace(/\\\\/g, '\\')
+
+          const keywordsMatch = textContent.match(/"keywords"\s*:\s*\[([\s\S]*?)\]/)
+          let keywords: string[] = []
+          if (keywordsMatch) {
+            const keywordsStr = keywordsMatch[1]
+            keywords = keywordsStr.match(/"([^"]+)"/g)?.map((k: string) => k.replace(/"/g, '')) || []
           }
 
-          // 추출된 JSON에 대해 개행 문자 처리
-          let extractedJson = jsonMatch[0]
-            .replace(/\n/g, '\\n')
-            .replace(/\r/g, '\\r')
-            .replace(/\t/g, '\\t')
-
-          result = JSON.parse(extractedJson) as SummaryResult
+          result = { summary: extractedSummary, keywords }
+          console.log('[Gemini] Extracted via regex, summary length:', extractedSummary.length)
         }
+      }
+
+      // 5. 최종 실패
+      if (!result) {
+        throw new Error(`JSON parse failed. finishReason: ${finishReason}, Content preview: "${textContent.slice(0, 200)}..."`)
       }
 
       // 검증

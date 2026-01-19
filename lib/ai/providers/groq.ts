@@ -71,11 +71,83 @@ ${content}
       })
 
       const content = response.choices[0]?.message?.content
+      const finishReason = response.choices[0]?.finish_reason
+
+      // 디버깅
+      console.log('[Groq] finishReason:', finishReason)
+      console.log('[Groq] Content length:', content?.length || 0)
+
       if (!content) {
         throw new Error('Empty response from Groq API')
       }
 
-      const result = JSON.parse(content) as SummaryResult
+      // finishReason이 length면 응답이 잘렸을 가능성
+      const isTruncated = finishReason === 'length'
+
+      // JSON 파싱 헬퍼 함수
+      function tryParseJson(jsonStr: string): SummaryResult | null {
+        try {
+          return JSON.parse(jsonStr) as SummaryResult
+        } catch {
+          return null
+        }
+      }
+
+      // 잘린 JSON 복구 시도 함수
+      function tryRepairJson(jsonStr: string): SummaryResult | null {
+        const summaryMatch = jsonStr.match(/"summary"\s*:\s*"((?:[^"\\]|\\.)*)/)
+        if (summaryMatch) {
+          const summaryContent = summaryMatch[1]
+          const repairedJson = `{"summary": "${summaryContent}", "keywords": []}`
+          const parsed = tryParseJson(repairedJson)
+          if (parsed) {
+            console.log('[Groq] JSON repaired successfully')
+            return parsed
+          }
+        }
+        return null
+      }
+
+      let result: SummaryResult | null = null
+
+      // 1. 직접 파싱 시도
+      result = tryParseJson(content)
+
+      // 2. 실패 시 - 잘린 JSON 복구 시도
+      if (!result && isTruncated) {
+        console.log('[Groq] Response truncated, attempting repair...')
+        result = tryRepairJson(content)
+      }
+
+      // 3. 여전히 실패 - 정규식으로 summary 추출
+      if (!result) {
+        console.log('[Groq] Direct parse failed, trying regex extraction...')
+
+        const summaryRegex = /"summary"\s*:\s*"((?:[^"\\]|\\["\\nrt])*)"/
+        const match = content.match(summaryRegex)
+
+        if (match) {
+          const extractedSummary = match[1]
+            .replace(/\\n/g, '\n')
+            .replace(/\\"/g, '"')
+            .replace(/\\\\/g, '\\')
+
+          const keywordsMatch = content.match(/"keywords"\s*:\s*\[([\s\S]*?)\]/)
+          let keywords: string[] = []
+          if (keywordsMatch) {
+            const keywordsStr = keywordsMatch[1]
+            keywords = keywordsStr.match(/"([^"]+)"/g)?.map((k: string) => k.replace(/"/g, '')) || []
+          }
+
+          result = { summary: extractedSummary, keywords }
+          console.log('[Groq] Extracted via regex, summary length:', extractedSummary.length)
+        }
+      }
+
+      // 4. 최종 실패
+      if (!result) {
+        throw new Error(`JSON parse failed. finishReason: ${finishReason}, Content preview: "${content.slice(0, 200)}..."`)
+      }
 
       // 검증
       if (!result.summary || !Array.isArray(result.keywords)) {
