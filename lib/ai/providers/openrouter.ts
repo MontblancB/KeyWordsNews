@@ -15,7 +15,7 @@ export class OpenRouterProvider implements AIProvider {
     this.apiKey = config.apiKey
     this.model = config.model || 'meta-llama/llama-3.1-70b-instruct:free'
     this.temperature = config.temperature ?? 0.3
-    this.maxTokens = config.maxTokens ?? 1200  // 구체적 요약을 위해 증가 (200-250자 * 4-6개 불릿)
+    this.maxTokens = config.maxTokens ?? 2400  // 응답 잘림 방지를 위해 2배 증가 (1200 → 2400)
   }
 
   async summarize(title: string, content: string): Promise<SummaryResult> {

@@ -16,7 +16,7 @@ export class GeminiProvider implements AIProvider {
     this.apiKey = config.apiKey
     this.model = config.model || 'gemini-2.5-flash'
     this.temperature = config.temperature ?? 0.3
-    this.maxTokens = config.maxTokens ?? 1200
+    this.maxTokens = config.maxTokens ?? 2400  // 응답 잘림 방지를 위해 2배 증가 (1200 → 2400)
   }
 
   async summarize(title: string, content: string): Promise<SummaryResult> {

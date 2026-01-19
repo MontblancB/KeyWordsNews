@@ -18,7 +18,7 @@ export class GroqProvider implements AIProvider {
     })
     this.model = config.model || 'llama-3.3-70b-versatile'  // 280 tokens/sec, 128K context
     this.temperature = config.temperature ?? 0.3
-    this.maxTokens = config.maxTokens ?? 1200  // 구체적 요약을 위해 증가 (200-250자 * 4-6개 불릿)
+    this.maxTokens = config.maxTokens ?? 2400  // 응답 잘림 방지를 위해 2배 증가 (1200 → 2400)
   }
 
   async summarize(title: string, content: string): Promise<SummaryResult> {
