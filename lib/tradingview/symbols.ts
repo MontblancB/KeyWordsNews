@@ -14,27 +14,27 @@ export interface TradingViewSymbol {
 export const TRADINGVIEW_SYMBOLS: Record<string, TradingViewSymbol> = {
   // 국내 지수
   'KOSPI': {
-    symbol: 'TVC:KOSPI',
+    symbol: 'KRX:KOSPI',
     name: 'KOSPI',
-    exchange: 'TVC',
+    exchange: 'KRX',
     description: '한국종합주가지수',
   },
   '코스피': {
-    symbol: 'TVC:KOSPI',
+    symbol: 'KRX:KOSPI',
     name: 'KOSPI',
-    exchange: 'TVC',
+    exchange: 'KRX',
     description: '한국종합주가지수',
   },
   'KOSDAQ': {
-    symbol: 'TVC:KOSDAQ',
+    symbol: 'KRX:KOSDAQ',
     name: 'KOSDAQ',
-    exchange: 'TVC',
+    exchange: 'KRX',
     description: '코스닥지수',
   },
   '코스닥': {
-    symbol: 'TVC:KOSDAQ',
+    symbol: 'KRX:KOSDAQ',
     name: 'KOSDAQ',
-    exchange: 'TVC',
+    exchange: 'KRX',
     description: '코스닥지수',
   },
 
@@ -221,6 +221,20 @@ export const TRADINGVIEW_SYMBOLS: Record<string, TradingViewSymbol> = {
     exchange: 'CRYPTOCAP',
     description: '이더리움 시장 점유율',
   },
+
+  // 글로벌 암호화폐 시장
+  '전체 시가총액': {
+    symbol: 'CRYPTOCAP:TOTAL',
+    name: 'Total Crypto Market Cap',
+    exchange: 'CRYPTOCAP',
+    description: '전체 암호화폐 시가총액',
+  },
+  '시가총액': {
+    symbol: 'CRYPTOCAP:TOTAL',
+    name: 'Total Crypto Market Cap',
+    exchange: 'CRYPTOCAP',
+    description: '전체 암호화폐 시가총액',
+  },
 }
 
 /**
@@ -246,12 +260,10 @@ export function getTradingViewSymbol(indicatorName: string): TradingViewSymbol |
 
 /**
  * 차트 지원 여부 확인
- * 일부 지표(시가총액, 공포탐욕지수 등)는 차트 미지원
+ * 공포탐욕지수는 TradingView에서 지원하지 않음
  */
 export function isChartSupported(indicatorName: string): boolean {
   const unsupportedIndicators = [
-    '전체 시가총액',
-    '시가총액',
     '공포·탐욕 지수',
     '공포탐욕',
   ]

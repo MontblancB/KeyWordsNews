@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, memo } from 'react'
+import { useEffect, useRef, memo, useState } from 'react'
 import { useTheme } from 'next-themes'
 
 interface TradingViewChartProps {
@@ -16,12 +16,22 @@ function TradingViewChartComponent({
 }: TradingViewChartProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const { resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  // 클라이언트 마운트 확인 (테마 하이드레이션 대기)
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
-    if (!containerRef.current) return
+    // 마운트되지 않았거나 테마가 결정되지 않은 경우 대기
+    if (!containerRef.current || !mounted) return
 
     // 기존 위젯 제거
     containerRef.current.innerHTML = ''
+
+    // 테마 결정 (기본값: light)
+    const colorTheme = resolvedTheme === 'dark' ? 'dark' : 'light'
 
     // TradingView 위젯 스크립트 생성
     const script = document.createElement('script')
@@ -34,7 +44,7 @@ function TradingViewChartComponent({
       height: height,
       locale: 'kr',
       dateRange: dateRange,
-      colorTheme: resolvedTheme === 'dark' ? 'dark' : 'light',
+      colorTheme: colorTheme,
       isTransparent: true,
       autosize: false,
       largeChartUrl: '',
@@ -50,10 +60,26 @@ function TradingViewChartComponent({
         containerRef.current.innerHTML = ''
       }
     }
-  }, [symbol, height, dateRange, resolvedTheme])
+  }, [symbol, height, dateRange, resolvedTheme, mounted])
+
+  // 마운트 전에는 로딩 표시
+  if (!mounted) {
+    return (
+      <div
+        className="tradingview-widget-container flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg"
+        style={{ height }}
+      >
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+      </div>
+    )
+  }
 
   return (
-    <div className="tradingview-widget-container" ref={containerRef}>
+    <div
+      key={`${symbol}-${resolvedTheme}`}
+      className="tradingview-widget-container"
+      ref={containerRef}
+    >
       <div className="tradingview-widget-container__widget"></div>
     </div>
   )
