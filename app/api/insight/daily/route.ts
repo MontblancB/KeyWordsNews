@@ -252,7 +252,7 @@ async function generateWithGemini(prompt: string, systemPrompt: string): Promise
         ],
         generationConfig: {
           temperature: 0.4,
-          maxOutputTokens: 2500,
+          maxOutputTokens: 4000,
           responseMimeType: 'application/json',
           responseJsonSchema: {
             type: 'object',
@@ -281,71 +281,92 @@ async function generateWithGemini(prompt: string, systemPrompt: string): Promise
 
   const data = await response.json()
 
-  // 디버깅: 전체 응답 구조 확인
-  console.log('[Gemini] Response structure:', JSON.stringify(data, null, 2).slice(0, 500))
-
-  // 응답에서 텍스트 추출
+  // 응답에서 텍스트 및 메타데이터 추출
   const content = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+  const finishReason = data.candidates?.[0]?.finishReason
+  const safetyRatings = data.candidates?.[0]?.safetyRatings
+  const blockReason = data.promptFeedback?.blockReason
+
+  // 디버깅
+  console.log('[Gemini] finishReason:', finishReason)
+  console.log('[Gemini] Content length:', content.length)
+  console.log('[Gemini] Content end (last 50 chars):', JSON.stringify(content.slice(-50)))
 
   // 응답이 비어있는 경우 상세 에러
   if (!content) {
-    const finishReason = data.candidates?.[0]?.finishReason
-    const safetyRatings = data.candidates?.[0]?.safetyRatings
-    const blockReason = data.promptFeedback?.blockReason
-
     let errorDetail = 'Empty response from Gemini'
     if (blockReason) errorDetail += ` (blockReason: ${blockReason})`
     if (finishReason) errorDetail += ` (finishReason: ${finishReason})`
     if (safetyRatings) errorDetail += ` (safety: ${JSON.stringify(safetyRatings)})`
-
     throw new Error(errorDetail)
   }
 
-  // JSON 파싱 (여러 방식 시도)
-  let result: InsightResult
-  let parseError: string = ''
+  // finishReason이 MAX_TOKENS면 응답이 잘렸을 가능성
+  const isTruncated = finishReason === 'MAX_TOKENS' || finishReason === 'LENGTH'
 
-  // 디버깅: content 시작/끝 확인
-  console.log('[Gemini] Content length:', content.length)
-  console.log('[Gemini] Content start:', content.slice(0, 100))
-  console.log('[Gemini] Content end:', content.slice(-100))
-
-  // 1. 먼저 직접 파싱 시도
-  try {
-    result = JSON.parse(content) as InsightResult
-  } catch (e1) {
-    parseError = `Direct parse failed: ${e1 instanceof Error ? e1.message : 'unknown'}`
-
-    // 2. 개행 문자가 이스케이프되지 않은 경우 처리
-    let cleanContent = content
-      .replace(/\n/g, '\\n')  // 실제 개행을 이스케이프된 개행으로
-      .replace(/\r/g, '\\r')  // 캐리지 리턴 처리
-      .replace(/\t/g, '\\t')  // 탭 처리
-
+  // JSON 파싱 헬퍼 함수
+  function tryParseJson(jsonStr: string): InsightResult | null {
     try {
-      result = JSON.parse(cleanContent) as InsightResult
-    } catch (e2) {
-      parseError += ` | Escaped parse failed: ${e2 instanceof Error ? e2.message : 'unknown'}`
+      return JSON.parse(jsonStr) as InsightResult
+    } catch {
+      return null
+    }
+  }
 
-      // 3. 정규식으로 JSON 추출 시도
-      const jsonMatch = content.match(/\{[\s\S]*\}/)
-      if (!jsonMatch) {
-        throw new Error(`No JSON found in response. Content preview: "${content.slice(0, 200)}..." | Errors: ${parseError}`)
-      }
-
-      // 추출된 JSON에 대해 개행 문자 처리
-      let extractedJson = jsonMatch[0]
-        .replace(/\n/g, '\\n')
-        .replace(/\r/g, '\\r')
-        .replace(/\t/g, '\\t')
-
-      try {
-        result = JSON.parse(extractedJson) as InsightResult
-      } catch (e3) {
-        parseError += ` | Regex parse failed: ${e3 instanceof Error ? e3.message : 'unknown'}`
-        throw new Error(`JSON parse failed. Content preview: "${content.slice(0, 200)}..." | Errors: ${parseError}`)
+  // 잘린 JSON 복구 시도 함수
+  function tryRepairJson(jsonStr: string): InsightResult | null {
+    const insightsMatch = jsonStr.match(/"insights"\s*:\s*"((?:[^"\\]|\\.)*)/)
+    if (insightsMatch) {
+      const insightsContent = insightsMatch[1]
+      const repairedJson = `{"insights": "${insightsContent}", "keywords": []}`
+      const parsed = tryParseJson(repairedJson)
+      if (parsed) {
+        console.log('[Gemini] JSON repaired successfully')
+        return parsed
       }
     }
+    return null
+  }
+
+  let result: InsightResult | null = null
+
+  // 1. 직접 파싱 시도
+  result = tryParseJson(content)
+
+  // 2. 실패 시 - 잘린 JSON 복구 시도
+  if (!result && isTruncated) {
+    console.log('[Gemini] Response truncated, attempting repair...')
+    result = tryRepairJson(content)
+  }
+
+  // 3. 여전히 실패 - 정규식으로 insights 추출
+  if (!result) {
+    console.log('[Gemini] Direct parse failed, trying regex extraction...')
+
+    const insightsRegex = /"insights"\s*:\s*"((?:[^"\\]|\\["\\nrt])*)"/
+    const match = content.match(insightsRegex)
+
+    if (match) {
+      const extractedInsights = match[1]
+        .replace(/\\n/g, '\n')
+        .replace(/\\"/g, '"')
+        .replace(/\\\\/g, '\\')
+
+      const keywordsMatch = content.match(/"keywords"\s*:\s*\[([\s\S]*?)\]/)
+      let keywords: string[] = []
+      if (keywordsMatch) {
+        const keywordsStr = keywordsMatch[1]
+        keywords = keywordsStr.match(/"([^"]+)"/g)?.map((k: string) => k.replace(/"/g, '')) || []
+      }
+
+      result = { insights: extractedInsights, keywords }
+      console.log('[Gemini] Extracted via regex, insights length:', extractedInsights.length)
+    }
+  }
+
+  // 4. 최종 실패
+  if (!result) {
+    throw new Error(`JSON parse failed. finishReason: ${finishReason}, Content preview: "${content.slice(0, 200)}...", Content end: "${content.slice(-100)}"`)
   }
   if (!result.insights || !Array.isArray(result.keywords)) {
     throw new Error('Invalid response format')
