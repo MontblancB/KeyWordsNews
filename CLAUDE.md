@@ -18,7 +18,7 @@
 ### 배포 정보
 - **배포 URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
-- **현재 버전**: 2.20.0
+- **현재 버전**: 2.20.1
 - **마지막 업데이트**: 2026-01-19
 
 ---
@@ -965,6 +965,26 @@ setTimeout(async () => {
 
 ## 최근 업데이트
 
+### v2.20.1 (2026-01-19)
+**TradingView 차트 심볼 및 다크모드 수정**
+
+#### 버그 수정
+- 📈 **TradingView 심볼 수정**: 차트가 표시되지 않던 문제 해결
+  - KOSPI: `TVC:KOSPI` → `KRX:KOSPI`
+  - KOSDAQ: `TVC:KOSDAQ` → `KRX:KOSDAQ`
+  - 전체 시가총액: 차트 미지원 → `CRYPTOCAP:TOTAL` 지원 추가
+
+- 🌙 **다크모드 차트 수정**: 테마 변경 시 차트가 업데이트되지 않던 문제 해결
+  - `mounted` 상태 추가로 클라이언트 렌더링 후 차트 표시
+  - `key` prop에 테마 포함하여 테마 변경 시 차트 재생성
+  - 로딩 상태 UI 추가
+
+#### 수정된 파일
+- 📄 `lib/tradingview/symbols.ts`: KOSPI, KOSDAQ 심볼 수정, 전체 시가총액 심볼 추가
+- 📄 `components/economy/TradingViewChart.tsx`: 다크모드 지원 개선
+
+---
+
 ### v2.20.0 (2026-01-19)
 **개별 뉴스 전문가 의견 기능 추가**
 
@@ -1669,4 +1689,4 @@ git commit -m "fix: 버그 수정
 ---
 
 **Last Updated**: 2026-01-19
-**Version**: 2.20.0
+**Version**: 2.20.1
