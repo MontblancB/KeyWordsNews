@@ -3,7 +3,9 @@
 import { NewsItem } from '@/types/news'
 import { useState, useEffect } from 'react'
 import AISummary from './AISummary'
+import NewsInsight from './NewsInsight'
 import { useAISummarySettings } from '@/hooks/useAISummarySettings'
+import { useNewsInsightSettings } from '@/hooks/useNewsInsightSettings'
 
 interface NewsCardProps {
   news: NewsItem
@@ -11,7 +13,8 @@ interface NewsCardProps {
 }
 
 export default function NewsCard({ news, hideSource = false }: NewsCardProps) {
-  const { isEnabled } = useAISummarySettings()
+  const { isEnabled: isAISummaryEnabled } = useAISummarySettings()
+  const { isEnabled: isNewsInsightEnabled } = useNewsInsightSettings()
 
   // 간단한 시간 표시 함수
   const getTimeAgo = (date: Date) => {
@@ -39,13 +42,15 @@ export default function NewsCard({ news, hideSource = false }: NewsCardProps) {
     return () => clearInterval(interval)
   }, [news.publishedAt])
 
+  const hasAIFeatures = isAISummaryEnabled || isNewsInsightEnabled
+
   return (
     <article className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
       <a
         href={news.url}
         target="_blank"
         rel="noopener noreferrer"
-        className={`block p-4 ${isEnabled ? 'pb-0' : 'pb-4'}`}
+        className={`block p-4 ${hasAIFeatures ? 'pb-0' : 'pb-4'}`}
       >
         <div className="flex gap-3">
           <div className="flex-1 min-w-0">
@@ -78,18 +83,35 @@ export default function NewsCard({ news, hideSource = false }: NewsCardProps) {
         </div>
       </a>
 
-      {/* AI 요약 (링크 밖에 배치) */}
-      {isEnabled && news.id && (
+      {/* AI 기능 (링크 밖에 배치) */}
+      {hasAIFeatures && news.id && (
         <div className="px-4 pb-4">
-          <AISummary
-            newsId={news.id}
-            url={news.url}
-            title={news.title}
-            summary={news.summary}
-            initialSummary={news.aiSummary}
-            initialKeywords={news.aiKeywords}
-            initialProvider={news.aiProvider}
-          />
+          {/* AI 요약 */}
+          {isAISummaryEnabled && (
+            <AISummary
+              newsId={news.id}
+              url={news.url}
+              title={news.title}
+              summary={news.summary}
+              initialSummary={news.aiSummary}
+              initialKeywords={news.aiKeywords}
+              initialProvider={news.aiProvider}
+            />
+          )}
+
+          {/* 전문가 의견 */}
+          {isNewsInsightEnabled && (
+            <NewsInsight
+              newsId={news.id}
+              url={news.url}
+              title={news.title}
+              summary={news.summary}
+              category={news.category}
+              initialInsight={news.aiInsight}
+              initialExpert={news.aiInsightExpert}
+              initialProvider={news.aiInsightProvider}
+            />
+          )}
         </div>
       )}
     </article>

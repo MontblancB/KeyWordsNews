@@ -5,6 +5,7 @@ import BreakingTabSourceManager from '@/components/BreakingTabSourceManager'
 import ThemeToggle from '@/components/ThemeToggle'
 import ColorThemeSelector from '@/components/ColorThemeSelector'
 import AISummaryToggle from '@/components/AISummaryToggle'
+import NewsInsightToggle from '@/components/NewsInsightToggle'
 import FontSizeControl from '@/components/FontSizeControl'
 import { useColorTheme } from '@/hooks/useColorTheme'
 import { InformationCircleIcon } from '@heroicons/react/24/outline'
@@ -25,6 +26,9 @@ export default function SettingsPage() {
         {/* AI 요약 설정 */}
         <AISummaryToggle />
 
+        {/* 전문가 의견 설정 */}
+        <NewsInsightToggle />
+
         {/* 색상 테마 설정 */}
         <ColorThemeSelector />
 
@@ -43,7 +47,7 @@ export default function SettingsPage() {
             </h3>
           </div>
           <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
-            <p>버전: 2.19.3</p>
+            <p>버전: 2.20.0</p>
             <p>마지막 업데이트: 2026-01-19</p>
           </div>
         </div>

@@ -15,6 +15,12 @@ export interface NewsItem {
   aiSummarizedAt?: Date | string | null
   aiProvider?: string | null
 
+  // AI 전문가 의견 필드
+  aiInsight?: string | null
+  aiInsightExpert?: string | null
+  aiInsightAt?: Date | string | null
+  aiInsightProvider?: string | null
+
   createdAt?: Date
   updatedAt?: Date
 }

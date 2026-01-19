@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
                   aiProvider: 'groq',
                 },
               })
-              .catch((err) => {
+              .catch((err: unknown) => {
                 console.error('[DB] 요약 저장 실패:', err)
               })
           }
