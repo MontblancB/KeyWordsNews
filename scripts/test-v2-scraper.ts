@@ -25,7 +25,7 @@ async function testV2Scraper() {
     console.log(`  - CNY/KRW: ${data.exchange.cnyKrw.value} (${data.exchange.cnyKrw.change}, ${data.exchange.cnyKrw.changePercent}%) [${data.exchange.cnyKrw.changeType}]\n`)
 
     console.log('💰 금시세:')
-    console.log(`  - 국제 금: ${data.gold.international.value} (${data.gold.international.change}, ${data.gold.international.changePercent}%) [${data.gold.international.changeType}]\n`)
+    console.log(`  - 국제 금: ${data.metals.gold.value} (${data.metals.gold.change}, ${data.metals.gold.changePercent}%) [${data.metals.gold.changeType}]\n`)
 
     console.log('🌍 해외 지수:')
     console.log(`  - S&P 500: ${data.international.sp500.value}`)
@@ -47,7 +47,7 @@ async function testV2Scraper() {
       console.log('  ✅ 환율 changePercent 개선됨')
       improvements++
     }
-    if (data.gold.international.value !== '데이터 없음') {
+    if (data.metals.gold.value !== '데이터 없음') {
       console.log('  ✅ 금시세 데이터 수집 성공')
       improvements++
     }

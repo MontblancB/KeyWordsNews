@@ -297,14 +297,71 @@ export async function scrapeGoldPriceV2(): Promise<Indicator> {
 }
 
 /**
+ * 은시세 스크래핑 V2
+ */
+export async function scrapeSilverPriceV2(): Promise<Indicator> {
+  try {
+    const url = 'https://finance.naver.com/marketindex/silverDetail.naver'
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch silver price: ${response.statusText}`)
+    }
+
+    const html = await response.text()
+    const $ = cheerio.load(html)
+
+    // 현재가 - em 내부의 텍스트만 추출 (숫자 span들)
+    const priceEm = $('.no_today em')
+    const priceText = priceEm.text().trim()
+
+    // 변동값
+    const changeEm = $('.no_exday em').first()
+    const changeText = changeEm.text().trim()
+
+    // 변동률
+    const changePercentEm = $('.no_exday em').eq(1)
+    const changePercentText = changePercentEm.text().trim()
+    const changePercent = extractChangePercent(changePercentText)
+
+    // 변동 타입
+    const emClass = priceEm.attr('class') || ''
+    const changeType = getChangeTypeFromClass(emClass)
+
+    return {
+      name: '국제 은',
+      value: priceText ? `${priceText}원/g` : '데이터 없음',
+      change: changeText || '0',
+      changePercent,
+      changeType,
+    }
+  } catch (error) {
+    console.error('Error scraping silver price:', error)
+    return {
+      name: '국제 은',
+      value: '데이터 없음',
+      change: '0',
+      changePercent: '0',
+      changeType: 'unchanged',
+    }
+  }
+}
+
+/**
  * 모든 경제 지표 스크래핑 V2 (병렬 처리)
  */
 export async function scrapeAllIndicatorsV2(): Promise<EconomyData> {
-  const [kospi, kosdaq, exchange, gold] = await Promise.all([
+  const [kospi, kosdaq, exchange, gold, silver] = await Promise.all([
     scrapeDomesticIndexV2('KOSPI'),
     scrapeDomesticIndexV2('KOSDAQ'),
     scrapeExchangeV2(),
     scrapeGoldPriceV2(),
+    scrapeSilverPriceV2(),
   ])
 
   // 해외 지수는 별도 처리 (느림)
@@ -326,8 +383,9 @@ export async function scrapeAllIndicatorsV2(): Promise<EconomyData> {
     },
     international,
     exchange,
-    gold: {
-      international: gold,
+    metals: {
+      gold,
+      silver,
     },
     crypto: {
       bitcoin: { ...fallbackIndicator, name: 'Bitcoin (BTC)' },
