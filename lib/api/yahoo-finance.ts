@@ -147,3 +147,49 @@ export async function fetchInternationalIndices() {
     nikkei: quoteToIndicator('Nikkei 225', nikkeiQuote),
   }
 }
+
+/**
+ * 귀금속 Quote를 Indicator로 변환 (USD/oz 단위 표시)
+ */
+function metalQuoteToIndicator(
+  name: string,
+  quote: YahooQuote | null,
+  unit: string = 'USD/oz'
+): Indicator {
+  if (!quote) {
+    return {
+      name,
+      value: '데이터 없음',
+      change: '0',
+      changePercent: '0',
+      changeType: 'unchanged',
+    }
+  }
+
+  // 귀금속 가격은 소수점 2자리까지 표시
+  const value = quote.regularMarketPrice.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+
+  const change = Math.abs(quote.regularMarketChange).toFixed(2)
+  const changePercent = Math.abs(quote.regularMarketChangePercent).toFixed(2)
+  const changeType = getChangeType(quote.regularMarketChange)
+
+  return {
+    name,
+    value: `$${value}/${unit === 'USD/oz' ? 'oz' : unit}`,
+    change: quote.regularMarketChange >= 0 ? `+${change}` : `-${change}`,
+    changePercent: quote.regularMarketChangePercent >= 0 ? `+${changePercent}` : `-${changePercent}`,
+    changeType,
+  }
+}
+
+/**
+ * 은 시세 가져오기 (Yahoo Finance)
+ */
+export async function fetchSilverPrice(): Promise<Indicator> {
+  // Yahoo Finance 은 선물 심볼
+  const silverQuote = await fetchYahooQuote('SI=F') // Silver Futures
+  return metalQuoteToIndicator('국제 은', silverQuote)
+}

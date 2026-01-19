@@ -3,9 +3,8 @@ import {
   scrapeDomesticIndexV2,
   scrapeExchangeV2,
   scrapeGoldPriceV2,
-  scrapeSilverPriceV2,
 } from './naver-finance-v2'
-import { fetchInternationalIndices } from '../api/yahoo-finance'
+import { fetchInternationalIndices, fetchSilverPrice } from '../api/yahoo-finance'
 import { fetchAllCoinGeckoData } from '../api/coingecko'
 
 /**
@@ -31,8 +30,8 @@ export async function collectAllEconomyData(): Promise<EconomyData> {
       scrapeDomesticIndexV2('KOSDAQ'),
       scrapeExchangeV2(),
       scrapeGoldPriceV2(),
-      scrapeSilverPriceV2(),
-      fetchInternationalIndices(), // Yahoo Finance API
+      fetchSilverPrice(), // Yahoo Finance API (은 시세)
+      fetchInternationalIndices(), // Yahoo Finance API (해외 지수)
       fetchAllCoinGeckoData(), // CoinGecko API (암호화폐 + 글로벌 데이터 + 공포탐욕지수)
     ])
 
