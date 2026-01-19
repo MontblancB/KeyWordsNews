@@ -18,7 +18,7 @@
 ### 배포 정보
 - **배포 URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
-- **현재 버전**: 2.20.3
+- **현재 버전**: 2.20.4
 - **마지막 업데이트**: 2026-01-19
 
 ---
@@ -964,6 +964,20 @@ setTimeout(async () => {
 ---
 
 ## 최근 업데이트
+
+### v2.20.4 (2026-01-19)
+**KOSPI/KOSDAQ 차트를 ETF 심볼로 변경**
+
+#### 기능 개선
+- 📈 **KOSPI/KOSDAQ TradingView 심볼을 ETF로 변경**
+  - KOSPI: `TVC:KOSPI` → `KRX:069500` (KODEX 200 ETF)
+  - KOSDAQ: `TVC:KOSDAQ` → `KRX:229200` (KODEX KOSDAQ 150 ETF)
+  - 실제 거래되는 ETF 심볼이라 외부 위젯에서 더 안정적으로 작동
+
+#### 수정된 파일
+- 📄 `lib/tradingview/symbols.ts`: KOSPI/KOSDAQ 심볼을 ETF로 변경
+
+---
 
 ### v2.20.3 (2026-01-19)
 **은 시세 원화 표시 및 KOSPI/KOSDAQ 차트 개선**
