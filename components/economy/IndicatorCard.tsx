@@ -1,18 +1,40 @@
+'use client'
+
 import type { Indicator } from '@/types/economy'
 import { ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/solid'
+import { ChartBarIcon } from '@heroicons/react/24/outline'
+import { isChartSupported } from '@/lib/tradingview/symbols'
 
 interface IndicatorCardProps {
   indicator: Indicator
+  onClick?: (indicator: Indicator) => void
 }
 
-export default function IndicatorCard({ indicator }: IndicatorCardProps) {
+export default function IndicatorCard({ indicator, onClick }: IndicatorCardProps) {
   const isUp = indicator.changeType === 'up'
   const isDown = indicator.changeType === 'down'
   const isFearGreed = indicator.name === '공포·탐욕 지수'
+  const hasChart = isChartSupported(indicator.name)
+
+  const handleClick = () => {
+    if (onClick) {
+      onClick(indicator)
+    }
+  }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg p-2 border border-gray-200 dark:border-gray-700 shadow-sm">
-      <div className="text-[10px] text-gray-500 dark:text-gray-400 mb-1">{indicator.name}</div>
+    <div
+      onClick={handleClick}
+      className={`bg-white dark:bg-gray-800 rounded-lg p-2 border border-gray-200 dark:border-gray-700 shadow-sm ${
+        onClick ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-[0.98] transition-all' : ''
+      }`}
+    >
+      <div className="flex items-center justify-between mb-1">
+        <div className="text-[10px] text-gray-500 dark:text-gray-400">{indicator.name}</div>
+        {hasChart && onClick && (
+          <ChartBarIcon className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+        )}
+      </div>
       <div className="flex items-center justify-between">
         <div className="text-base font-bold text-gray-900 dark:text-gray-100">{indicator.value}</div>
         <div className="flex items-center gap-0.5">

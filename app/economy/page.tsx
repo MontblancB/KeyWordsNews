@@ -1,8 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import { useEconomy } from '@/hooks/useEconomy'
 import BottomNav from '@/components/BottomNav'
 import IndicatorCard from '@/components/economy/IndicatorCard'
+import TradingViewModal from '@/components/economy/TradingViewModal'
 import {
   ArrowPathIcon,
   ChartBarIcon,
@@ -14,10 +16,27 @@ import {
 import { useColorTheme } from '@/hooks/useColorTheme'
 import { usePullToRefresh } from '@/hooks/usePullToRefresh'
 import PullToRefreshIndicator from '@/components/PullToRefreshIndicator'
+import type { Indicator } from '@/types/economy'
 
 export default function EconomyPage() {
   const { headerClasses } = useColorTheme()
   const { data, isLoading, error, forceRefetch, isRefetching } = useEconomy()
+
+  // 모달 상태
+  const [selectedIndicator, setSelectedIndicator] = useState<Indicator | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
+  // 지표 클릭 핸들러
+  const handleIndicatorClick = (indicator: Indicator) => {
+    setSelectedIndicator(indicator)
+    setIsModalOpen(true)
+  }
+
+  // 모달 닫기
+  const handleCloseModal = () => {
+    setIsModalOpen(false)
+    setSelectedIndicator(null)
+  }
 
   // Pull-to-Refresh
   const pullToRefresh = usePullToRefresh({
@@ -76,8 +95,8 @@ export default function EconomyPage() {
                 </h2>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <IndicatorCard indicator={data.domestic.kospi} />
-                <IndicatorCard indicator={data.domestic.kosdaq} />
+                <IndicatorCard indicator={data.domestic.kospi} onClick={handleIndicatorClick} />
+                <IndicatorCard indicator={data.domestic.kosdaq} onClick={handleIndicatorClick} />
               </div>
             </section>
 
@@ -90,10 +109,10 @@ export default function EconomyPage() {
                 </h2>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <IndicatorCard indicator={data.international.sp500} />
-                <IndicatorCard indicator={data.international.nasdaq} />
-                <IndicatorCard indicator={data.international.dow} />
-                <IndicatorCard indicator={data.international.nikkei} />
+                <IndicatorCard indicator={data.international.sp500} onClick={handleIndicatorClick} />
+                <IndicatorCard indicator={data.international.nasdaq} onClick={handleIndicatorClick} />
+                <IndicatorCard indicator={data.international.dow} onClick={handleIndicatorClick} />
+                <IndicatorCard indicator={data.international.nikkei} onClick={handleIndicatorClick} />
               </div>
             </section>
 
@@ -106,10 +125,10 @@ export default function EconomyPage() {
                 </h2>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <IndicatorCard indicator={data.exchange.usdKrw} />
-                <IndicatorCard indicator={data.exchange.jpyKrw} />
-                <IndicatorCard indicator={data.exchange.eurKrw} />
-                <IndicatorCard indicator={data.exchange.cnyKrw} />
+                <IndicatorCard indicator={data.exchange.usdKrw} onClick={handleIndicatorClick} />
+                <IndicatorCard indicator={data.exchange.jpyKrw} onClick={handleIndicatorClick} />
+                <IndicatorCard indicator={data.exchange.eurKrw} onClick={handleIndicatorClick} />
+                <IndicatorCard indicator={data.exchange.cnyKrw} onClick={handleIndicatorClick} />
               </div>
             </section>
 
@@ -122,7 +141,7 @@ export default function EconomyPage() {
                 </h2>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <IndicatorCard indicator={data.gold.international} />
+                <IndicatorCard indicator={data.gold.international} onClick={handleIndicatorClick} />
               </div>
             </section>
 
@@ -135,21 +154,28 @@ export default function EconomyPage() {
                 </h2>
               </div>
               <div className="grid grid-cols-2 gap-2 mb-2">
-                <IndicatorCard indicator={data.globalCrypto.totalMarketCap} />
-                <IndicatorCard indicator={data.fearGreed} />
+                <IndicatorCard indicator={data.globalCrypto.totalMarketCap} onClick={handleIndicatorClick} />
+                <IndicatorCard indicator={data.fearGreed} onClick={handleIndicatorClick} />
               </div>
               <div className="grid grid-cols-2 gap-2 mb-2">
-                <IndicatorCard indicator={data.crypto.bitcoin} />
-                <IndicatorCard indicator={data.crypto.ethereum} />
+                <IndicatorCard indicator={data.crypto.bitcoin} onClick={handleIndicatorClick} />
+                <IndicatorCard indicator={data.crypto.ethereum} onClick={handleIndicatorClick} />
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <IndicatorCard indicator={data.globalCrypto.btcDominance} />
-                <IndicatorCard indicator={data.globalCrypto.ethDominance} />
+                <IndicatorCard indicator={data.globalCrypto.btcDominance} onClick={handleIndicatorClick} />
+                <IndicatorCard indicator={data.globalCrypto.ethDominance} onClick={handleIndicatorClick} />
               </div>
             </section>
           </div>
         )}
       </main>
+
+      {/* TradingView 차트 모달 */}
+      <TradingViewModal
+        indicator={selectedIndicator}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+      />
 
       <BottomNav />
     </>
