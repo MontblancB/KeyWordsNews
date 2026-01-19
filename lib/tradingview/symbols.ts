@@ -70,22 +70,22 @@ export const TRADINGVIEW_SYMBOLS: Record<string, TradingViewSymbol> = {
     description: '미국 다우존스 산업평균지수',
   },
   'Nikkei 225': {
-    symbol: 'TVC:NI225',
+    symbol: 'OANDA:JP225USD',
     name: 'Nikkei 225',
-    exchange: 'TVC',
-    description: '일본 니케이 225 지수',
+    exchange: 'OANDA',
+    description: '일본 니케이 225 지수 (CFD)',
   },
   '니케이225': {
-    symbol: 'TVC:NI225',
+    symbol: 'OANDA:JP225USD',
     name: 'Nikkei 225',
-    exchange: 'TVC',
-    description: '일본 니케이 225 지수',
+    exchange: 'OANDA',
+    description: '일본 니케이 225 지수 (CFD)',
   },
   '니케이': {
-    symbol: 'TVC:NI225',
+    symbol: 'OANDA:JP225USD',
     name: 'Nikkei 225',
-    exchange: 'TVC',
-    description: '일본 니케이 225 지수',
+    exchange: 'OANDA',
+    description: '일본 니케이 225 지수 (CFD)',
   },
 
   // 환율
@@ -260,10 +260,23 @@ export function getTradingViewSymbol(indicatorName: string): TradingViewSymbol |
 
 /**
  * 차트 지원 여부 확인
- * 공포탐욕지수는 TradingView에서 지원하지 않음
+ *
+ * 다음 지표는 TradingView 외부 위젯에서 지원하지 않음:
+ * - KOSPI, KOSDAQ: KRX(한국거래소) 데이터 라이선스 제한
+ * - 전체 시가총액: CRYPTOCAP:TOTAL 외부 위젯 미지원
+ * - 공포탐욕지수: TradingView에서 제공하지 않음
  */
 export function isChartSupported(indicatorName: string): boolean {
   const unsupportedIndicators = [
+    // 한국 지수 (KRX 데이터 라이선스 제한)
+    'KOSPI',
+    'KOSDAQ',
+    '코스피',
+    '코스닥',
+    // 암호화폐 시장 데이터
+    '전체 시가총액',
+    '시가총액',
+    // 공포탐욕지수
     '공포·탐욕 지수',
     '공포탐욕',
   ]
