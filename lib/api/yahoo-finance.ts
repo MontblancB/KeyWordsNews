@@ -149,47 +149,60 @@ export async function fetchInternationalIndices() {
 }
 
 /**
- * 귀금속 Quote를 Indicator로 변환 (USD/oz 단위 표시)
+ * 은 시세 가져오기 (Yahoo Finance) - 원화/g 단위로 변환
+ *
+ * 변환 공식:
+ * - 1 troy ounce = 31.1035 grams
+ * - KRW/g = (USD/oz * USD_KRW_rate) / 31.1035
  */
-function metalQuoteToIndicator(
-  name: string,
-  quote: YahooQuote | null,
-  unit: string = 'USD/oz'
-): Indicator {
-  if (!quote) {
+export async function fetchSilverPrice(): Promise<Indicator> {
+  try {
+    // 은 가격(USD/oz)과 환율(USD/KRW)을 병렬로 가져오기
+    const [silverQuote, usdKrwQuote] = await Promise.all([
+      fetchYahooQuote('SI=F'),      // Silver Futures (USD/oz)
+      fetchYahooQuote('KRW=X'),     // USD/KRW 환율
+    ])
+
+    if (!silverQuote || !usdKrwQuote) {
+      return {
+        name: '국제 은',
+        value: '데이터 없음',
+        change: '0',
+        changePercent: '0',
+        changeType: 'unchanged',
+      }
+    }
+
+    // USD/oz → KRW/g 변환
+    const TROY_OUNCE_TO_GRAM = 31.1035
+    const usdKrwRate = usdKrwQuote.regularMarketPrice
+
+    // 현재가 변환
+    const priceKrwPerGram = (silverQuote.regularMarketPrice * usdKrwRate) / TROY_OUNCE_TO_GRAM
+
+    // 변동값 변환 (어제 환율과 오늘 환율 차이는 무시하고 현재 환율로 계산)
+    const changeKrwPerGram = (silverQuote.regularMarketChange * usdKrwRate) / TROY_OUNCE_TO_GRAM
+
+    const value = Math.round(priceKrwPerGram).toLocaleString('ko-KR')
+    const change = Math.abs(Math.round(changeKrwPerGram)).toLocaleString('ko-KR')
+    const changePercent = Math.abs(silverQuote.regularMarketChangePercent).toFixed(2)
+    const changeType = getChangeType(silverQuote.regularMarketChange)
+
     return {
-      name,
+      name: '국제 은',
+      value: `${value}원/g`,
+      change: silverQuote.regularMarketChange >= 0 ? `+${change}` : `-${change}`,
+      changePercent: silverQuote.regularMarketChangePercent >= 0 ? `+${changePercent}` : `-${changePercent}`,
+      changeType,
+    }
+  } catch (error) {
+    console.error('Error fetching silver price:', error)
+    return {
+      name: '국제 은',
       value: '데이터 없음',
       change: '0',
       changePercent: '0',
       changeType: 'unchanged',
     }
   }
-
-  // 귀금속 가격은 소수점 2자리까지 표시
-  const value = quote.regularMarketPrice.toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })
-
-  const change = Math.abs(quote.regularMarketChange).toFixed(2)
-  const changePercent = Math.abs(quote.regularMarketChangePercent).toFixed(2)
-  const changeType = getChangeType(quote.regularMarketChange)
-
-  return {
-    name,
-    value: `$${value}/${unit === 'USD/oz' ? 'oz' : unit}`,
-    change: quote.regularMarketChange >= 0 ? `+${change}` : `-${change}`,
-    changePercent: quote.regularMarketChangePercent >= 0 ? `+${changePercent}` : `-${changePercent}`,
-    changeType,
-  }
-}
-
-/**
- * 은 시세 가져오기 (Yahoo Finance)
- */
-export async function fetchSilverPrice(): Promise<Indicator> {
-  // Yahoo Finance 은 선물 심볼
-  const silverQuote = await fetchYahooQuote('SI=F') // Silver Futures
-  return metalQuoteToIndicator('국제 은', silverQuote)
 }
