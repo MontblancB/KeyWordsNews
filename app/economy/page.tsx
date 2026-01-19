@@ -132,16 +132,17 @@ export default function EconomyPage() {
               </div>
             </section>
 
-            {/* 금시세 */}
+            {/* 귀금속 */}
             <section>
               <div className="flex items-center gap-2 mb-2">
                 <SparklesIcon className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
                 <h2 className="text-sm font-bold text-gray-800 dark:text-gray-200">
-                  금시세
+                  귀금속
                 </h2>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <IndicatorCard indicator={data.gold.international} onClick={handleIndicatorClick} />
+                <IndicatorCard indicator={data.metals.gold} onClick={handleIndicatorClick} />
+                <IndicatorCard indicator={data.metals.silver} onClick={handleIndicatorClick} />
               </div>
             </section>
 

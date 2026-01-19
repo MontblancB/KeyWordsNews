@@ -158,6 +158,20 @@ export const TRADINGVIEW_SYMBOLS: Record<string, TradingViewSymbol> = {
     description: '국제 금 시세 (USD/oz)',
   },
 
+  // 은시세
+  '국제 은': {
+    symbol: 'TVC:SILVER',
+    name: 'Silver',
+    exchange: 'TVC',
+    description: '국제 은 시세 (USD/oz)',
+  },
+  'Silver': {
+    symbol: 'TVC:SILVER',
+    name: 'Silver',
+    exchange: 'TVC',
+    description: '국제 은 시세 (USD/oz)',
+  },
+
   // 암호화폐
   'Bitcoin (BTC)': {
     symbol: 'BINANCE:BTCUSDT',
@@ -261,22 +275,12 @@ export function getTradingViewSymbol(indicatorName: string): TradingViewSymbol |
 /**
  * 차트 지원 여부 확인
  *
- * 다음 지표는 TradingView 외부 위젯에서 지원하지 않음:
- * - KOSPI, KOSDAQ: KRX(한국거래소) 데이터 라이선스 제한
- * - 전체 시가총액: CRYPTOCAP:TOTAL 외부 위젯 미지원
- * - 공포탐욕지수: TradingView에서 제공하지 않음
+ * 다음 지표는 TradingView에서 지원하지 않음:
+ * - 공포탐욕지수: TradingView에서 제공하지 않음 (Alternative.me API 전용)
  */
 export function isChartSupported(indicatorName: string): boolean {
   const unsupportedIndicators = [
-    // 한국 지수 (KRX 데이터 라이선스 제한)
-    'KOSPI',
-    'KOSDAQ',
-    '코스피',
-    '코스닥',
-    // 암호화폐 시장 데이터
-    '전체 시가총액',
-    '시가총액',
-    // 공포탐욕지수
+    // 공포탐욕지수 (TradingView 미제공)
     '공포·탐욕 지수',
     '공포탐욕',
   ]

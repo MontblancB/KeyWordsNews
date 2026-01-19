@@ -52,7 +52,7 @@ async function testHybridScraper() {
 
     console.log('💰 금시세 (네이버 금융):')
     console.log(
-      `  - 국제 금: ${data.gold.international.value} (${data.gold.international.change}, ${data.gold.international.changePercent}%) [${data.gold.international.changeType}]\n`
+      `  - 국제 금: ${data.metals.gold.value} (${data.metals.gold.change}, ${data.metals.gold.changePercent}%) [${data.metals.gold.changeType}]\n`
     )
 
     console.log('₿ 암호화폐 (Finnhub API):')
@@ -84,7 +84,7 @@ async function testHybridScraper() {
       { name: 'Dow', value: data.international.dow.value },
       { name: 'Nikkei', value: data.international.nikkei.value },
       { name: 'USD/KRW', value: data.exchange.usdKrw.value },
-      { name: '금시세', value: data.gold.international.value },
+      { name: '금시세', value: data.metals.gold.value },
       { name: 'Bitcoin', value: data.crypto.bitcoin.value },
       { name: 'Ethereum', value: data.crypto.ethereum.value },
     ]

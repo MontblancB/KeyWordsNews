@@ -36,9 +36,10 @@ export interface ExchangeRates {
   cnyKrw: Indicator
 }
 
-// 금시세
-export interface GoldPrice {
-  international: Indicator
+// 귀금속 (금, 은)
+export interface PreciousMetals {
+  gold: Indicator
+  silver: Indicator
 }
 
 // 암호화폐
@@ -61,7 +62,7 @@ export interface EconomyData {
   domestic: DomesticIndices
   international: InternationalIndices
   exchange: ExchangeRates
-  gold: GoldPrice
+  metals: PreciousMetals
   crypto: CryptoPrices
   globalCrypto: GlobalCryptoData
   fearGreed: Indicator
