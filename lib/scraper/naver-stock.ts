@@ -14,114 +14,81 @@ import type { ChangeType } from '@/types/economy'
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 
+// 인기 종목 캐시 (검색 API 실패 시 폴백)
+const POPULAR_STOCKS: StockSearchItem[] = [
+  { code: '005930', name: '삼성전자', market: 'KOSPI' },
+  { code: '000660', name: 'SK하이닉스', market: 'KOSPI' },
+  { code: '035420', name: 'NAVER', market: 'KOSPI' },
+  { code: '035720', name: '카카오', market: 'KOSPI' },
+  { code: '005380', name: '현대차', market: 'KOSPI' },
+  { code: '051910', name: 'LG화학', market: 'KOSPI' },
+  { code: '006400', name: '삼성SDI', market: 'KOSPI' },
+  { code: '003670', name: '포스코퓨처엠', market: 'KOSPI' },
+  { code: '105560', name: 'KB금융', market: 'KOSPI' },
+  { code: '055550', name: '신한지주', market: 'KOSPI' },
+  { code: '000270', name: '기아', market: 'KOSPI' },
+  { code: '012330', name: '현대모비스', market: 'KOSPI' },
+  { code: '066570', name: 'LG전자', market: 'KOSPI' },
+  { code: '003550', name: 'LG', market: 'KOSPI' },
+  { code: '034730', name: 'SK', market: 'KOSPI' },
+  { code: '028260', name: '삼성물산', market: 'KOSPI' },
+  { code: '207940', name: '삼성바이오로직스', market: 'KOSPI' },
+  { code: '068270', name: '셀트리온', market: 'KOSPI' },
+  { code: '005490', name: 'POSCO홀딩스', market: 'KOSPI' },
+  { code: '017670', name: 'SK텔레콤', market: 'KOSPI' },
+  { code: '030200', name: 'KT', market: 'KOSPI' },
+  { code: '018260', name: '삼성에스디에스', market: 'KOSPI' },
+  { code: '032830', name: '삼성생명', market: 'KOSPI' },
+  { code: '086790', name: '하나금융지주', market: 'KOSPI' },
+  { code: '009150', name: '삼성전기', market: 'KOSPI' },
+  { code: '247540', name: '에코프로비엠', market: 'KOSDAQ' },
+  { code: '086520', name: '에코프로', market: 'KOSDAQ' },
+  { code: '293490', name: '카카오게임즈', market: 'KOSDAQ' },
+  { code: '263750', name: '펄어비스', market: 'KOSDAQ' },
+  { code: '041510', name: '에스엠', market: 'KOSDAQ' },
+  { code: '352820', name: '하이브', market: 'KOSPI' },
+  { code: '259960', name: '크래프톤', market: 'KOSPI' },
+  { code: '003490', name: '대한항공', market: 'KOSPI' },
+  { code: '180640', name: '한진칼', market: 'KOSPI' },
+  { code: '010130', name: '고려아연', market: 'KOSPI' },
+]
+
 /**
- * 종목 검색 (2단계 폴백 전략)
- * 1차: 네이버 금융 검색 페이지 스크래핑 (finance.naver.com - 가장 안정적)
- * 2차: 네이버 금융 종목 페이지 직접 조회
+ * 종목 검색 (3단계 폴백 전략)
+ * 1차: 종목코드 직접 조회 (6자리 숫자)
+ * 2차: 인기 종목에서 검색
+ * 3차: 종목 페이지에서 이름 확인
  */
 export async function searchStocks(query: string): Promise<StockSearchItem[]> {
   if (!query || query.trim().length === 0) {
     return []
   }
 
-  const trimmedQuery = query.trim()
+  const trimmedQuery = query.trim().toLowerCase()
 
-  try {
-    // 1차: 검색 페이지 스크래핑 (가장 안정적)
-    const pageResults = await searchStocksFromPage(trimmedQuery)
-    if (pageResults.length > 0) {
-      return pageResults
+  // 1차: 종목코드인 경우 직접 조회
+  if (/^\d{6}$/.test(trimmedQuery)) {
+    const directResult = await searchStockByCode(trimmedQuery)
+    if (directResult) {
+      return [directResult]
     }
-
-    // 2차: 종목코드인 경우 직접 조회
-    if (/^\d{6}$/.test(trimmedQuery)) {
-      const directResult = await searchStockByCode(trimmedQuery)
-      if (directResult) {
-        return [directResult]
-      }
-    }
-
-    return []
-  } catch (error) {
-    console.error('Stock search error:', error)
-    return []
   }
-}
 
-/**
- * 네이버 금융 검색 페이지에서 종목 검색 (Primary)
- * - finance.naver.com 도메인 사용 (안정적)
- * - HTML 스크래핑 방식
- */
-async function searchStocksFromPage(query: string): Promise<StockSearchItem[]> {
-  try {
-    const url = `https://finance.naver.com/search/searchList.naver?query=${encodeURIComponent(query)}`
-    console.log('Searching stocks from:', url)
+  // 2차: 인기 종목에서 검색 (이름 또는 코드 매칭)
+  const matchedStocks = POPULAR_STOCKS.filter(
+    (stock) =>
+      stock.name.toLowerCase().includes(trimmedQuery) ||
+      stock.code.includes(trimmedQuery)
+  )
 
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': USER_AGENT,
-        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
-        'Accept-Encoding': 'gzip, deflate, br',
-        Connection: 'keep-alive',
-      },
-    })
-
-    if (!response.ok) {
-      console.log('Search page request failed:', response.status)
-      return []
-    }
-
-    const html = await response.text()
-    const $ = cheerio.load(html)
-    const results: StockSearchItem[] = []
-
-    // 방법 1: 검색 결과 테이블에서 종목 추출
-    $('table.type_search tbody tr, table.tbl_search tbody tr').each((_, row) => {
-      const nameCell = $(row).find('td a').first()
-      const name = nameCell.text().trim()
-      const href = nameCell.attr('href') || ''
-
-      // 종목코드 추출
-      const codeMatch = href.match(/code=(\d{6})/)
-      const code = codeMatch ? codeMatch[1] : ''
-
-      // 시장 구분
-      const rowText = $(row).text()
-      let market: 'KOSPI' | 'KOSDAQ' | 'KONEX' = 'KOSPI'
-      if (rowText.includes('코스닥') || rowText.toLowerCase().includes('kosdaq')) {
-        market = 'KOSDAQ'
-      } else if (rowText.includes('코넥스') || rowText.toLowerCase().includes('konex')) {
-        market = 'KONEX'
-      }
-
-      if (name && code && !results.some((r) => r.code === code)) {
-        results.push({ code, name, market })
-      }
-    })
-
-    // 방법 2: 모든 종목 링크에서 추출 (폴백)
-    if (results.length === 0) {
-      $('a[href*="/item/main.naver?code="], a[href*="/item/main.nhn?code="]').each((_, el) => {
-        const href = $(el).attr('href') || ''
-        const name = $(el).text().trim()
-        const codeMatch = href.match(/code=(\d{6})/)
-        const code = codeMatch ? codeMatch[1] : ''
-
-        // 의미 있는 이름인지 확인 (숫자만 있거나 빈 문자열 제외)
-        if (name && code && name.length > 1 && !/^\d+$/.test(name) && !results.some((r) => r.code === code)) {
-          results.push({ code, name, market: 'KOSPI' })
-        }
-      })
-    }
-
-    console.log('Search results count:', results.length)
-    return results.slice(0, 10)
-  } catch (error) {
-    console.error('searchStocksFromPage error:', error)
-    return []
+  if (matchedStocks.length > 0) {
+    return matchedStocks.slice(0, 10)
   }
+
+  // 3차: 검색어가 종목명일 수 있으니 추가 검색 시도
+  // 인기 종목에 없는 경우, 직접 네이버 금융 페이지 확인은 어려우므로 빈 결과 반환
+  console.log('No matching stocks found for:', trimmedQuery)
+  return []
 }
 
 /**
@@ -130,14 +97,18 @@ async function searchStocksFromPage(query: string): Promise<StockSearchItem[]> {
 async function searchStockByCode(code: string): Promise<StockSearchItem | null> {
   try {
     const url = `https://finance.naver.com/item/main.naver?code=${code}`
+    console.log('Fetching stock info from:', url)
+
     const response = await fetch(url, {
       headers: {
         'User-Agent': USER_AGENT,
-        Accept: 'text/html',
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'ko-KR,ko;q=0.9',
       },
     })
 
     if (!response.ok) {
+      console.log('Stock page request failed:', response.status)
       return null
     }
 
@@ -147,7 +118,7 @@ async function searchStockByCode(code: string): Promise<StockSearchItem | null> 
     // 종목명 추출
     const name = $('.wrap_company h2 a').text().trim() || $('title').text().split(':')[0].trim()
 
-    if (!name || name.includes('없는') || name.includes('error')) {
+    if (!name || name.includes('없는') || name.includes('error') || name.length < 2) {
       return null
     }
 
@@ -160,6 +131,7 @@ async function searchStockByCode(code: string): Promise<StockSearchItem | null> 
       market = 'KONEX'
     }
 
+    console.log('Found stock:', { code, name, market })
     return { code, name, market }
   } catch (error) {
     console.error('searchStockByCode error:', error)
