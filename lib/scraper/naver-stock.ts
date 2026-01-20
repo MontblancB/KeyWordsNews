@@ -15,26 +15,90 @@ const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 
 /**
- * 종목 검색 (네이버 금융 검색 페이지 스크래핑 - Primary)
+ * 종목 검색 (3단계 폴백 전략)
+ * 1차: 네이버 증권 자동완성 API (가장 빠름)
+ * 2차: 네이버 금융 검색 페이지 스크래핑
+ * 3차: 모바일 API
  */
 export async function searchStocks(query: string): Promise<StockSearchItem[]> {
   if (!query || query.trim().length === 0) {
     return []
   }
 
+  const trimmedQuery = query.trim()
+
   try {
-    // 1차: 네이버 금융 검색 페이지 스크래핑 (가장 안정적)
-    const results = await searchStocksFromPage(query)
-    if (results.length > 0) {
-      return results
+    // 1차: 네이버 증권 자동완성 API (한글/영문 모두 지원)
+    const autocompleteResults = await searchStocksFromAutocomplete(trimmedQuery)
+    if (autocompleteResults.length > 0) {
+      return autocompleteResults
     }
 
-    // 2차: 모바일 API 시도
-    return await searchStocksFromMobileAPI(query)
+    // 2차: 검색 페이지 스크래핑
+    const pageResults = await searchStocksFromPage(trimmedQuery)
+    if (pageResults.length > 0) {
+      return pageResults
+    }
+
+    // 3차: 모바일 API
+    return await searchStocksFromMobileAPI(trimmedQuery)
   } catch (error) {
     console.error('Stock search error:', error)
     // 최종 폴백
-    return await searchStocksFromMobileAPI(query)
+    return await searchStocksFromMobileAPI(trimmedQuery)
+  }
+}
+
+/**
+ * 네이버 증권 자동완성 API (Primary)
+ * - 한글 종목명 검색 지원
+ * - 종목코드 검색 지원
+ * - 빠른 응답 속도
+ */
+async function searchStocksFromAutocomplete(query: string): Promise<StockSearchItem[]> {
+  try {
+    // 네이버 증권 자동완성 API
+    const url = `https://ac.finance.naver.com/ac?q=${encodeURIComponent(query)}&q_enc=utf-8&t_koreng=1&st=111&r_lt=111`
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'application/json, text/javascript, */*',
+        'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+        Referer: 'https://finance.naver.com/',
+      },
+    })
+
+    if (!response.ok) {
+      return []
+    }
+
+    const data = await response.json()
+
+    // 응답 구조: { query: [...], items: [[종목명, 코드, 시장, ...], ...] }
+    const items = data?.items?.[0] || []
+
+    if (!Array.isArray(items) || items.length === 0) {
+      return []
+    }
+
+    return items.slice(0, 10).map((item: string[]) => {
+      // item 구조: [종목명, 코드, 시장구분, ...]
+      const name = item[0] || ''
+      const code = item[1] || ''
+      const marketInfo = item[2] || ''
+
+      let market: 'KOSPI' | 'KOSDAQ' | 'KONEX' = 'KOSPI'
+      if (marketInfo.includes('KOSDAQ') || marketInfo.includes('코스닥')) {
+        market = 'KOSDAQ'
+      } else if (marketInfo.includes('KONEX') || marketInfo.includes('코넥스')) {
+        market = 'KONEX'
+      }
+
+      return { code, name, market }
+    }).filter((item: StockSearchItem) => item.code && item.name)
+  } catch (error) {
+    console.error('searchStocksFromAutocomplete error:', error)
+    return []
   }
 }
 
