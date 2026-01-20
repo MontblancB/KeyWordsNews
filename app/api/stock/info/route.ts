@@ -6,7 +6,7 @@ import {
   getStockMarket,
 } from '@/lib/scraper/naver-stock'
 import { scrapeFinancials, scrapeFnGuideIndicators } from '@/lib/scraper/fnguide'
-import type { StockInfo } from '@/types/stock'
+import type { StockInfo, StockBasicInfo, StockMetrics, StockFinancialData } from '@/types/stock'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,12 +16,13 @@ const CACHE_TTL = 60 * 1000 // 1분
 
 /**
  * 종목 상세 정보 API
- * GET /api/stock/info?code={종목코드}
+ * GET /api/stock/info?code={종목코드}&name={종목명}
  */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const code = searchParams.get('code')
+    const name = searchParams.get('name') || ''
 
     if (!code || code.trim().length === 0) {
       return NextResponse.json(
@@ -46,7 +47,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 병렬로 데이터 수집
-    const [priceData, companyInfo, naverIndicators, fnGuideIndicators, financials, market] =
+    const [priceData, companyInfo, naverIndicators, fnGuideIndicators, fnGuideFinancials, market] =
       await Promise.all([
         scrapeStockPrice(stockCode),
         scrapeCompanyInfo(stockCode),
@@ -56,41 +57,49 @@ export async function GET(request: NextRequest) {
         getStockMarket(stockCode),
       ])
 
-    // 데이터 병합
-    const stockInfo: StockInfo = {
+    // basic 정보 구성
+    const basic: StockBasicInfo = {
       code: stockCode,
-      name: '', // 검색 결과에서 가져옴
+      name: name,
       market,
-      price: priceData || {
-        current: '0',
-        change: '0',
-        changePercent: '0',
-        changeType: 'unchanged',
-        high: '0',
-        low: '0',
-        open: '0',
-        volume: '0',
-        prevClose: '0',
-      },
-      company: {
-        industry: companyInfo?.industry || '-',
-        ceo: companyInfo?.ceo || '-',
-        establishedDate: companyInfo?.establishedDate || '-',
-        fiscalMonth: companyInfo?.fiscalMonth || '-',
-        employees: companyInfo?.employees || '-',
-        marketCap: companyInfo?.marketCap || '-',
-        headquarters: companyInfo?.headquarters || '-',
-        website: companyInfo?.website || '-',
-      },
-      indicators: {
-        per: fnGuideIndicators?.per || naverIndicators?.per || '-',
-        pbr: fnGuideIndicators?.pbr || naverIndicators?.pbr || '-',
-        eps: fnGuideIndicators?.eps || naverIndicators?.eps || '-',
-        bps: fnGuideIndicators?.bps || naverIndicators?.bps || '-',
-        roe: fnGuideIndicators?.roe || naverIndicators?.roe || '-',
-        dividendYield: fnGuideIndicators?.dividendYield || naverIndicators?.dividendYield || '-',
-      },
-      financials: financials.length > 0 ? financials : [],
+      sector: companyInfo?.industry || '-',
+      currentPrice: priceData?.current || '0',
+      change: priceData?.change || '0',
+      changePercent: priceData?.changePercent ? `${priceData.changePercent}%` : '0%',
+      changeType: priceData?.changeType || 'unchanged',
+      marketCap: companyInfo?.marketCap || '-',
+      volume: priceData?.volume || '0',
+      high52week: '-', // 네이버 금융에서 별도 스크래핑 필요
+      low52week: '-',
+    }
+
+    // metrics 정보 구성
+    const metrics: StockMetrics = {
+      per: fnGuideIndicators?.per || naverIndicators?.per || '-',
+      pbr: fnGuideIndicators?.pbr || naverIndicators?.pbr || '-',
+      roe: fnGuideIndicators?.roe || naverIndicators?.roe || '-',
+      eps: fnGuideIndicators?.eps || naverIndicators?.eps || '-',
+      bps: fnGuideIndicators?.bps || naverIndicators?.bps || '-',
+      dividendYield: fnGuideIndicators?.dividendYield || naverIndicators?.dividendYield || '-',
+    }
+
+    // financials 정보 구성 (연간 데이터만 필터링)
+    const financials: StockFinancialData[] = fnGuideFinancials
+      .filter(f => f.periodType === 'annual')
+      .slice(0, 4) // 최근 4년
+      .map(f => ({
+        year: f.period.replace(/[^\d]/g, '').slice(0, 4) || f.period, // 연도만 추출
+        revenue: f.revenue,
+        operatingProfit: f.operatingProfit,
+        netIncome: f.netIncome,
+        operatingMargin: f.operatingMargin,
+      }))
+
+    // 최종 StockInfo 구성
+    const stockInfo: StockInfo = {
+      basic,
+      metrics,
+      financials,
       lastUpdated: new Date().toLocaleString('ko-KR', {
         timeZone: 'Asia/Seoul',
         year: 'numeric',

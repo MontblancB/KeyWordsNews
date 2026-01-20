@@ -36,7 +36,7 @@ export function useStockSearch(query: string) {
 /**
  * 종목 상세 정보 훅
  */
-export function useStockInfo(code: string | null) {
+export function useStockInfo(code: string | null, name?: string) {
   return useQuery<StockInfo>({
     queryKey: ['stock', 'info', code],
     queryFn: async () => {
@@ -44,7 +44,12 @@ export function useStockInfo(code: string | null) {
         throw new Error('Stock code is required')
       }
 
-      const response = await fetch(`/api/stock/info?code=${code}`)
+      const params = new URLSearchParams({ code })
+      if (name) {
+        params.append('name', name)
+      }
+
+      const response = await fetch(`/api/stock/info?${params.toString()}`)
       const data = await response.json()
 
       if (!data.success) {

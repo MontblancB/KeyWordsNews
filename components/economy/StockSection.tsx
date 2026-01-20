@@ -10,7 +10,10 @@ import type { StockSearchItem } from '@/types/stock'
 export default function StockSection() {
   const [selectedStock, setSelectedStock] = useState<StockSearchItem | null>(null)
   const { recentStocks, addRecentStock, removeRecentStock } = useRecentStocks()
-  const { data: stockInfo, isLoading, error } = useStockInfo(selectedStock?.code || null)
+  const { data: stockInfo, isLoading, error } = useStockInfo(
+    selectedStock?.code || null,
+    selectedStock?.name
+  )
 
   // 종목 선택
   const handleSelectStock = (stock: StockSearchItem) => {

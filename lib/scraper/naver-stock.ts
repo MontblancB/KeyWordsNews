@@ -1,11 +1,39 @@
 import * as cheerio from 'cheerio'
-import type {
-  StockSearchItem,
-  StockPrice,
-  CompanyInfo,
-  InvestmentIndicators,
-} from '@/types/stock'
+import type { StockSearchItem } from '@/types/stock'
 import type { ChangeType } from '@/types/economy'
+
+// 내부 타입 정의 (API에서 조합용)
+export interface NaverStockPrice {
+  current: string
+  change: string
+  changePercent: string
+  changeType: ChangeType
+  high: string
+  low: string
+  open: string
+  volume: string
+  prevClose: string
+}
+
+export interface NaverCompanyInfo {
+  industry: string
+  ceo: string
+  establishedDate: string
+  fiscalMonth: string
+  employees: string
+  marketCap: string
+  headquarters: string
+  website: string
+}
+
+export interface NaverInvestmentIndicators {
+  per: string
+  pbr: string
+  eps: string
+  bps: string
+  roe: string
+  dividendYield: string
+}
 
 /**
  * 네이버 금융 주식 스크래퍼
@@ -88,7 +116,7 @@ function cleanNumber(text: string): string {
 /**
  * 주식 시세 스크래핑 (네이버 금융 종목 페이지)
  */
-export async function scrapeStockPrice(code: string): Promise<StockPrice | null> {
+export async function scrapeStockPrice(code: string): Promise<NaverStockPrice | null> {
   try {
     const url = `https://finance.naver.com/item/main.naver?code=${code}`
     const response = await fetch(url, {
@@ -163,7 +191,7 @@ export async function scrapeStockPrice(code: string): Promise<StockPrice | null>
 /**
  * 기업 정보 스크래핑 (네이버 금융 기업개요)
  */
-export async function scrapeCompanyInfo(code: string): Promise<CompanyInfo | null> {
+export async function scrapeCompanyInfo(code: string): Promise<NaverCompanyInfo | null> {
   try {
     const url = `https://finance.naver.com/item/coinfo.naver?code=${code}`
     const response = await fetch(url, {
@@ -178,7 +206,7 @@ export async function scrapeCompanyInfo(code: string): Promise<CompanyInfo | nul
     const $ = cheerio.load(html)
 
     // 기업 정보 테이블에서 추출
-    const companyInfo: CompanyInfo = {
+    const companyInfo: NaverCompanyInfo = {
       industry: '',
       ceo: '',
       establishedDate: '',
@@ -245,7 +273,7 @@ export async function scrapeCompanyInfo(code: string): Promise<CompanyInfo | nul
  */
 export async function scrapeInvestmentIndicators(
   code: string
-): Promise<InvestmentIndicators | null> {
+): Promise<NaverInvestmentIndicators | null> {
   try {
     const url = `https://finance.naver.com/item/main.naver?code=${code}`
     const response = await fetch(url, {
@@ -259,7 +287,7 @@ export async function scrapeInvestmentIndicators(
     const html = await response.text()
     const $ = cheerio.load(html)
 
-    const indicators: InvestmentIndicators = {
+    const indicators: NaverInvestmentIndicators = {
       per: '-',
       pbr: '-',
       eps: '-',

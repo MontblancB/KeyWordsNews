@@ -1,5 +1,33 @@
 import * as cheerio from 'cheerio'
-import type { FinancialData, CompanyInfo, InvestmentIndicators } from '@/types/stock'
+
+// 내부 타입 정의 (API에서 조합용)
+export interface FnGuideFinancialData {
+  period: string
+  periodType: 'quarterly' | 'annual'
+  revenue: string
+  operatingProfit: string
+  netIncome: string
+  operatingMargin: string
+  netMargin: string
+}
+
+export interface FnGuideIndicators {
+  per?: string
+  pbr?: string
+  roe?: string
+  eps?: string
+  bps?: string
+  dividendYield?: string
+}
+
+export interface FnGuideCompanyInfo {
+  ceo?: string
+  establishedDate?: string
+  fiscalMonth?: string
+  employees?: string
+  industry?: string
+  website?: string
+}
 
 /**
  * FnGuide 재무제표 스크래퍼
@@ -18,7 +46,7 @@ function cleanValue(text: string): string {
 /**
  * 재무제표 스크래핑 (FnGuide)
  */
-export async function scrapeFinancials(code: string): Promise<FinancialData[]> {
+export async function scrapeFinancials(code: string): Promise<FnGuideFinancialData[]> {
   try {
     // FnGuide 기업 페이지
     const url = `https://comp.fnguide.com/SVO2/ASP/SVD_Main.asp?gicode=A${code}`
@@ -37,7 +65,7 @@ export async function scrapeFinancials(code: string): Promise<FinancialData[]> {
     const html = await response.text()
     const $ = cheerio.load(html)
 
-    const financials: FinancialData[] = []
+    const financials: FnGuideFinancialData[] = []
 
     // 연간 재무제표 테이블 파싱
     // FnGuide의 SVD_Main 페이지에서 재무 하이라이트 테이블
@@ -83,7 +111,7 @@ export async function scrapeFinancials(code: string): Promise<FinancialData[]> {
       const period = headers[i] || ''
       const isQuarterly = period.includes('Q') || period.includes('분기')
 
-      const financial: FinancialData = {
+      const financial: FnGuideFinancialData = {
         period,
         periodType: isQuarterly ? 'quarterly' : 'annual',
         revenue: rows['매출액']?.[i] || rows['영업수익']?.[i] || '-',
@@ -115,7 +143,7 @@ export async function scrapeFinancials(code: string): Promise<FinancialData[]> {
  */
 export async function scrapeFnGuideIndicators(
   code: string
-): Promise<Partial<InvestmentIndicators>> {
+): Promise<FnGuideIndicators> {
   try {
     const url = `https://comp.fnguide.com/SVO2/ASP/SVD_Main.asp?gicode=A${code}`
     const response = await fetch(url, {
@@ -132,7 +160,7 @@ export async function scrapeFnGuideIndicators(
     const html = await response.text()
     const $ = cheerio.load(html)
 
-    const indicators: Partial<InvestmentIndicators> = {}
+    const indicators: FnGuideIndicators = {}
 
     // 투자지표 섹션에서 PER, PBR, ROE 등 추출
     $('table').each((_, table) => {
@@ -180,7 +208,7 @@ export async function scrapeFnGuideIndicators(
  */
 export async function scrapeFnGuideCompanyInfo(
   code: string
-): Promise<Partial<CompanyInfo>> {
+): Promise<FnGuideCompanyInfo> {
   try {
     const url = `https://comp.fnguide.com/SVO2/ASP/SVD_Main.asp?gicode=A${code}`
     const response = await fetch(url, {
@@ -197,7 +225,7 @@ export async function scrapeFnGuideCompanyInfo(
     const html = await response.text()
     const $ = cheerio.load(html)
 
-    const companyInfo: Partial<CompanyInfo> = {}
+    const companyInfo: FnGuideCompanyInfo = {}
 
     // 기업 개요 섹션에서 정보 추출
     $('table').each((_, table) => {
