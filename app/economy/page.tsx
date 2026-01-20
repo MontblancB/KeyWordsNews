@@ -3,18 +3,11 @@
 import { useState } from 'react'
 import { useEconomy } from '@/hooks/useEconomy'
 import BottomNav from '@/components/BottomNav'
-import IndicatorCard from '@/components/economy/IndicatorCard'
+import EconomyTabs, { type EconomyTabType } from '@/components/economy/EconomyTabs'
+import IndicatorsSection from '@/components/economy/IndicatorsSection'
+import StockSection from '@/components/economy/StockSection'
 import TradingViewModal from '@/components/economy/TradingViewModal'
-import EconomyTabs, { type EconomyTab } from '@/components/economy/EconomyTabs'
-import StockSearch from '@/components/economy/StockSearch'
-import {
-  ArrowPathIcon,
-  ChartBarIcon,
-  GlobeAltIcon,
-  CurrencyDollarIcon,
-  SparklesIcon,
-  CircleStackIcon,
-} from '@heroicons/react/24/outline'
+import { ArrowPathIcon } from '@heroicons/react/24/outline'
 import { useColorTheme } from '@/hooks/useColorTheme'
 import { usePullToRefresh } from '@/hooks/usePullToRefresh'
 import PullToRefreshIndicator from '@/components/PullToRefreshIndicator'
@@ -25,7 +18,7 @@ export default function EconomyPage() {
   const { data, isLoading, error, forceRefetch, isRefetching } = useEconomy()
 
   // 탭 상태
-  const [activeTab, setActiveTab] = useState<EconomyTab>('indicators')
+  const [activeTab, setActiveTab] = useState<EconomyTabType>('indicators')
 
   // 모달 상태
   const [selectedIndicator, setSelectedIndicator] = useState<Indicator | null>(null)
@@ -43,15 +36,13 @@ export default function EconomyPage() {
     setSelectedIndicator(null)
   }
 
-  // Pull-to-Refresh (지표 탭에서만 동작)
+  // Pull-to-Refresh
   const pullToRefresh = usePullToRefresh({
     onRefresh: async () => {
-      if (activeTab === 'indicators') {
-        await new Promise<void>((resolve) => {
-          forceRefetch()
-          setTimeout(resolve, 1000)
-        })
-      }
+      await new Promise<void>((resolve) => {
+        forceRefetch()
+        setTimeout(resolve, 1000)
+      })
     },
   })
 
@@ -79,118 +70,34 @@ export default function EconomyPage() {
         </div>
       </header>
 
-      {/* 카테고리 탭 */}
+      {/* 탭 네비게이션 */}
       <EconomyTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
-      {/* 지표 탭 콘텐츠 */}
-      {activeTab === 'indicators' && (
-        <main className="pb-16 p-3 bg-white dark:bg-gray-900">
-          {isLoading && (
-            <div className="flex items-center justify-center py-20">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 dark:border-green-400"></div>
-            </div>
-          )}
+      <main className="pb-16 p-3 bg-white dark:bg-gray-900 min-h-screen">
+        {/* 지표 탭 */}
+        {activeTab === 'indicators' && (
+          <>
+            {isLoading && (
+              <div className="flex items-center justify-center py-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 dark:border-green-400"></div>
+              </div>
+            )}
 
-          {error && (
-            <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400 text-center">
-              데이터를 불러오는데 실패했습니다.
-            </div>
-          )}
+            {error && (
+              <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400 text-center">
+                데이터를 불러오는데 실패했습니다.
+              </div>
+            )}
 
-          {data && (
-            <div className="space-y-3">
-              {/* 국내 지수 */}
-              <section>
-                <div className="flex items-center gap-2 mb-2">
-                  <ChartBarIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                  <h2 className="text-sm font-bold text-gray-800 dark:text-gray-200">
-                    국내 지수
-                  </h2>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <IndicatorCard indicator={data.domestic.kospi} onClick={handleIndicatorClick} />
-                  <IndicatorCard indicator={data.domestic.kosdaq} onClick={handleIndicatorClick} />
-                </div>
-              </section>
+            {data && (
+              <IndicatorsSection data={data} onIndicatorClick={handleIndicatorClick} />
+            )}
+          </>
+        )}
 
-              {/* 해외 지수 */}
-              <section>
-                <div className="flex items-center gap-2 mb-2">
-                  <GlobeAltIcon className="w-4 h-4 text-green-600 dark:text-green-400" />
-                  <h2 className="text-sm font-bold text-gray-800 dark:text-gray-200">
-                    해외 지수
-                  </h2>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <IndicatorCard indicator={data.international.sp500} onClick={handleIndicatorClick} />
-                  <IndicatorCard indicator={data.international.nasdaq} onClick={handleIndicatorClick} />
-                  <IndicatorCard indicator={data.international.dow} onClick={handleIndicatorClick} />
-                  <IndicatorCard indicator={data.international.nikkei} onClick={handleIndicatorClick} />
-                </div>
-              </section>
-
-              {/* 환율 */}
-              <section>
-                <div className="flex items-center gap-2 mb-2">
-                  <CurrencyDollarIcon className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                  <h2 className="text-sm font-bold text-gray-800 dark:text-gray-200">
-                    환율
-                  </h2>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <IndicatorCard indicator={data.exchange.usdKrw} onClick={handleIndicatorClick} />
-                  <IndicatorCard indicator={data.exchange.jpyKrw} onClick={handleIndicatorClick} />
-                  <IndicatorCard indicator={data.exchange.eurKrw} onClick={handleIndicatorClick} />
-                  <IndicatorCard indicator={data.exchange.cnyKrw} onClick={handleIndicatorClick} />
-                </div>
-              </section>
-
-              {/* 귀금속 */}
-              <section>
-                <div className="flex items-center gap-2 mb-2">
-                  <SparklesIcon className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
-                  <h2 className="text-sm font-bold text-gray-800 dark:text-gray-200">
-                    귀금속
-                  </h2>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <IndicatorCard indicator={data.metals.gold} onClick={handleIndicatorClick} />
-                  <IndicatorCard indicator={data.metals.silver} onClick={handleIndicatorClick} />
-                </div>
-              </section>
-
-              {/* 암호화폐 */}
-              <section>
-                <div className="flex items-center gap-2 mb-2">
-                  <CircleStackIcon className="w-4 h-4 text-orange-600 dark:text-orange-400" />
-                  <h2 className="text-sm font-bold text-gray-800 dark:text-gray-200">
-                    암호화폐
-                  </h2>
-                </div>
-                <div className="grid grid-cols-2 gap-2 mb-2">
-                  <IndicatorCard indicator={data.globalCrypto.totalMarketCap} onClick={handleIndicatorClick} />
-                  <IndicatorCard indicator={data.fearGreed} onClick={handleIndicatorClick} />
-                </div>
-                <div className="grid grid-cols-2 gap-2 mb-2">
-                  <IndicatorCard indicator={data.crypto.bitcoin} onClick={handleIndicatorClick} />
-                  <IndicatorCard indicator={data.crypto.ethereum} onClick={handleIndicatorClick} />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <IndicatorCard indicator={data.globalCrypto.btcDominance} onClick={handleIndicatorClick} />
-                  <IndicatorCard indicator={data.globalCrypto.ethDominance} onClick={handleIndicatorClick} />
-                </div>
-              </section>
-            </div>
-          )}
-        </main>
-      )}
-
-      {/* 주식 탭 콘텐츠 */}
-      {activeTab === 'stocks' && (
-        <main className="pb-16 bg-white dark:bg-gray-900 min-h-[calc(100vh-120px)]">
-          <StockSearch />
-        </main>
-      )}
+        {/* 주식 탭 */}
+        {activeTab === 'stock' && <StockSection />}
+      </main>
 
       {/* TradingView 차트 모달 */}
       <TradingViewModal

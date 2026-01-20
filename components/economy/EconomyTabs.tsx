@@ -1,57 +1,45 @@
 'use client'
 
+import { useColorTheme } from '@/hooks/useColorTheme'
 import { ChartBarIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
-import {
-  ChartBarIcon as ChartBarIconSolid,
-  MagnifyingGlassIcon as MagnifyingGlassIconSolid,
-} from '@heroicons/react/24/solid'
 
-export type EconomyTab = 'indicators' | 'stocks'
+export type EconomyTabType = 'indicators' | 'stock'
 
 interface EconomyTabsProps {
-  activeTab: EconomyTab
-  onTabChange: (tab: EconomyTab) => void
+  activeTab: EconomyTabType
+  onTabChange: (tab: EconomyTabType) => void
 }
 
 const TABS = [
-  {
-    id: 'indicators' as const,
-    label: '지표',
-    icon: ChartBarIcon,
-    activeIcon: ChartBarIconSolid,
-  },
-  {
-    id: 'stocks' as const,
-    label: '주식',
-    icon: MagnifyingGlassIcon,
-    activeIcon: MagnifyingGlassIconSolid,
-  },
+  { id: 'indicators' as const, label: '지표', icon: ChartBarIcon },
+  { id: 'stock' as const, label: '주식', icon: MagnifyingGlassIcon },
 ]
 
 export default function EconomyTabs({ activeTab, onTabChange }: EconomyTabsProps) {
-  return (
-    <div className="flex border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
-      {TABS.map((tab) => {
-        const isActive = activeTab === tab.id
-        const Icon = isActive ? tab.activeIcon : tab.icon
+  const { buttonClasses } = useColorTheme()
 
-        return (
-          <button
-            key={tab.id}
-            onClick={() => onTabChange(tab.id)}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 text-sm font-medium transition-colors
-              ${
+  return (
+    <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex gap-2 p-2">
+        {TABS.map((tab) => {
+          const Icon = tab.icon
+          const isActive = activeTab === tab.id
+          return (
+            <button
+              key={tab.id}
+              onClick={() => onTabChange(tab.id)}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
                 isActive
-                  ? 'text-green-600 dark:text-green-400 border-b-2 border-green-600 dark:border-green-400'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-              }
-            `}
-          >
-            <Icon className="w-5 h-5" />
-            <span>{tab.label}</span>
-          </button>
-        )
-      })}
+                  ? buttonClasses
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              {tab.label}
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }
