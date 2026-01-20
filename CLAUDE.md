@@ -18,8 +18,8 @@
 ### 배포 정보
 - **배포 URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
-- **현재 버전**: 2.20.4
-- **마지막 업데이트**: 2026-01-19
+- **현재 버전**: 2.21.0
+- **마지막 업데이트**: 2026-01-20
 
 ---
 
@@ -965,6 +965,39 @@ setTimeout(async () => {
 
 ## 최근 업데이트
 
+### v2.21.0 (2026-01-20)
+**경제 탭에 주식 검색 기능 추가**
+
+#### 새로운 기능
+- 📊 **경제 탭 카테고리 시스템**: 지표 / 주식 탭으로 분리
+  - 지표 탭: 기존 경제 지표 (국내외 지수, 환율, 귀금속, 암호화폐)
+  - 주식 탭: 종목 검색 및 상세 정보 조회
+
+- 🔍 **주식 종목 검색**: 종목명 또는 종목코드로 검색
+  - 네이버 금융 자동완성 API 활용
+  - KOSPI/KOSDAQ 시장 구분 표시
+  - 검색 결과에서 클릭하여 상세 정보 조회
+
+- 📈 **주식 상세 정보**: 종목 선택 시 다음 정보 표시
+  - 기본 정보: 종목명, 시장, 업종, 현재가, 등락률, 시가총액, 거래량, 52주 최고/최저
+  - 투자 지표: PER, PBR, EPS, BPS, 배당수익률, ROE
+  - 재무제표: 최근 3개년 매출액, 영업이익, 당기순이익, 영업이익률
+  - 주가 차트: TradingView Advanced Chart (1일~5년 기간 선택)
+
+#### 추가된 파일
+- 📄 `types/stock.ts`: 주식 관련 타입 정의
+- 📄 `components/economy/EconomyTabs.tsx`: 경제 탭 카테고리 컴포넌트
+- 📄 `components/economy/StockSearch.tsx`: 주식 검색 UI 컴포넌트
+- 📄 `components/economy/StockInfo.tsx`: 주식 정보 표시 컴포넌트
+- 📄 `lib/scraper/naver-stock.ts`: 네이버 금융 주식 스크래퍼
+- 📄 `app/api/stock/search/route.ts`: 종목 검색 API
+- 📄 `app/api/stock/info/route.ts`: 종목 정보 API
+
+#### 수정된 파일
+- 📄 `app/economy/page.tsx`: 카테고리 탭 시스템 통합
+
+---
+
 ### v2.20.4 (2026-01-19)
 **KOSPI/KOSDAQ 차트를 ETF 심볼로 변경**
 
@@ -1757,5 +1790,5 @@ git commit -m "fix: 버그 수정
 
 ---
 
-**Last Updated**: 2026-01-19
-**Version**: 2.20.1
+**Last Updated**: 2026-01-20
+**Version**: 2.21.0
