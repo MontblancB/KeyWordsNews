@@ -317,18 +317,6 @@ export async function scrapeStockPrice(code: string): Promise<StockPrice | null>
  */
 export async function scrapeCompanyInfo(code: string): Promise<CompanyInfo | null> {
   try {
-    const url = `https://finance.naver.com/item/coinfo.naver?code=${code}`
-    const response = await fetch(url, {
-      headers: { 'User-Agent': USER_AGENT },
-    })
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch company info: ${response.statusText}`)
-    }
-
-    const html = await response.text()
-    const $ = cheerio.load(html)
-
     // 기업 정보 테이블에서 추출
     const companyInfo: CompanyInfo = {
       industry: '',
@@ -344,44 +332,89 @@ export async function scrapeCompanyInfo(code: string): Promise<CompanyInfo | nul
     // 종목 메인 페이지에서 시가총액, 업종 가져오기
     const mainUrl = `https://finance.naver.com/item/main.naver?code=${code}`
     const mainResponse = await fetch(mainUrl, {
-      headers: { 'User-Agent': USER_AGENT },
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'ko-KR,ko;q=0.9',
+      },
     })
 
     if (mainResponse.ok) {
       const mainHtml = await mainResponse.text()
       const $main = cheerio.load(mainHtml)
 
-      // 시가총액
-      const marketCapText = $main('.first td').first().text().trim()
-      companyInfo.marketCap = marketCapText
+      // 시가총액 - 여러 셀렉터 시도
+      const marketCapSelectors = [
+        '#_market_sum',
+        '.tab_con1 table td:contains("시가총액") + td',
+        '.first td em',
+        '.aside_invest_info td:first-child',
+      ]
+      for (const selector of marketCapSelectors) {
+        const text = $main(selector).first().text().trim()
+        if (text && text !== '-' && /[\d,]+/.test(text)) {
+          companyInfo.marketCap = text.replace(/\s+/g, '') + '억원'
+          break
+        }
+      }
 
-      // 업종
-      const industryLink = $main('.sub_section .trade_compare a').first()
-      companyInfo.industry = industryLink.text().trim()
+      // 업종 - 여러 셀렉터 시도
+      const industrySelectors = [
+        '.sub_section .trade_compare a',
+        'table.tb_type1_f td a',
+        '.tab_con1 a[href*="upjong"]',
+      ]
+      for (const selector of industrySelectors) {
+        const text = $main(selector).first().text().trim()
+        if (text && text.length > 1) {
+          companyInfo.industry = text
+          break
+        }
+      }
     }
 
-    // 기업개요 iframe에서 상세 정보
-    // 네이버 금융은 iframe 구조이므로 별도 요청
-    const companyDetailUrl = `https://finance.naver.com/item/coinfo.naver?code=${code}&target=finsum_more`
-    const detailResponse = await fetch(companyDetailUrl, {
-      headers: { 'User-Agent': USER_AGENT },
+    // 기업개요 페이지에서 상세 정보
+    const corpUrl = `https://navercomp.wisereport.co.kr/v2/company/c1010001.aspx?cmp_cd=${code}`
+    const corpResponse = await fetch(corpUrl, {
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'ko-KR,ko;q=0.9',
+      },
     })
 
-    if (detailResponse.ok) {
-      const detailHtml = await detailResponse.text()
-      const $detail = cheerio.load(detailHtml)
+    if (corpResponse.ok) {
+      const corpHtml = await corpResponse.text()
+      const $corp = cheerio.load(corpHtml)
 
-      // 테이블에서 정보 추출
-      $detail('table tr').each((_, row) => {
-        const th = $detail(row).find('th').text().trim()
-        const td = $detail(row).find('td').text().trim()
+      // 기업 개요 테이블 파싱
+      $corp('table tr, .cmp-table tr, .tb_type1 tr').each((_, row) => {
+        const th = $corp(row).find('th, .cmp-dt').text().trim()
+        const td = $corp(row).find('td, .cmp-dd').first().text().trim()
 
-        if (th.includes('대표자')) companyInfo.ceo = td
-        if (th.includes('설립일')) companyInfo.establishedDate = td
-        if (th.includes('결산월')) companyInfo.fiscalMonth = td
-        if (th.includes('직원')) companyInfo.employees = td
-        if (th.includes('주소') || th.includes('본사')) companyInfo.headquarters = td
-        if (th.includes('홈페이지')) companyInfo.website = td
+        if (!td || td === '-') return
+
+        if (th.includes('대표자') || th.includes('CEO')) {
+          companyInfo.ceo = companyInfo.ceo || td.split('\n')[0].trim()
+        }
+        if (th.includes('설립일') || th.includes('설립')) {
+          companyInfo.establishedDate = companyInfo.establishedDate || td
+        }
+        if (th.includes('결산월') || th.includes('결산')) {
+          companyInfo.fiscalMonth = companyInfo.fiscalMonth || td
+        }
+        if (th.includes('직원') || th.includes('종업원')) {
+          companyInfo.employees = companyInfo.employees || td
+        }
+        if (th.includes('주소') || th.includes('본사')) {
+          companyInfo.headquarters = companyInfo.headquarters || td
+        }
+        if (th.includes('홈페이지') || th.includes('웹사이트') || th.includes('URL')) {
+          companyInfo.website = companyInfo.website || td
+        }
+        if (th.includes('업종') && !companyInfo.industry) {
+          companyInfo.industry = td
+        }
       })
     }
 
