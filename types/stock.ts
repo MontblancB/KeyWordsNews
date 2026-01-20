@@ -34,6 +34,12 @@ export interface CompanyInfo {
   marketCap: string // 시가총액
   headquarters: string // 본사 소재지
   website: string // 홈페이지
+  // 추가 정보
+  faceValue: string // 액면가
+  listedDate: string // 상장일
+  listedShares: string // 상장주식수
+  foreignOwnership: string // 외국인 지분율
+  capital: string // 자본금
 }
 
 // 투자 지표
@@ -44,6 +50,11 @@ export interface InvestmentIndicators {
   bps: string // BPS (주당순자산)
   roe: string // ROE (자기자본이익률)
   dividendYield: string // 배당수익률
+  // 추가 지표
+  week52High: string // 52주 최고가
+  week52Low: string // 52주 최저가
+  psr: string // PSR (주가매출비율)
+  dps: string // DPS (주당배당금)
 }
 
 // 재무제표 데이터
@@ -55,6 +66,11 @@ export interface FinancialData {
   netIncome: string // 당기순이익
   operatingMargin: string // 영업이익률
   netMargin: string // 순이익률
+  // 추가 재무 지표
+  totalAssets: string // 자산총계
+  totalLiabilities: string // 부채총계
+  totalEquity: string // 자본총계
+  debtRatio: string // 부채비율
 }
 
 // 종목 전체 정보

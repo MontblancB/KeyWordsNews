@@ -18,7 +18,7 @@
 ### 배포 정보
 - **배포 URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
-- **현재 버전**: 2.21.0
+- **현재 버전**: 2.22.0
 - **마지막 업데이트**: 2026-01-20
 
 ---
@@ -965,6 +965,37 @@ setTimeout(async () => {
 
 ## 최근 업데이트
 
+### v2.22.0 (2026-01-20)
+**주식 카테고리 기능 대폭 개선**
+
+#### 새로운 기능
+- 📈 **TradingView Advanced Chart**: 종목 상세 페이지에 캔들차트 추가
+  - 기간 선택: 1일, 1주, 1개월, 3개월, 1년, 5년
+  - 한국 주식 심볼 지원 (KRX:{종목코드})
+  - 다크모드 완벽 지원
+
+#### 기업 정보 세분화
+- 🏢 **추가된 기업 정보**: 액면가, 상장일, 상장주식수, 외국인 지분율, 자본금
+- 📂 **더보기/접기 UI**: 기본 4개 항목 → 더보기 클릭 시 전체 11개 항목 표시
+
+#### 투자 지표 세분화
+- 📊 **52주 최고/최저 시각화**: 프로그레스 바 형태로 현재 가격 위치 표시
+- 🔢 **추가된 지표**: PSR (주가매출비율), DPS (주당배당금)
+- 📐 **4열 그리드 레이아웃**: PER, PBR, PSR, ROE / EPS, BPS, DPS, 배당률
+
+#### 재무제표 세분화
+- 📋 **추가된 항목**: 영업이익률, 순이익률, 자산총계, 부채총계, 자본총계, 부채비율
+- 📂 **더보기/접기 UI**: 기본 손익계산서 → 더보기 클릭 시 재무상태표 포함
+
+#### 수정된 파일
+- 📄 `types/stock.ts`: CompanyInfo, InvestmentIndicators, FinancialData 타입 확장
+- 📄 `lib/scraper/naver-stock.ts`: 추가 지표 수집 (외국인 지분율, 52주 최고/최저 등)
+- 📄 `lib/scraper/fnguide.ts`: 추가 재무 지표 수집 (자산총계, 부채비율 등)
+- 📄 `app/api/stock/info/route.ts`: 확장된 필드 반환
+- 📄 `components/economy/StockInfoCard.tsx`: TradingView 차트, 세분화된 UI
+
+---
+
 ### v2.21.0 (2026-01-20)
 **경제 탭 주식 카테고리 추가**
 
@@ -1800,4 +1831,4 @@ git commit -m "fix: 버그 수정
 ---
 
 **Last Updated**: 2026-01-20
-**Version**: 2.21.0
+**Version**: 2.22.0

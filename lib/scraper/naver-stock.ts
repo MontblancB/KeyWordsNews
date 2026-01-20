@@ -327,6 +327,12 @@ export async function scrapeCompanyInfo(code: string): Promise<CompanyInfo | nul
       marketCap: '',
       headquarters: '',
       website: '',
+      // 추가 정보
+      faceValue: '-',
+      listedDate: '-',
+      listedShares: '-',
+      foreignOwnership: '-',
+      capital: '-',
     }
 
     // 종목 메인 페이지에서 시가총액, 업종 가져오기
@@ -415,7 +421,59 @@ export async function scrapeCompanyInfo(code: string): Promise<CompanyInfo | nul
         if (th.includes('업종') && !companyInfo.industry) {
           companyInfo.industry = td
         }
+        // 추가 정보 파싱
+        if (th.includes('액면가') && companyInfo.faceValue === '-') {
+          companyInfo.faceValue = td
+        }
+        if (th.includes('상장일') && companyInfo.listedDate === '-') {
+          companyInfo.listedDate = td
+        }
+        if ((th.includes('상장주식') || th.includes('발행주식')) && companyInfo.listedShares === '-') {
+          companyInfo.listedShares = td
+        }
+        if ((th.includes('외국인') || th.includes('외인')) && companyInfo.foreignOwnership === '-') {
+          companyInfo.foreignOwnership = td
+        }
+        if (th.includes('자본금') && companyInfo.capital === '-') {
+          companyInfo.capital = td
+        }
       })
+    }
+
+    // 네이버 금융 종목 페이지에서 추가 정보 수집
+    const mainUrl2 = `https://finance.naver.com/item/main.naver?code=${code}`
+    const mainResponse2 = await fetch(mainUrl2, {
+      headers: { 'User-Agent': USER_AGENT },
+    })
+
+    if (mainResponse2.ok) {
+      const mainHtml2 = await mainResponse2.text()
+      const $main2 = cheerio.load(mainHtml2)
+
+      // 외국인 지분율
+      if (companyInfo.foreignOwnership === '-') {
+        $main2('.tab_con1 table tr').each((_, row) => {
+          const th = $main2(row).find('th').text().trim()
+          const td = $main2(row).find('td').text().trim()
+          if (th.includes('외국인')) {
+            const match = td.match(/[\d.]+%?/)
+            if (match) {
+              companyInfo.foreignOwnership = match[0].includes('%') ? match[0] : match[0] + '%'
+            }
+          }
+        })
+      }
+
+      // 상장주식수
+      if (companyInfo.listedShares === '-') {
+        $main2('.tab_con1 table tr').each((_, row) => {
+          const th = $main2(row).find('th').text().trim()
+          const td = $main2(row).find('td .blind, td em').first().text().trim()
+          if (th.includes('상장주식')) {
+            companyInfo.listedShares = td || '-'
+          }
+        })
+      }
     }
 
     return companyInfo
@@ -451,6 +509,11 @@ export async function scrapeInvestmentIndicators(
       bps: '-',
       roe: '-',
       dividendYield: '-',
+      // 추가 지표
+      week52High: '-',
+      week52Low: '-',
+      psr: '-',
+      dps: '-',
     }
 
     // 투자 지표 테이블 파싱
@@ -465,7 +528,28 @@ export async function scrapeInvestmentIndicators(
       if (th.includes('BPS')) indicators.bps = value || '-'
       if (th.includes('ROE')) indicators.roe = value || '-'
       if (th.includes('배당')) indicators.dividendYield = value || '-'
+      // 52주 최고/최저
+      if (th.includes('52주') && th.includes('최고')) {
+        indicators.week52High = value || '-'
+      }
+      if (th.includes('52주') && th.includes('최저')) {
+        indicators.week52Low = value || '-'
+      }
     })
+
+    // 52주 최고/최저 - 다른 셀렉터로 시도
+    if (indicators.week52High === '-' || indicators.week52Low === '-') {
+      $('table tr').each((_, row) => {
+        const th = $(row).find('th').text().trim()
+        const td = $(row).find('td .blind, td em').first().text().trim()
+        if (th.includes('52주') && th.includes('고')) {
+          indicators.week52High = td || indicators.week52High
+        }
+        if (th.includes('52주') && th.includes('저')) {
+          indicators.week52Low = td || indicators.week52Low
+        }
+      })
+    }
 
     // 추가: 종목분석 탭에서 상세 지표
     const analysisUrl = `https://finance.naver.com/item/coinfo.naver?code=${code}`

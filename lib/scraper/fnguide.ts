@@ -91,6 +91,11 @@ export async function scrapeFinancials(code: string): Promise<FinancialData[]> {
         netIncome: rows['당기순이익']?.[i] || rows['순이익']?.[i] || '-',
         operatingMargin: rows['영업이익률']?.[i] || '-',
         netMargin: rows['순이익률']?.[i] || '-',
+        // 추가 재무 지표
+        totalAssets: rows['자산총계']?.[i] || rows['자산']?.[i] || '-',
+        totalLiabilities: rows['부채총계']?.[i] || rows['부채']?.[i] || '-',
+        totalEquity: rows['자본총계']?.[i] || rows['자본']?.[i] || '-',
+        debtRatio: rows['부채비율']?.[i] || '-',
       }
 
       // 값 정리
@@ -99,6 +104,10 @@ export async function scrapeFinancials(code: string): Promise<FinancialData[]> {
       financial.netIncome = cleanValue(financial.netIncome)
       financial.operatingMargin = cleanValue(financial.operatingMargin)
       financial.netMargin = cleanValue(financial.netMargin)
+      financial.totalAssets = cleanValue(financial.totalAssets)
+      financial.totalLiabilities = cleanValue(financial.totalLiabilities)
+      financial.totalEquity = cleanValue(financial.totalEquity)
+      financial.debtRatio = cleanValue(financial.debtRatio)
 
       financials.push(financial)
     }
@@ -164,6 +173,19 @@ export async function scrapeFnGuideIndicators(
             if (text.includes('배당수익률') || text.includes('배당률')) {
               indicators.dividendYield = cleanValue(nextValue) || indicators.dividendYield
             }
+            // 추가 지표
+            if (text === 'PSR' || text.includes('PSR(배)')) {
+              indicators.psr = cleanValue(nextValue) || indicators.psr
+            }
+            if (text === 'DPS' || text.includes('DPS(원)') || text.includes('주당배당금')) {
+              indicators.dps = cleanValue(nextValue) || indicators.dps
+            }
+            if (text.includes('52주') && text.includes('최고')) {
+              indicators.week52High = cleanValue(nextValue) || indicators.week52High
+            }
+            if (text.includes('52주') && text.includes('최저')) {
+              indicators.week52Low = cleanValue(nextValue) || indicators.week52Low
+            }
           })
         })
     })
@@ -224,6 +246,22 @@ export async function scrapeFnGuideCompanyInfo(
           }
           if (th.includes('홈페이지') || th.includes('웹사이트')) {
             companyInfo.website = td
+          }
+          // 추가 정보
+          if (th.includes('액면가')) {
+            companyInfo.faceValue = td
+          }
+          if (th.includes('상장일')) {
+            companyInfo.listedDate = td
+          }
+          if (th.includes('상장주식') || th.includes('발행주식')) {
+            companyInfo.listedShares = td
+          }
+          if (th.includes('외국인') || th.includes('외인')) {
+            companyInfo.foreignOwnership = td
+          }
+          if (th.includes('자본금')) {
+            companyInfo.capital = td
           }
         })
     })
