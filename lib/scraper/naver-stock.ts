@@ -108,7 +108,8 @@ export async function searchStocks(query: string): Promise<StockSearchItem[]> {
  */
 async function searchStocksFromYahoo(query: string): Promise<StockSearchItem[]> {
   try {
-    const url = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}&quotesCount=20&newsCount=0&listsCount=0&enableFuzzyQuery=false&quotesQueryId=tss_match_phrase_query`
+    // Yahoo Finance autoc API (더 안정적)
+    const url = `https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}&lang=ko-KR&region=KR&quotesCount=20&newsCount=0&listsCount=0`
 
     console.log('Searching Yahoo Finance:', query)
 
@@ -116,6 +117,9 @@ async function searchStocksFromYahoo(query: string): Promise<StockSearchItem[]> 
       headers: {
         'User-Agent': USER_AGENT,
         Accept: 'application/json',
+        'Accept-Language': 'ko-KR,ko;q=0.9',
+        Origin: 'https://finance.yahoo.com',
+        Referer: 'https://finance.yahoo.com/',
       },
     })
 
@@ -137,14 +141,23 @@ async function searchStocksFromYahoo(query: string): Promise<StockSearchItem[]> 
         const symbol = quote.symbol || ''
         return symbol.endsWith('.KS') || symbol.endsWith('.KQ')
       })
-      .map((quote: { symbol?: string; shortname?: string; longname?: string; exchange?: string }) => {
-        const symbol = quote.symbol || ''
-        const code = symbol.replace('.KS', '').replace('.KQ', '')
-        const name = quote.shortname || quote.longname || ''
-        const market: 'KOSPI' | 'KOSDAQ' | 'KONEX' = symbol.endsWith('.KQ') ? 'KOSDAQ' : 'KOSPI'
+      .map(
+        (quote: {
+          symbol?: string
+          shortname?: string
+          longname?: string
+          exchange?: string
+        }) => {
+          const symbol = quote.symbol || ''
+          const code = symbol.replace('.KS', '').replace('.KQ', '')
+          const name = quote.shortname || quote.longname || ''
+          const market: 'KOSPI' | 'KOSDAQ' | 'KONEX' = symbol.endsWith('.KQ')
+            ? 'KOSDAQ'
+            : 'KOSPI'
 
-        return { code, name, market }
-      })
+          return { code, name, market }
+        }
+      )
       .filter((stock: StockSearchItem) => stock.code && stock.name)
 
     console.log('Yahoo Finance results:', koreanStocks.length)
