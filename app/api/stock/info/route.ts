@@ -5,7 +5,7 @@ import {
   scrapeInvestmentIndicators,
   getStockMarket,
 } from '@/lib/scraper/naver-stock'
-import { scrapeFinancials, scrapeFnGuideIndicators } from '@/lib/scraper/fnguide'
+import { scrapeFinancials, scrapeFnGuideIndicators, scrapeFnGuideCompanyInfo } from '@/lib/scraper/fnguide'
 import type { StockInfo } from '@/types/stock'
 
 export const dynamic = 'force-dynamic'
@@ -46,10 +46,11 @@ export async function GET(request: NextRequest) {
     }
 
     // 병렬로 데이터 수집
-    const [priceData, companyInfo, naverIndicators, fnGuideIndicators, financials, market] =
+    const [priceData, naverCompanyInfo, fnGuideCompanyInfo, naverIndicators, fnGuideIndicators, financials, market] =
       await Promise.all([
         scrapeStockPrice(stockCode),
         scrapeCompanyInfo(stockCode),
+        scrapeFnGuideCompanyInfo(stockCode),
         scrapeInvestmentIndicators(stockCode),
         scrapeFnGuideIndicators(stockCode),
         scrapeFinancials(stockCode),
@@ -73,14 +74,14 @@ export async function GET(request: NextRequest) {
         prevClose: '0',
       },
       company: {
-        industry: companyInfo?.industry || '-',
-        ceo: companyInfo?.ceo || '-',
-        establishedDate: companyInfo?.establishedDate || '-',
-        fiscalMonth: companyInfo?.fiscalMonth || '-',
-        employees: companyInfo?.employees || '-',
-        marketCap: companyInfo?.marketCap || '-',
-        headquarters: companyInfo?.headquarters || '-',
-        website: companyInfo?.website || '-',
+        industry: fnGuideCompanyInfo?.industry || naverCompanyInfo?.industry || '-',
+        ceo: fnGuideCompanyInfo?.ceo || naverCompanyInfo?.ceo || '-',
+        establishedDate: fnGuideCompanyInfo?.establishedDate || naverCompanyInfo?.establishedDate || '-',
+        fiscalMonth: fnGuideCompanyInfo?.fiscalMonth || naverCompanyInfo?.fiscalMonth || '-',
+        employees: fnGuideCompanyInfo?.employees || naverCompanyInfo?.employees || '-',
+        marketCap: naverCompanyInfo?.marketCap || '-',
+        headquarters: naverCompanyInfo?.headquarters || '-',
+        website: fnGuideCompanyInfo?.website || naverCompanyInfo?.website || '-',
       },
       indicators: {
         per: fnGuideIndicators?.per || naverIndicators?.per || '-',
