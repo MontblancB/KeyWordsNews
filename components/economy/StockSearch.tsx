@@ -11,30 +11,35 @@ interface StockSearchProps {
 
 export default function StockSearch({ onSelect }: StockSearchProps) {
   const [query, setQuery] = useState('')
-  const [debouncedQuery, setDebouncedQuery] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
   const [isOpen, setIsOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // 디바운싱
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedQuery(query)
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [query])
+  // 검색 결과 (버튼 클릭 시에만 검색)
+  const { data: results = [], isLoading, refetch } = useStockSearch(searchQuery)
 
-  // 검색 결과
-  const { data: results = [], isLoading } = useStockSearch(debouncedQuery)
-
-  // 드롭다운 열기/닫기
-  useEffect(() => {
-    if (query.length >= 1 && results.length > 0) {
+  // 검색 실행
+  const handleSearch = () => {
+    if (query.trim().length >= 1) {
+      setSearchQuery(query.trim())
       setIsOpen(true)
-    } else if (query.length === 0) {
-      setIsOpen(false)
     }
-  }, [query, results])
+  }
+
+  // Enter 키로 검색
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch()
+    }
+  }
+
+  // 검색 결과가 있으면 드롭다운 열기
+  useEffect(() => {
+    if (searchQuery && results.length > 0) {
+      setIsOpen(true)
+    }
+  }, [searchQuery, results])
 
   // 외부 클릭 시 닫기
   useEffect(() => {
@@ -51,12 +56,14 @@ export default function StockSearch({ onSelect }: StockSearchProps) {
   const handleSelect = (stock: StockSearchItem) => {
     onSelect(stock)
     setQuery('')
+    setSearchQuery('')
     setIsOpen(false)
   }
 
   // 입력 초기화
   const handleClear = () => {
     setQuery('')
+    setSearchQuery('')
     setIsOpen(false)
     inputRef.current?.focus()
   }
@@ -76,33 +83,46 @@ export default function StockSearch({ onSelect }: StockSearchProps) {
   return (
     <div ref={containerRef} className="relative">
       {/* 검색 입력 */}
-      <div className="relative">
-        <input
-          ref={inputRef}
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => {
-            if (results.length > 0) setIsOpen(true)
-          }}
-          placeholder="종목명 또는 종목코드 검색"
-          className="w-full px-4 py-3 pl-10 pr-10 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400"
-        />
-        <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onFocus={() => {
+              if (results.length > 0 && searchQuery) setIsOpen(true)
+            }}
+            placeholder="종목명 또는 종목코드 검색"
+            className="w-full px-4 py-3 pl-10 pr-10 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400"
+          />
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
 
-        {/* 로딩 또는 삭제 버튼 */}
-        {query && (
-          <button
-            onClick={handleClear}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors"
-          >
-            {isLoading ? (
-              <div className="w-4 h-4 border-2 border-gray-300 border-t-green-500 rounded-full animate-spin" />
-            ) : (
+          {/* 삭제 버튼 */}
+          {query && (
+            <button
+              onClick={handleClear}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors"
+            >
               <XMarkIcon className="w-4 h-4 text-gray-400" />
-            )}
-          </button>
-        )}
+            </button>
+          )}
+        </div>
+
+        {/* 검색 버튼 */}
+        <button
+          onClick={handleSearch}
+          disabled={isLoading || query.trim().length < 1}
+          className="px-4 py-3 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 dark:disabled:bg-gray-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+        >
+          {isLoading ? (
+            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          ) : (
+            <MagnifyingGlassIcon className="w-5 h-5" />
+          )}
+          <span className="hidden sm:inline">검색</span>
+        </button>
       </div>
 
       {/* 자동완성 드롭다운 */}

@@ -15,7 +15,7 @@ const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 
 /**
- * 종목 검색 (네이버 금융 자동완성 API)
+ * 종목 검색 (네이버 금융 검색 페이지 스크래핑 - Primary)
  */
 export async function searchStocks(query: string): Promise<StockSearchItem[]> {
   if (!query || query.trim().length === 0) {
@@ -23,43 +23,141 @@ export async function searchStocks(query: string): Promise<StockSearchItem[]> {
   }
 
   try {
-    const url = `https://ac.stock.naver.com/ac?q=${encodeURIComponent(query)}&target=stock`
+    // 1차: 네이버 금융 검색 페이지 스크래핑 (가장 안정적)
+    const results = await searchStocksFromPage(query)
+    if (results.length > 0) {
+      return results
+    }
+
+    // 2차: 모바일 API 시도
+    return await searchStocksFromMobileAPI(query)
+  } catch (error) {
+    console.error('Stock search error:', error)
+    // 최종 폴백
+    return await searchStocksFromMobileAPI(query)
+  }
+}
+
+/**
+ * 네이버 금융 검색 페이지에서 종목 검색
+ */
+async function searchStocksFromPage(query: string): Promise<StockSearchItem[]> {
+  try {
+    const url = `https://finance.naver.com/search/searchList.naver?query=${encodeURIComponent(query)}`
     const response = await fetch(url, {
       headers: {
         'User-Agent': USER_AGENT,
-        Accept: 'application/json',
+        Accept: 'text/html,application/xhtml+xml',
+        'Accept-Language': 'ko-KR,ko;q=0.9',
       },
     })
 
     if (!response.ok) {
-      throw new Error(`Search failed: ${response.statusText}`)
+      return []
+    }
+
+    const html = await response.text()
+    const $ = cheerio.load(html)
+    const results: StockSearchItem[] = []
+
+    // 검색 결과 테이블에서 종목 추출
+    $('table.tbl_search tbody tr').each((_, row) => {
+      const nameCell = $(row).find('td.tit a')
+      const name = nameCell.text().trim()
+      const href = nameCell.attr('href') || ''
+
+      // 종목코드 추출
+      const codeMatch = href.match(/code=(\d+)/)
+      const code = codeMatch ? codeMatch[1] : ''
+
+      // 시장 구분 (두 번째 td)
+      const marketText = $(row).find('td').eq(1).text().trim()
+      let market: 'KOSPI' | 'KOSDAQ' | 'KONEX' = 'KOSPI'
+      if (marketText.includes('코스닥') || marketText.toLowerCase().includes('kosdaq')) {
+        market = 'KOSDAQ'
+      } else if (marketText.includes('코넥스') || marketText.toLowerCase().includes('konex')) {
+        market = 'KONEX'
+      }
+
+      if (name && code) {
+        results.push({ code, name, market })
+      }
+    })
+
+    // 다른 형식 테이블 시도 (검색 결과가 없을 경우)
+    if (results.length === 0) {
+      $('a[href*="/item/main.naver?code="]').each((_, el) => {
+        const href = $(el).attr('href') || ''
+        const name = $(el).text().trim()
+        const codeMatch = href.match(/code=(\d+)/)
+        const code = codeMatch ? codeMatch[1] : ''
+
+        if (name && code && !results.some((r) => r.code === code)) {
+          results.push({ code, name, market: 'KOSPI' })
+        }
+      })
+    }
+
+    return results.slice(0, 10)
+  } catch (error) {
+    console.error('searchStocksFromPage error:', error)
+    return []
+  }
+}
+
+/**
+ * 네이버 모바일 금융 API에서 종목 검색
+ */
+async function searchStocksFromMobileAPI(query: string): Promise<StockSearchItem[]> {
+  try {
+    const url = `https://m.stock.naver.com/api/json/search/searchListJson.nhn?keyword=${encodeURIComponent(query)}`
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148',
+        Accept: 'application/json',
+        Referer: 'https://m.stock.naver.com/',
+      },
+    })
+
+    if (!response.ok) {
+      return []
     }
 
     const data = await response.json()
+    const stocks = data?.result?.stock || data?.result?.d || data?.items || []
 
-    // 응답 구조: { items: [{ code, name, typeCode, ... }] }
-    const items = data?.items || []
+    if (!Array.isArray(stocks)) {
+      return []
+    }
 
-    return items
-      .filter((item: { typeCode: string }) => item.typeCode === 'stock')
-      .slice(0, 10)
-      .map((item: { code: string; name: string; market?: string }) => {
-        // market 판단
+    return stocks.slice(0, 10).map(
+      (item: {
+        cd?: string
+        nm?: string
+        nv?: string
+        code?: string
+        name?: string
+        marketName?: string
+        rf?: string
+      }) => {
         let market: 'KOSPI' | 'KOSDAQ' | 'KONEX' = 'KOSPI'
-        if (item.market === 'KOSDAQ') {
+        const marketName = item.marketName || item.rf || ''
+        if (marketName.includes('KOSDAQ') || marketName.includes('코스닥')) {
           market = 'KOSDAQ'
-        } else if (item.market === 'KONEX') {
+        } else if (marketName.includes('KONEX')) {
           market = 'KONEX'
         }
 
         return {
-          code: item.code,
-          name: item.name,
+          code: item.cd || item.nv || item.code || '',
+          name: item.nm || item.name || '',
           market,
         }
-      })
+      }
+    )
   } catch (error) {
-    console.error('Stock search error:', error)
+    console.error('searchStocksFromMobileAPI error:', error)
     return []
   }
 }
