@@ -8,13 +8,13 @@ import type {
 import type { ChangeType } from '@/types/economy'
 
 /**
- * 네이버 금융 주식 스크래퍼
+ * 주식 스크래퍼 (Yahoo Finance + 네이버 금융)
  */
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 
-// 인기 종목 캐시 (검색 API 실패 시 폴백)
+// 인기 종목 캐시 (Yahoo Finance 검색 실패 시 폴백)
 const POPULAR_STOCKS: StockSearchItem[] = [
   { code: '005930', name: '삼성전자', market: 'KOSPI' },
   { code: '000660', name: 'SK하이닉스', market: 'KOSPI' },
@@ -55,44 +55,108 @@ const POPULAR_STOCKS: StockSearchItem[] = [
 
 /**
  * 종목 검색 (3단계 폴백 전략)
- * 1차: 종목코드 직접 조회 (6자리 숫자)
- * 2차: 인기 종목에서 검색
- * 3차: 종목 페이지에서 이름 확인
+ * 1차: Yahoo Finance 검색 API
+ * 2차: 인기 종목 캐시에서 검색
+ * 3차: 종목코드 직접 조회
  */
 export async function searchStocks(query: string): Promise<StockSearchItem[]> {
   if (!query || query.trim().length === 0) {
     return []
   }
 
-  const trimmedQuery = query.trim().toLowerCase()
+  const trimmedQuery = query.trim()
 
-  // 1차: 종목코드인 경우 직접 조회
-  if (/^\d{6}$/.test(trimmedQuery)) {
-    const directResult = await searchStockByCode(trimmedQuery)
-    if (directResult) {
-      return [directResult]
+  try {
+    // 1차: Yahoo Finance 검색 API
+    const yahooResults = await searchStocksFromYahoo(trimmedQuery)
+    if (yahooResults.length > 0) {
+      return yahooResults
     }
+
+    // 2차: 인기 종목 캐시에서 검색
+    const lowerQuery = trimmedQuery.toLowerCase()
+    const matchedStocks = POPULAR_STOCKS.filter(
+      (stock) =>
+        stock.name.toLowerCase().includes(lowerQuery) ||
+        stock.code.includes(trimmedQuery)
+    )
+
+    if (matchedStocks.length > 0) {
+      return matchedStocks.slice(0, 10)
+    }
+
+    // 3차: 종목코드인 경우 직접 조회
+    if (/^\d{6}$/.test(trimmedQuery)) {
+      const directResult = await searchStockByCode(trimmedQuery)
+      if (directResult) {
+        return [directResult]
+      }
+    }
+
+    console.log('No matching stocks found for:', trimmedQuery)
+    return []
+  } catch (error) {
+    console.error('Stock search error:', error)
+    return []
   }
-
-  // 2차: 인기 종목에서 검색 (이름 또는 코드 매칭)
-  const matchedStocks = POPULAR_STOCKS.filter(
-    (stock) =>
-      stock.name.toLowerCase().includes(trimmedQuery) ||
-      stock.code.includes(trimmedQuery)
-  )
-
-  if (matchedStocks.length > 0) {
-    return matchedStocks.slice(0, 10)
-  }
-
-  // 3차: 검색어가 종목명일 수 있으니 추가 검색 시도
-  // 인기 종목에 없는 경우, 직접 네이버 금융 페이지 확인은 어려우므로 빈 결과 반환
-  console.log('No matching stocks found for:', trimmedQuery)
-  return []
 }
 
 /**
- * 종목코드로 직접 종목 정보 조회
+ * Yahoo Finance 검색 API
+ * - 한글 종목명 검색 지원
+ * - 한국 주식은 .KS (KOSPI) 또는 .KQ (KOSDAQ) 형식
+ */
+async function searchStocksFromYahoo(query: string): Promise<StockSearchItem[]> {
+  try {
+    const url = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}&quotesCount=20&newsCount=0&listsCount=0&enableFuzzyQuery=false&quotesQueryId=tss_match_phrase_query`
+
+    console.log('Searching Yahoo Finance:', query)
+
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      console.log('Yahoo Finance search failed:', response.status)
+      return []
+    }
+
+    const data = await response.json()
+    const quotes = data?.quotes || []
+
+    if (!Array.isArray(quotes) || quotes.length === 0) {
+      return []
+    }
+
+    // 한국 주식만 필터링 (.KS = KOSPI, .KQ = KOSDAQ)
+    const koreanStocks = quotes
+      .filter((quote: { symbol?: string; exchange?: string }) => {
+        const symbol = quote.symbol || ''
+        return symbol.endsWith('.KS') || symbol.endsWith('.KQ')
+      })
+      .map((quote: { symbol?: string; shortname?: string; longname?: string; exchange?: string }) => {
+        const symbol = quote.symbol || ''
+        const code = symbol.replace('.KS', '').replace('.KQ', '')
+        const name = quote.shortname || quote.longname || ''
+        const market: 'KOSPI' | 'KOSDAQ' | 'KONEX' = symbol.endsWith('.KQ') ? 'KOSDAQ' : 'KOSPI'
+
+        return { code, name, market }
+      })
+      .filter((stock: StockSearchItem) => stock.code && stock.name)
+
+    console.log('Yahoo Finance results:', koreanStocks.length)
+    return koreanStocks.slice(0, 10)
+  } catch (error) {
+    console.error('searchStocksFromYahoo error:', error)
+    return []
+  }
+}
+
+/**
+ * 종목코드로 직접 종목 정보 조회 (네이버 금융)
  */
 async function searchStockByCode(code: string): Promise<StockSearchItem | null> {
   try {
