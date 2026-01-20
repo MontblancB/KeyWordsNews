@@ -50,52 +50,72 @@ export async function searchStocks(query: string): Promise<StockSearchItem[]> {
 }
 
 /**
- * 네이버 증권 자동완성 API (Primary)
+ * 네이버 증권 모바일 검색 API (Primary)
  * - 한글 종목명 검색 지원
  * - 종목코드 검색 지원
- * - 빠른 응답 속도
+ * - 가장 안정적인 API
  */
 async function searchStocksFromAutocomplete(query: string): Promise<StockSearchItem[]> {
   try {
-    // 네이버 증권 자동완성 API
-    const url = `https://ac.finance.naver.com/ac?q=${encodeURIComponent(query)}&q_enc=utf-8&t_koreng=1&st=111&r_lt=111`
+    // 네이버 증권 모바일 검색 API (가장 안정적)
+    const url = `https://m.stock.naver.com/api/stocks/search?keyword=${encodeURIComponent(query)}`
     const response = await fetch(url, {
       headers: {
-        'User-Agent': USER_AGENT,
-        Accept: 'application/json, text/javascript, */*',
-        'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
-        Referer: 'https://finance.naver.com/',
+        'User-Agent':
+          'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148',
+        Accept: 'application/json',
+        'Accept-Language': 'ko-KR,ko;q=0.9',
+        Referer: 'https://m.stock.naver.com/',
       },
     })
 
     if (!response.ok) {
+      console.log('Mobile search API failed:', response.status)
       return []
     }
 
     const data = await response.json()
 
-    // 응답 구조: { query: [...], items: [[종목명, 코드, 시장, ...], ...] }
-    const items = data?.items?.[0] || []
+    // 응답 구조: { stocks: [{ itemCode, stockName, ... }] }
+    const stocks = data?.stocks || data?.result || []
 
-    if (!Array.isArray(items) || items.length === 0) {
+    if (!Array.isArray(stocks) || stocks.length === 0) {
       return []
     }
 
-    return items.slice(0, 10).map((item: string[]) => {
-      // item 구조: [종목명, 코드, 시장구분, ...]
-      const name = item[0] || ''
-      const code = item[1] || ''
-      const marketInfo = item[2] || ''
+    return stocks.slice(0, 10).map(
+      (item: {
+        itemCode?: string
+        stockName?: string
+        stockNameEng?: string
+        reutersCode?: string
+        marketName?: string
+        marketCode?: string
+        sosok?: string
+        // 다른 가능한 필드명들
+        code?: string
+        name?: string
+        cd?: string
+        nm?: string
+      }) => {
+        const code = item.itemCode || item.code || item.cd || item.reutersCode || ''
+        const name = item.stockName || item.name || item.nm || item.stockNameEng || ''
 
-      let market: 'KOSPI' | 'KOSDAQ' | 'KONEX' = 'KOSPI'
-      if (marketInfo.includes('KOSDAQ') || marketInfo.includes('코스닥')) {
-        market = 'KOSDAQ'
-      } else if (marketInfo.includes('KONEX') || marketInfo.includes('코넥스')) {
-        market = 'KONEX'
+        let market: 'KOSPI' | 'KOSDAQ' | 'KONEX' = 'KOSPI'
+        const marketInfo = item.marketName || item.marketCode || item.sosok || ''
+        if (
+          marketInfo.includes('KOSDAQ') ||
+          marketInfo.includes('코스닥') ||
+          marketInfo === '2'
+        ) {
+          market = 'KOSDAQ'
+        } else if (marketInfo.includes('KONEX') || marketInfo.includes('코넥스')) {
+          market = 'KONEX'
+        }
+
+        return { code: code.replace(/[^0-9]/g, ''), name, market }
       }
-
-      return { code, name, market }
-    }).filter((item: StockSearchItem) => item.code && item.name)
+    ).filter((item: StockSearchItem) => item.code && item.name)
   } catch (error) {
     console.error('searchStocksFromAutocomplete error:', error)
     return []
@@ -170,56 +190,54 @@ async function searchStocksFromPage(query: string): Promise<StockSearchItem[]> {
 }
 
 /**
- * 네이버 모바일 금융 API에서 종목 검색
+ * 네이버 금융 자동완성 API (Fallback)
  */
 async function searchStocksFromMobileAPI(query: string): Promise<StockSearchItem[]> {
   try {
-    const url = `https://m.stock.naver.com/api/json/search/searchListJson.nhn?keyword=${encodeURIComponent(query)}`
+    // 네이버 금융 자동완성 API
+    const url = `https://ac.finance.naver.com/ac?q=${encodeURIComponent(query)}&q_enc=utf-8&t_koreng=1&st=111&r_lt=111`
     const response = await fetch(url, {
       headers: {
-        'User-Agent':
-          'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148',
-        Accept: 'application/json',
-        Referer: 'https://m.stock.naver.com/',
+        'User-Agent': USER_AGENT,
+        Accept: '*/*',
+        'Accept-Language': 'ko-KR,ko;q=0.9',
+        Referer: 'https://finance.naver.com/',
       },
     })
 
     if (!response.ok) {
+      console.log('Finance autocomplete API failed:', response.status)
       return []
     }
 
     const data = await response.json()
-    const stocks = data?.result?.stock || data?.result?.d || data?.items || []
 
-    if (!Array.isArray(stocks)) {
+    // 응답 구조: { query: [...], items: [[[종목명, 코드, 시장], ...]] }
+    // items[0]이 검색 결과 배열
+    const items = data?.items?.[0] || []
+
+    if (!Array.isArray(items) || items.length === 0) {
       return []
     }
 
-    return stocks.slice(0, 10).map(
-      (item: {
-        cd?: string
-        nm?: string
-        nv?: string
-        code?: string
-        name?: string
-        marketName?: string
-        rf?: string
-      }) => {
+    return items
+      .slice(0, 10)
+      .map((item: string[]) => {
+        // item 구조: [종목명, 종목코드, 시장구분, ...]
+        const name = item[0] || ''
+        const code = item[1] || ''
+        const marketInfo = item[2] || ''
+
         let market: 'KOSPI' | 'KOSDAQ' | 'KONEX' = 'KOSPI'
-        const marketName = item.marketName || item.rf || ''
-        if (marketName.includes('KOSDAQ') || marketName.includes('코스닥')) {
+        if (marketInfo.includes('KOSDAQ') || marketInfo.includes('코스닥')) {
           market = 'KOSDAQ'
-        } else if (marketName.includes('KONEX')) {
+        } else if (marketInfo.includes('KONEX') || marketInfo.includes('코넥스')) {
           market = 'KONEX'
         }
 
-        return {
-          code: item.cd || item.nv || item.code || '',
-          name: item.nm || item.name || '',
-          market,
-        }
-      }
-    )
+        return { code, name, market }
+      })
+      .filter((item: StockSearchItem) => item.code && item.name)
   } catch (error) {
     console.error('searchStocksFromMobileAPI error:', error)
     return []
