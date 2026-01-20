@@ -82,6 +82,12 @@ export async function GET(request: NextRequest) {
         marketCap: naverCompanyInfo?.marketCap || '-',
         headquarters: naverCompanyInfo?.headquarters || '-',
         website: fnGuideCompanyInfo?.website || naverCompanyInfo?.website || '-',
+        // 추가 정보
+        faceValue: fnGuideCompanyInfo?.faceValue || naverCompanyInfo?.faceValue || '-',
+        listedDate: fnGuideCompanyInfo?.listedDate || naverCompanyInfo?.listedDate || '-',
+        listedShares: fnGuideCompanyInfo?.listedShares || naverCompanyInfo?.listedShares || '-',
+        foreignOwnership: fnGuideCompanyInfo?.foreignOwnership || naverCompanyInfo?.foreignOwnership || '-',
+        capital: fnGuideCompanyInfo?.capital || naverCompanyInfo?.capital || '-',
       },
       indicators: {
         per: fnGuideIndicators?.per || naverIndicators?.per || '-',
@@ -90,6 +96,11 @@ export async function GET(request: NextRequest) {
         bps: fnGuideIndicators?.bps || naverIndicators?.bps || '-',
         roe: fnGuideIndicators?.roe || naverIndicators?.roe || '-',
         dividendYield: fnGuideIndicators?.dividendYield || naverIndicators?.dividendYield || '-',
+        // 추가 지표
+        week52High: fnGuideIndicators?.week52High || naverIndicators?.week52High || '-',
+        week52Low: fnGuideIndicators?.week52Low || naverIndicators?.week52Low || '-',
+        psr: fnGuideIndicators?.psr || naverIndicators?.psr || '-',
+        dps: fnGuideIndicators?.dps || naverIndicators?.dps || '-',
       },
       financials: financials.length > 0 ? financials : [],
       lastUpdated: new Date().toLocaleString('ko-KR', {
