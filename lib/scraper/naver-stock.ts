@@ -23,43 +23,100 @@ export async function searchStocks(query: string): Promise<StockSearchItem[]> {
   }
 
   try {
-    const url = `https://ac.stock.naver.com/ac?q=${encodeURIComponent(query)}&target=stock`
+    // 네이버 금융 자동완성 API (새로운 URL)
+    const url = `https://m.stock.naver.com/api/json/search/searchListJson.nhn?keyword=${encodeURIComponent(query)}`
     const response = await fetch(url, {
       headers: {
         'User-Agent': USER_AGENT,
         Accept: 'application/json',
+        Referer: 'https://m.stock.naver.com/',
       },
     })
 
     if (!response.ok) {
-      throw new Error(`Search failed: ${response.statusText}`)
+      // 폴백: 기존 API 시도
+      return await searchStocksFallback(query)
     }
 
     const data = await response.json()
 
-    // 응답 구조: { items: [{ code, name, typeCode, ... }] }
-    const items = data?.items || []
+    // 응답 구조: { result: { d: [...], etf: [...], stock: [...] } }
+    const stocks = data?.result?.stock || data?.result?.d || []
 
-    return items
-      .filter((item: { typeCode: string }) => item.typeCode === 'stock')
+    return stocks
       .slice(0, 10)
-      .map((item: { code: string; name: string; market?: string }) => {
+      .map((item: { cd: string; nm: string; nv: string; marketName?: string; rf?: string }) => {
         // market 판단
         let market: 'KOSPI' | 'KOSDAQ' | 'KONEX' = 'KOSPI'
-        if (item.market === 'KOSDAQ') {
+        const marketName = item.marketName || item.rf || ''
+        if (marketName.includes('KOSDAQ') || marketName.includes('코스닥')) {
           market = 'KOSDAQ'
-        } else if (item.market === 'KONEX') {
+        } else if (marketName.includes('KONEX')) {
           market = 'KONEX'
         }
 
         return {
-          code: item.code,
-          name: item.name,
+          code: item.cd || item.nv,
+          name: item.nm,
           market,
         }
       })
   } catch (error) {
     console.error('Stock search error:', error)
+    // 폴백 시도
+    return await searchStocksFallback(query)
+  }
+}
+
+/**
+ * 종목 검색 폴백 (네이버 금융 검색 페이지 스크래핑)
+ */
+async function searchStocksFallback(query: string): Promise<StockSearchItem[]> {
+  try {
+    // 네이버 금융 검색 결과 페이지 스크래핑
+    const url = `https://finance.naver.com/search/searchList.naver?query=${encodeURIComponent(query)}`
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': USER_AGENT,
+      },
+    })
+
+    if (!response.ok) {
+      return []
+    }
+
+    const html = await response.text()
+    const $ = cheerio.load(html)
+
+    const results: StockSearchItem[] = []
+
+    // 검색 결과 테이블에서 종목 추출
+    $('table.tbl_search tbody tr').each((_, row) => {
+      const nameLink = $(row).find('td.tit a')
+      const name = nameLink.text().trim()
+      const href = nameLink.attr('href') || ''
+
+      // 종목코드 추출: /item/main.naver?code=005930
+      const codeMatch = href.match(/code=(\d+)/)
+      const code = codeMatch ? codeMatch[1] : ''
+
+      // 시장 구분
+      const marketText = $(row).find('td').eq(1).text().trim()
+      let market: 'KOSPI' | 'KOSDAQ' | 'KONEX' = 'KOSPI'
+      if (marketText.includes('코스닥') || marketText.includes('KOSDAQ')) {
+        market = 'KOSDAQ'
+      } else if (marketText.includes('코넥스') || marketText.includes('KONEX')) {
+        market = 'KONEX'
+      }
+
+      if (name && code) {
+        results.push({ code, name, market })
+      }
+    })
+
+    return results.slice(0, 10)
+  } catch (error) {
+    console.error('Stock search fallback error:', error)
     return []
   }
 }
