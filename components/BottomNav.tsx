@@ -16,10 +16,14 @@ import {
   Cog6ToothIcon as Cog6ToothIconSolid,
 } from '@heroicons/react/24/solid'
 
-// 햅틱 피드백 (Android + iOS 18+)
-const triggerHaptic = (duration: number = 10) => {
+// 햅틱 피드백 (Android Chrome)
+const triggerHaptic = (duration: number = 50) => {
   if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-    navigator.vibrate(duration)
+    try {
+      navigator.vibrate(duration)
+    } catch {
+      // 진동 실패 시 무시
+    }
   }
 }
 
@@ -28,7 +32,7 @@ export default function BottomNav() {
   const router = useRouter()
 
   const handleNavClick = (path: string) => {
-    triggerHaptic(10) // 10ms 짧은 진동
+    triggerHaptic(50) // 50ms 진동 (체감 가능한 최소 시간)
     router.push(path)
   }
 
