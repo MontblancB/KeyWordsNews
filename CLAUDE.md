@@ -18,8 +18,8 @@
 ### 배포 정보
 - **배포 URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
-- **현재 버전**: 2.25.1
-- **마지막 업데이트**: 2026-01-22
+- **현재 버전**: 2.26.0
+- **마지막 업데이트**: 2026-01-23
 
 ---
 
@@ -965,6 +965,52 @@ setTimeout(async () => {
 
 ## 최근 업데이트
 
+### v2.26.0 (2026-01-23)
+**Yahoo Finance + DART API 통합 (스크래핑 → API 전환)**
+
+#### 데이터 수집 방식 개선
+- 🔄 **스크래핑 방식에서 공식 API 방식으로 전환**
+  - Yahoo Finance API: 한국 주식 시세 데이터 (.KS/.KQ 심볼)
+  - DART API: 기업정보 및 재무제표 데이터 (전자공시시스템 공식 API)
+  - 데이터 정확도 및 안정성 대폭 향상
+
+#### API 통합 세부사항
+- 📊 **Yahoo Finance Chart API**: 실시간 시세 조회
+  - 현재가, 전일대비, 시가, 고가, 저가, 거래량
+  - 한국 주식 심볼 자동 변환 (005930 → 005930.KS)
+  - 모든 가격 데이터 원화 단위로 반올림
+
+- 🏢 **DART API 완전 통합**: 기업정보 및 재무제표
+  - 기업개황: 기업명, 대표자, 설립일, 결산월, 본사, 홈페이지, 업종 등 15개 필드
+  - 재무제표: 매출액, 영업이익, 당기순이익, 자산총계, 부채총계, 자본총계 등
+  - 투자지표 자동 계산: PER, PBR, EPS, BPS, ROE, ROA
+  - 30개 이상 주요 종목 코드 매핑 지원 (삼성전자, 네이버, 카카오 등)
+
+#### 로깅 시스템 추가
+- 📝 **상세 디버깅 로그**: 모든 API 호출 단계별 로깅
+  - Log Level: INFO, WARN, ERROR, SUCCESS
+  - 데이터 수집 성공/실패 추적
+  - API 응답 시간 측정
+  - 데이터 수집률 계산 및 표시
+
+#### 성능 개선
+- ⚡ **병렬 API 호출**: Promise.all을 활용한 동시 데이터 수집
+- 💾 **메모리 캐시 유지**: 1분 TTL 캐싱으로 중복 요청 방지
+- 📈 **데이터 수집률**: 96.4% (DART 테스트 기준)
+
+#### 추가된 파일
+- 📄 `lib/api/dart.ts`: DART API 클라이언트 (기업정보, 재무제표)
+- 📄 `scripts/test-yahoo-korea.ts`: Yahoo Finance API 테스트 스크립트
+- 📄 `scripts/test-finnhub-korea.ts`: Finnhub API 테스트 스크립트
+- 📄 `scripts/test-dart.ts`: DART API 테스트 스크립트
+
+#### 수정된 파일
+- 📄 `lib/scraper/yahoo-stock.ts`: Yahoo Finance API 통합, 한국 주식 지원 추가, 로깅 시스템 추가
+- 📄 `app/api/stock/info/route.ts`: 완전 재작성 (Yahoo + DART 하이브리드 아키텍처)
+- 📄 `.env.local`: DART_API_KEY 추가
+
+---
+
 ### v2.24.1 (2026-01-22)
 **주식 종목 정보 대폭 강화**
 
@@ -1299,5 +1345,5 @@ git commit -m "fix: 버그 수정
 
 ---
 
-**Last Updated**: 2026-01-22
-**Version**: 2.23.1
+**Last Updated**: 2026-01-23
+**Version**: 2.26.0
