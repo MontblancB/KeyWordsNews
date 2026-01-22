@@ -18,7 +18,7 @@
 ### 배포 정보
 - **배포 URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
-- **현재 버전**: 2.24.2
+- **현재 버전**: 2.24.3
 - **마지막 업데이트**: 2026-01-22
 
 ---

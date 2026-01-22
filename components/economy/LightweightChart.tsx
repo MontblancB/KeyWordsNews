@@ -76,10 +76,12 @@ export default function LightweightChart({
 
     const initChart = async () => {
       try {
-        // 브라우저에서만 lightweight-charts 로드
-        const { createChart } = await import('lightweight-charts')
+        // 브라우저에서만 lightweight-charts 로드 - v5 API
+        const { createChart, CandlestickSeries } = await import('lightweight-charts')
 
         if (!containerRef.current) return
+
+        console.log('[LightweightChart] Initializing with v5 API')
 
         // 차트 생성
         chart = createChart(containerRef.current, {
@@ -105,8 +107,8 @@ export default function LightweightChart({
 
         chartRef.current = chart
 
-        // 캔들스틱 시리즈 추가
-        candlestickSeries = (chart as any).addCandlestickSeries({
+        // 캔들스틱 시리즈 추가 - v5 API (addSeries 사용)
+        candlestickSeries = chart.addSeries(CandlestickSeries, {
           upColor: '#ef4444', // 빨강 (상승)
           downColor: '#3b82f6', // 파랑 (하락)
           borderUpColor: '#ef4444',
@@ -116,6 +118,8 @@ export default function LightweightChart({
         })
 
         seriesRef.current = candlestickSeries
+
+        console.log('[LightweightChart] ✅ Chart and series created successfully')
 
         // 데이터 가져오기
         setLoading(true)
