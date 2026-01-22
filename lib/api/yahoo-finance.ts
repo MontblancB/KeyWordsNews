@@ -225,33 +225,68 @@ export async function fetchSilverPrice(): Promise<Indicator> {
  */
 export async function fetchKoreanIndexHistory(
   indexCode: 'KOSPI' | 'KOSDAQ',
-  range: '1d' | '5d' | '1mo' | '3mo' | '1y' | '5y' = '3mo'
+  range: '1d' | '5d' | '1mo' | '3mo' | '1y' | '2y' | '5y' = '3mo',
+  intervalParam?: string
 ): Promise<OHLCData[]> {
   try {
     // Yahoo Finance 심볼
     const symbol = indexCode === 'KOSPI' ? '^KS11' : '^KQ11'
 
-    // interval 결정
+    // interval 결정 (파라미터가 있으면 사용, 없으면 range 기반)
     let interval: string
-    switch (range) {
-      case '1d':
-        interval = '5m' // 5분봉
-        break
-      case '5d':
-        interval = '15m' // 15분봉
-        break
-      case '1mo':
-        interval = '1h' // 1시간봉
-        break
-      case '3mo':
-      case '1y':
-        interval = '1d' // 일봉
-        break
-      case '5y':
-        interval = '1wk' // 주봉
-        break
-      default:
-        interval = '1d'
+    if (intervalParam) {
+      // 파라미터로 받은 interval을 Yahoo Finance 형식으로 변환
+      switch (intervalParam) {
+        case '1m':
+          interval = '1m'
+          break
+        case '5m':
+          interval = '5m'
+          break
+        case '15m':
+          interval = '15m'
+          break
+        case '30m':
+          interval = '30m'
+          break
+        case '1h':
+          interval = '1h'
+          break
+        case '4h':
+          interval = '4h' // Yahoo Finance는 4h를 지원하지 않을 수 있음
+          break
+        case '1d':
+          interval = '1d'
+          break
+        case '1w':
+          interval = '1wk'
+          break
+        default:
+          interval = '1d'
+      }
+    } else {
+      // range 기반 interval 결정 (폴백)
+      switch (range) {
+        case '1d':
+          interval = '5m'
+          break
+        case '5d':
+          interval = '15m'
+          break
+        case '1mo':
+          interval = '1h'
+          break
+        case '3mo':
+        case '1y':
+        case '2y':
+          interval = '1d'
+          break
+        case '5y':
+          interval = '1wk'
+          break
+        default:
+          interval = '1d'
+      }
     }
 
     console.log(`[Yahoo Finance] Fetching ${symbol} history: range=${range}, interval=${interval}`)

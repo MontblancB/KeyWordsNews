@@ -26,6 +26,7 @@ interface TradingViewModalProps {
 }
 
 type DateRange = '1D' | '1W' | '1M' | '3M' | '12M' | '60M' | 'ALL'
+type Interval = '1m' | '5m' | '15m' | '30m' | '1h' | '4h' | '1d' | '1w'
 
 const DATE_RANGE_OPTIONS: { value: DateRange; label: string }[] = [
   { value: '1D', label: '1일' },
@@ -36,12 +37,24 @@ const DATE_RANGE_OPTIONS: { value: DateRange; label: string }[] = [
   { value: '60M', label: '5년' },
 ]
 
+const INTERVAL_OPTIONS: { value: Interval; label: string }[] = [
+  { value: '1m', label: '1분' },
+  { value: '5m', label: '5분' },
+  { value: '15m', label: '15분' },
+  { value: '30m', label: '30분' },
+  { value: '1h', label: '1시간' },
+  { value: '4h', label: '4시간' },
+  { value: '1d', label: '일봉' },
+  { value: '1w', label: '주봉' },
+]
+
 export default function TradingViewModal({
   indicator,
   isOpen,
   onClose,
 }: TradingViewModalProps) {
   const [dateRange, setDateRange] = useState<DateRange>('3M')
+  const [interval, setInterval] = useState<Interval>('1d')
   const [mounted, setMounted] = useState(false)
   const { resolvedTheme } = useTheme()
 
@@ -172,6 +185,25 @@ export default function TradingViewModal({
           </div>
         )}
 
+        {/* 봉 간격 선택 탭 (KOSPI/KOSDAQ만) */}
+        {useLightweightChart && (
+          <div className="flex gap-1 p-2 border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
+            {INTERVAL_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => setInterval(option.value)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap transition-colors ${
+                  interval === option.value
+                    ? 'bg-green-500 text-white'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* 차트 영역 */}
         <div className="p-2">
           {useLightweightChart ? (
@@ -179,6 +211,7 @@ export default function TradingViewModal({
             <LightweightChart
               indexCode={indicator.name as 'KOSPI' | 'KOSDAQ'}
               dateRange={dateRange === 'ALL' ? '60M' : dateRange}
+              interval={interval}
               height={350}
             />
           ) : chartSupported && symbolInfo ? (

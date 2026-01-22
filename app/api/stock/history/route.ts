@@ -14,7 +14,8 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const indexCode = searchParams.get('index') as 'KOSPI' | 'KOSDAQ' | null
-    const range = (searchParams.get('range') as '1d' | '5d' | '1mo' | '3mo' | '1y' | '5y') || '3mo'
+    const range = (searchParams.get('range') as '1d' | '5d' | '1mo' | '3mo' | '1y' | '2y' | '5y') || '3mo'
+    const interval = searchParams.get('interval') || '1d'
 
     // 유효성 검사
     if (!indexCode || !['KOSPI', 'KOSDAQ'].includes(indexCode)) {
@@ -24,8 +25,8 @@ export async function GET(request: Request) {
       )
     }
 
-    // 캐시 키
-    const cacheKey = `${indexCode}-${range}`
+    // 캐시 키 (interval 포함)
+    const cacheKey = `${indexCode}-${range}-${interval}`
     const now = Date.now()
 
     // 캐시 확인
@@ -42,8 +43,8 @@ export async function GET(request: Request) {
     }
 
     // 데이터 가져오기
-    console.log(`[Stock History API] Fetching fresh data for ${indexCode} (${range})`)
-    const data = await fetchKoreanIndexHistory(indexCode, range)
+    console.log(`[Stock History API] Fetching fresh data for ${indexCode} (${range}, ${interval})`)
+    const data = await fetchKoreanIndexHistory(indexCode, range, interval)
 
     if (!data.length) {
       return NextResponse.json(
@@ -61,6 +62,7 @@ export async function GET(request: Request) {
       cached: false,
       index: indexCode,
       range,
+      interval,
       dataPoints: data.length,
     })
   } catch (error) {

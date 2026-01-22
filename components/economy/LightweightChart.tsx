@@ -3,18 +3,37 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTheme } from 'next-themes'
 
+type Interval = '1m' | '5m' | '15m' | '30m' | '1h' | '4h' | '1d' | '1w'
+
 interface LightweightChartProps {
   indexCode: 'KOSPI' | 'KOSDAQ'
   dateRange: '1D' | '1W' | '1M' | '3M' | '12M' | '60M'
+  interval: Interval
   height?: number
 }
 
-// 항상 최대 기간(5년) 데이터 로드
-// dateRange는 초기 표시 범위에만 사용
-function getApiRange(): string {
-  // dateRange에 관계없이 항상 5년치 전체 데이터 로드
-  // 사용자가 자유롭게 스크롤/줌으로 모든 기간을 탐색 가능
-  return '5y'
+// interval에 따라 적절한 range 결정 (Yahoo Finance API 제한 고려)
+function getApiRangeForInterval(interval: Interval): string {
+  switch (interval) {
+    case '1m':
+      return '5d' // 1분봉: 최대 5일
+    case '5m':
+      return '1mo' // 5분봉: 최대 1개월
+    case '15m':
+      return '3mo' // 15분봉: 최대 3개월
+    case '30m':
+      return '3mo' // 30분봉: 최대 3개월
+    case '1h':
+      return '1y' // 1시간봉: 최대 1년
+    case '4h':
+      return '2y' // 4시간봉: 최대 2년
+    case '1d':
+      return '5y' // 일봉: 최대 5년
+    case '1w':
+      return '5y' // 주봉: 최대 5년
+    default:
+      return '1y'
+  }
 }
 
 // dateRange에 맞춰 초기 표시할 데이터 범위 계산 (일 단위)
@@ -40,6 +59,7 @@ function getVisibleRangeDays(dateRange: string): number {
 export default function LightweightChart({
   indexCode,
   dateRange,
+  interval,
   height = 350,
 }: LightweightChartProps) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -168,15 +188,15 @@ export default function LightweightChart({
 
         console.log('[LightweightChart] ✅ Chart and series created successfully')
 
-        // 데이터 가져오기 - 항상 전체 기간(5년) 로드
+        // 데이터 가져오기 - interval에 따라 적절한 range 로드
         setLoading(true)
         setError(null)
 
-        const apiRange = getApiRange()
-        console.log(`[LightweightChart] Fetching full history: ${indexCode}, range=${apiRange} (display: ${dateRange})`)
+        const apiRange = getApiRangeForInterval(interval)
+        console.log(`[LightweightChart] Fetching data: ${indexCode}, interval=${interval}, range=${apiRange} (display: ${dateRange})`)
 
         const response = await fetch(
-          `/api/stock/history?index=${indexCode}&range=${apiRange}`
+          `/api/stock/history?index=${indexCode}&range=${apiRange}&interval=${interval}`
         )
 
         if (!response.ok) {
@@ -260,7 +280,7 @@ export default function LightweightChart({
         }
       }
     }
-  }, [indexCode, dateRange, resolvedTheme, mounted, height])
+  }, [indexCode, dateRange, interval, resolvedTheme, mounted, height])
 
   // 마운트 전에는 로딩 표시
   if (!mounted) {
