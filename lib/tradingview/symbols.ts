@@ -12,29 +12,29 @@ export interface TradingViewSymbol {
 
 // 지표 이름 → TradingView 심볼 매핑
 export const TRADINGVIEW_SYMBOLS: Record<string, TradingViewSymbol> = {
-  // 국내 지수 (INDEX 심볼 사용 - TradingView 공식 지수)
+  // 국내 지수 (TVC 심볼 사용 - TradingView Composite Index, 임베드 위젯 지원)
   'KOSPI': {
-    symbol: 'INDEX:KS11',
+    symbol: 'TVC:KOSPI',
     name: 'KOSPI',
-    exchange: 'INDEX',
+    exchange: 'TVC',
     description: 'KOSPI 종합주가지수',
   },
   '코스피': {
-    symbol: 'INDEX:KS11',
+    symbol: 'TVC:KOSPI',
     name: 'KOSPI',
-    exchange: 'INDEX',
+    exchange: 'TVC',
     description: 'KOSPI 종합주가지수',
   },
   'KOSDAQ': {
-    symbol: 'INDEX:KQ11',
+    symbol: 'TVC:KOSDAQ',
     name: 'KOSDAQ',
-    exchange: 'INDEX',
+    exchange: 'TVC',
     description: 'KOSDAQ 종합지수',
   },
   '코스닥': {
-    symbol: 'INDEX:KQ11',
+    symbol: 'TVC:KOSDAQ',
     name: 'KOSDAQ',
-    exchange: 'INDEX',
+    exchange: 'TVC',
     description: 'KOSDAQ 종합지수',
   },
 
