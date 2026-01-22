@@ -16,9 +16,21 @@ import {
   Cog6ToothIcon as Cog6ToothIconSolid,
 } from '@heroicons/react/24/solid'
 
+// 햅틱 피드백 (Android + iOS 18+)
+const triggerHaptic = (duration: number = 10) => {
+  if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+    navigator.vibrate(duration)
+  }
+}
+
 export default function BottomNav() {
   const pathname = usePathname()
   const router = useRouter()
+
+  const handleNavClick = (path: string) => {
+    triggerHaptic(10) // 10ms 짧은 진동
+    router.push(path)
+  }
 
   const navItems = [
     {
@@ -70,7 +82,7 @@ export default function BottomNav() {
           return (
             <button
               key={item.path}
-              onClick={() => router.push(item.path)}
+              onClick={() => handleNavClick(item.path)}
               className={`flex-1 py-3 flex flex-col items-center gap-1 transition-all ${
                 isActive ? item.color : 'text-gray-400 dark:text-gray-500'
               }`}
