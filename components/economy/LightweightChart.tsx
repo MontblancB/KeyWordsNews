@@ -9,25 +9,12 @@ interface LightweightChartProps {
   height?: number
 }
 
-// dateRange를 API range로 변환 (항상 넉넉하게 로드)
-function getApiRange(dateRange: string): string {
-  // 사용자가 스크롤/줌아웃할 수 있도록 충분한 데이터를 미리 로드
-  switch (dateRange) {
-    case '1D':
-      return '5d' // 1일 선택 시 5일치 로드
-    case '1W':
-      return '1mo' // 1주 선택 시 1개월치 로드
-    case '1M':
-      return '3mo' // 1개월 선택 시 3개월치 로드
-    case '3M':
-      return '1y' // 3개월 선택 시 1년치 로드
-    case '12M':
-      return '5y' // 1년 선택 시 5년치 로드 (최대한 많이)
-    case '60M':
-      return '5y' // 5년 선택 시 5년치 로드
-    default:
-      return '1y'
-  }
+// 항상 최대 기간(5년) 데이터 로드
+// dateRange는 초기 표시 범위에만 사용
+function getApiRange(): string {
+  // dateRange에 관계없이 항상 5년치 전체 데이터 로드
+  // 사용자가 자유롭게 스크롤/줌으로 모든 기간을 탐색 가능
+  return '5y'
 }
 
 // dateRange에 맞춰 초기 표시할 데이터 범위 계산 (일 단위)
@@ -181,12 +168,12 @@ export default function LightweightChart({
 
         console.log('[LightweightChart] ✅ Chart and series created successfully')
 
-        // 데이터 가져오기
+        // 데이터 가져오기 - 항상 전체 기간(5년) 로드
         setLoading(true)
         setError(null)
 
-        const apiRange = getApiRange(dateRange)
-        console.log(`[LightweightChart] Fetching data: ${indexCode}, ${apiRange}`)
+        const apiRange = getApiRange()
+        console.log(`[LightweightChart] Fetching full history: ${indexCode}, range=${apiRange} (display: ${dateRange})`)
 
         const response = await fetch(
           `/api/stock/history?index=${indexCode}&range=${apiRange}`
