@@ -16,8 +16,9 @@ import {
   Cog6ToothIcon as Cog6ToothIconSolid,
 } from '@heroicons/react/24/solid'
 
-// 햅틱 피드백 (Android Chrome)
-const triggerHaptic = (duration: number = 50) => {
+// 햅틱 피드백 (Android Chrome만 지원, iOS 미지원)
+// UX 가이드라인: 버튼 탭 20-30ms 권장
+const triggerHaptic = (duration: number = 30) => {
   if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
     try {
       navigator.vibrate(duration)
@@ -32,7 +33,7 @@ export default function BottomNav() {
   const router = useRouter()
 
   const handleNavClick = (path: string) => {
-    triggerHaptic(50) // 50ms 진동 (체감 가능한 최소 시간)
+    triggerHaptic(30) // 30ms - 버튼 탭 권장 시간
     router.push(path)
   }
 
