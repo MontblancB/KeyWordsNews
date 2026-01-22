@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useTheme } from 'next-themes'
-import { createChart } from 'lightweight-charts'
 
 interface LightweightChartProps {
   indexCode: 'KOSPI' | 'KOSDAQ'
@@ -48,6 +47,18 @@ export default function LightweightChart({
     setMounted(true)
   }, [])
 
+  // 브라우저 환경 체크
+  if (typeof window === 'undefined') {
+    return (
+      <div
+        className="flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg"
+        style={{ height }}
+      >
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+      </div>
+    )
+  }
+
   useEffect(() => {
     if (!containerRef.current || !mounted) return
 
@@ -59,45 +70,54 @@ export default function LightweightChart({
       theme: resolvedTheme,
     })
 
-    // 차트 생성
-    const chart = createChart(containerRef.current, {
-      width: containerRef.current.clientWidth,
-      height,
-      layout: {
-        background: { color: isDark ? '#1f2937' : '#ffffff' },
-        textColor: isDark ? '#d1d5db' : '#374151',
-      },
-      grid: {
-        vertLines: { color: isDark ? '#374151' : '#e5e7eb' },
-        horzLines: { color: isDark ? '#374151' : '#e5e7eb' },
-      },
-      timeScale: {
-        borderColor: isDark ? '#4b5563' : '#d1d5db',
-        timeVisible: true,
-        secondsVisible: false,
-      },
-      rightPriceScale: {
-        borderColor: isDark ? '#4b5563' : '#d1d5db',
-      },
-    })
+    // Dynamic import로 createChart 로드
+    let chart: any = null
+    let candlestickSeries: any = null
 
-    chartRef.current = chart
-
-    // 캔들스틱 시리즈 추가
-    const candlestickSeries = (chart as any).addCandlestickSeries({
-      upColor: '#ef4444', // 빨강 (상승)
-      downColor: '#3b82f6', // 파랑 (하락)
-      borderUpColor: '#ef4444',
-      borderDownColor: '#3b82f6',
-      wickUpColor: '#ef4444',
-      wickDownColor: '#3b82f6',
-    })
-
-    seriesRef.current = candlestickSeries
-
-    // 데이터 가져오기
-    const fetchData = async () => {
+    const initChart = async () => {
       try {
+        // 브라우저에서만 lightweight-charts 로드
+        const { createChart } = await import('lightweight-charts')
+
+        if (!containerRef.current) return
+
+        // 차트 생성
+        chart = createChart(containerRef.current, {
+          width: containerRef.current.clientWidth,
+          height,
+          layout: {
+            background: { color: isDark ? '#1f2937' : '#ffffff' },
+            textColor: isDark ? '#d1d5db' : '#374151',
+          },
+          grid: {
+            vertLines: { color: isDark ? '#374151' : '#e5e7eb' },
+            horzLines: { color: isDark ? '#374151' : '#e5e7eb' },
+          },
+          timeScale: {
+            borderColor: isDark ? '#4b5563' : '#d1d5db',
+            timeVisible: true,
+            secondsVisible: false,
+          },
+          rightPriceScale: {
+            borderColor: isDark ? '#4b5563' : '#d1d5db',
+          },
+        })
+
+        chartRef.current = chart
+
+        // 캔들스틱 시리즈 추가
+        candlestickSeries = (chart as any).addCandlestickSeries({
+          upColor: '#ef4444', // 빨강 (상승)
+          downColor: '#3b82f6', // 파랑 (하락)
+          borderUpColor: '#ef4444',
+          borderDownColor: '#3b82f6',
+          wickUpColor: '#ef4444',
+          wickDownColor: '#3b82f6',
+        })
+
+        seriesRef.current = candlestickSeries
+
+        // 데이터 가져오기
         setLoading(true)
         setError(null)
 
@@ -143,12 +163,12 @@ export default function LightweightChart({
       }
     }
 
-    fetchData()
+    initChart()
 
     // 반응형 처리
     const handleResize = () => {
-      if (containerRef.current && chart) {
-        chart.applyOptions({
+      if (containerRef.current && chartRef.current) {
+        chartRef.current.applyOptions({
           width: containerRef.current.clientWidth,
         })
       }
