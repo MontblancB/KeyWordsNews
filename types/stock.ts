@@ -35,6 +35,8 @@ export interface CompanyInfo {
   marketCap: string // 시가총액
   headquarters: string // 본사 소재지
   website: string // 홈페이지
+  businessDescription: string // 주요 사업 내용
+  mainProducts: string // 대표 제품/서비스
   // 추가 정보
   faceValue: string // 액면가
   listedDate: string // 상장일
@@ -50,12 +52,16 @@ export interface InvestmentIndicators {
   eps: string // EPS (주당순이익)
   bps: string // BPS (주당순자산)
   roe: string // ROE (자기자본이익률)
+  roa: string // ROA (총자산순이익률)
   dividendYield: string // 배당수익률
   // 추가 지표
   week52High: string // 52주 최고가
   week52Low: string // 52주 최저가
   psr: string // PSR (주가매출비율)
   dps: string // DPS (주당배당금)
+  currentRatio: string // 유동비율
+  quickRatio: string // 당좌비율
+  beta: string // 베타 (시장 대비 변동성)
 }
 
 // 재무제표 데이터
@@ -63,15 +69,21 @@ export interface FinancialData {
   period: string // 기간 (2024.3Q, 2024)
   periodType: 'quarterly' | 'annual' // 분기/연간
   revenue: string // 매출액
+  costOfRevenue: string // 매출원가
+  grossProfit: string // 매출총이익
+  grossMargin: string // 매출총이익률
   operatingProfit: string // 영업이익
-  netIncome: string // 당기순이익
   operatingMargin: string // 영업이익률
+  netIncome: string // 당기순이익
   netMargin: string // 순이익률
+  ebitda: string // EBITDA (법인세·이자·감가상각 차감 전 이익)
   // 추가 재무 지표
   totalAssets: string // 자산총계
   totalLiabilities: string // 부채총계
   totalEquity: string // 자본총계
   debtRatio: string // 부채비율
+  operatingCashFlow: string // 영업현금흐름
+  freeCashFlow: string // 잉여현금흐름
 }
 
 // 종목 전체 정보

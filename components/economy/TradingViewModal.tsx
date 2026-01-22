@@ -4,10 +4,20 @@ import { useState, useEffect } from 'react'
 import { useTheme } from 'next-themes'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/solid'
+import dynamic from 'next/dynamic'
 import { TradingViewChart } from './TradingViewChart'
-import LightweightChart from './LightweightChart'
 import type { Indicator } from '@/types/economy'
 import { getTradingViewSymbol, isChartSupported } from '@/lib/tradingview/symbols'
+
+// Lightweight Charts를 dynamic import로 로드 (SSR 비활성화)
+const LightweightChart = dynamic(() => import('./LightweightChart'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg" style={{ height: 350 }}>
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+    </div>
+  ),
+})
 
 interface TradingViewModalProps {
   indicator: Indicator | null

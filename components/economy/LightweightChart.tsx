@@ -159,8 +159,13 @@ export default function LightweightChart({
     // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize)
-      if (chart) {
-        chart.remove()
+      if (chartRef.current) {
+        try {
+          chartRef.current.remove()
+          chartRef.current = null
+        } catch (error) {
+          console.error('[LightweightChart] Cleanup error:', error)
+        }
       }
     }
   }, [indexCode, dateRange, resolvedTheme, mounted, height])

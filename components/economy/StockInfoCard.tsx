@@ -92,9 +92,14 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-              {stockInfo.code}
-            </h2>
+            <div>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                {stockInfo.name}
+              </h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {stockInfo.code}
+              </p>
+            </div>
             <span
               className={`px-2 py-0.5 text-xs font-medium rounded ${getMarketBadgeClass(market)}`}
             >
@@ -264,6 +269,41 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
                   {company.listedShares}
                 </span>
               </div>
+              <div className="flex justify-between col-span-2">
+                <span className="text-gray-500 dark:text-gray-400">본사</span>
+                <span className="text-gray-900 dark:text-gray-100 font-medium text-right">
+                  {company.headquarters}
+                </span>
+              </div>
+              {company.website && company.website !== '-' && (
+                <div className="flex justify-between col-span-2">
+                  <span className="text-gray-500 dark:text-gray-400">홈페이지</span>
+                  <a
+                    href={company.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 dark:text-blue-400 hover:underline text-right truncate max-w-[200px]"
+                  >
+                    {company.website}
+                  </a>
+                </div>
+              )}
+              {company.businessDescription && company.businessDescription !== '-' && (
+                <div className="col-span-2 pt-2 border-t border-gray-100 dark:border-gray-700">
+                  <span className="text-gray-500 dark:text-gray-400 text-xs">주요 사업</span>
+                  <p className="text-gray-900 dark:text-gray-100 text-xs mt-1 leading-relaxed">
+                    {company.businessDescription}
+                  </p>
+                </div>
+              )}
+              {company.mainProducts && company.mainProducts !== '-' && (
+                <div className="col-span-2">
+                  <span className="text-gray-500 dark:text-gray-400 text-xs">대표 제품</span>
+                  <p className="text-gray-900 dark:text-gray-100 text-xs mt-1">
+                    {company.mainProducts}
+                  </p>
+                </div>
+              )}
             </>
           )}
         </div>
@@ -350,6 +390,34 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
             </div>
           </div>
         </div>
+
+        {/* 추가 투자 지표 */}
+        <div className="grid grid-cols-4 gap-2 mt-2">
+          <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+            <div className="text-[10px] text-gray-500 dark:text-gray-400 mb-1">ROA</div>
+            <div className="text-sm font-bold text-blue-600 dark:text-blue-400">
+              {indicators.roa}
+            </div>
+          </div>
+          <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+            <div className="text-[10px] text-gray-500 dark:text-gray-400 mb-1">유동비율</div>
+            <div className="text-sm font-bold text-blue-600 dark:text-blue-400">
+              {indicators.currentRatio}
+            </div>
+          </div>
+          <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+            <div className="text-[10px] text-gray-500 dark:text-gray-400 mb-1">당좌비율</div>
+            <div className="text-sm font-bold text-blue-600 dark:text-blue-400">
+              {indicators.quickRatio}
+            </div>
+          </div>
+          <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+            <div className="text-[10px] text-gray-500 dark:text-gray-400 mb-1">베타</div>
+            <div className="text-sm font-bold text-blue-600 dark:text-blue-400">
+              {indicators.beta}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* 재무제표 */}
@@ -394,6 +462,34 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
                     </td>
                   ))}
                 </tr>
+                {showAllFinancials && (
+                  <>
+                    <tr className="border-t border-gray-100 dark:border-gray-700">
+                      <td className="py-2 pr-2 text-gray-500 dark:text-gray-400">매출원가</td>
+                      {financials.slice(0, 4).map((f, i) => (
+                        <td key={i} className="text-right py-2 px-1 font-medium text-gray-600 dark:text-gray-400">
+                          {f.costOfRevenue}
+                        </td>
+                      ))}
+                    </tr>
+                    <tr className="border-t border-gray-100 dark:border-gray-700 bg-green-50/50 dark:bg-green-900/10">
+                      <td className="py-2 pr-2 text-gray-500 dark:text-gray-400">매출총이익</td>
+                      {financials.slice(0, 4).map((f, i) => (
+                        <td key={i} className="text-right py-2 px-1 font-medium text-green-600 dark:text-green-400">
+                          {f.grossProfit}
+                        </td>
+                      ))}
+                    </tr>
+                    <tr className="border-t border-gray-100 dark:border-gray-700 bg-green-50/50 dark:bg-green-900/10">
+                      <td className="py-2 pr-2 text-gray-500 dark:text-gray-400">매출총이익률</td>
+                      {financials.slice(0, 4).map((f, i) => (
+                        <td key={i} className="text-right py-2 px-1 font-medium text-green-600 dark:text-green-400">
+                          {f.grossMargin}
+                        </td>
+                      ))}
+                    </tr>
+                  </>
+                )}
                 <tr className="border-t border-gray-100 dark:border-gray-700">
                   <td className="py-2 pr-2 text-gray-500 dark:text-gray-400">영업이익</td>
                   {financials.slice(0, 4).map((f, i) => (
@@ -402,6 +498,16 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
                     </td>
                   ))}
                 </tr>
+                {showAllFinancials && (
+                  <tr className="border-t border-gray-100 dark:border-gray-700">
+                    <td className="py-2 pr-2 text-gray-500 dark:text-gray-400">EBITDA</td>
+                    {financials.slice(0, 4).map((f, i) => (
+                      <td key={i} className="text-right py-2 px-1 font-medium text-purple-600 dark:text-purple-400">
+                        {f.ebitda}
+                      </td>
+                    ))}
+                  </tr>
+                )}
                 <tr className="border-t border-gray-100 dark:border-gray-700">
                   <td className="py-2 pr-2 text-gray-500 dark:text-gray-400">당기순이익</td>
                   {financials.slice(0, 4).map((f, i) => (
@@ -459,6 +565,22 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
                       {financials.slice(0, 4).map((f, i) => (
                         <td key={i} className="text-right py-2 px-1 font-medium text-orange-600 dark:text-orange-400">
                           {f.debtRatio}
+                        </td>
+                      ))}
+                    </tr>
+                    <tr className="border-t-2 border-gray-200 dark:border-gray-600 bg-blue-50/50 dark:bg-blue-900/10">
+                      <td className="py-2 pr-2 text-gray-500 dark:text-gray-400">영업현금흐름</td>
+                      {financials.slice(0, 4).map((f, i) => (
+                        <td key={i} className="text-right py-2 px-1 font-medium text-blue-600 dark:text-blue-400">
+                          {f.operatingCashFlow}
+                        </td>
+                      ))}
+                    </tr>
+                    <tr className="border-t border-gray-100 dark:border-gray-700 bg-blue-50/50 dark:bg-blue-900/10">
+                      <td className="py-2 pr-2 text-gray-500 dark:text-gray-400">잉여현금흐름</td>
+                      {financials.slice(0, 4).map((f, i) => (
+                        <td key={i} className="text-right py-2 px-1 font-medium text-blue-600 dark:text-blue-400">
+                          {f.freeCashFlow}
                         </td>
                       ))}
                     </tr>

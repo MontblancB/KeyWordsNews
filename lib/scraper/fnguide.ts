@@ -87,27 +87,39 @@ export async function scrapeFinancials(code: string): Promise<FinancialData[]> {
         period,
         periodType: isQuarterly ? 'quarterly' : 'annual',
         revenue: rows['매출액']?.[i] || rows['영업수익']?.[i] || '-',
+        costOfRevenue: rows['매출원가']?.[i] || '-',
+        grossProfit: rows['매출총이익']?.[i] || '-',
+        grossMargin: rows['매출총이익률']?.[i] || '-',
         operatingProfit: rows['영업이익']?.[i] || '-',
-        netIncome: rows['당기순이익']?.[i] || rows['순이익']?.[i] || '-',
         operatingMargin: rows['영업이익률']?.[i] || '-',
+        netIncome: rows['당기순이익']?.[i] || rows['순이익']?.[i] || '-',
         netMargin: rows['순이익률']?.[i] || '-',
+        ebitda: rows['EBITDA']?.[i] || '-',
         // 추가 재무 지표
         totalAssets: rows['자산총계']?.[i] || rows['자산']?.[i] || '-',
         totalLiabilities: rows['부채총계']?.[i] || rows['부채']?.[i] || '-',
         totalEquity: rows['자본총계']?.[i] || rows['자본']?.[i] || '-',
         debtRatio: rows['부채비율']?.[i] || '-',
+        operatingCashFlow: rows['영업활동현금흐름']?.[i] || rows['영업현금흐름']?.[i] || '-',
+        freeCashFlow: rows['잉여현금흐름']?.[i] || rows['FCF']?.[i] || '-',
       }
 
       // 값 정리
       financial.revenue = cleanValue(financial.revenue)
+      financial.costOfRevenue = cleanValue(financial.costOfRevenue)
+      financial.grossProfit = cleanValue(financial.grossProfit)
+      financial.grossMargin = cleanValue(financial.grossMargin)
       financial.operatingProfit = cleanValue(financial.operatingProfit)
-      financial.netIncome = cleanValue(financial.netIncome)
       financial.operatingMargin = cleanValue(financial.operatingMargin)
+      financial.netIncome = cleanValue(financial.netIncome)
       financial.netMargin = cleanValue(financial.netMargin)
+      financial.ebitda = cleanValue(financial.ebitda)
       financial.totalAssets = cleanValue(financial.totalAssets)
       financial.totalLiabilities = cleanValue(financial.totalLiabilities)
       financial.totalEquity = cleanValue(financial.totalEquity)
       financial.debtRatio = cleanValue(financial.debtRatio)
+      financial.operatingCashFlow = cleanValue(financial.operatingCashFlow)
+      financial.freeCashFlow = cleanValue(financial.freeCashFlow)
 
       financials.push(financial)
     }
@@ -186,6 +198,19 @@ export async function scrapeFnGuideIndicators(
             if (text.includes('52주') && text.includes('최저')) {
               indicators.week52Low = cleanValue(nextValue) || indicators.week52Low
             }
+            // 추가 지표
+            if (text === 'ROA' || text.includes('ROA(%)')) {
+              indicators.roa = cleanValue(nextValue) || indicators.roa
+            }
+            if (text.includes('유동비율')) {
+              indicators.currentRatio = cleanValue(nextValue) || indicators.currentRatio
+            }
+            if (text.includes('당좌비율')) {
+              indicators.quickRatio = cleanValue(nextValue) || indicators.quickRatio
+            }
+            if (text.includes('베타') || text.includes('Beta')) {
+              indicators.beta = cleanValue(nextValue) || indicators.beta
+            }
           })
         })
     })
@@ -262,6 +287,13 @@ export async function scrapeFnGuideCompanyInfo(
           }
           if (th.includes('자본금')) {
             companyInfo.capital = td
+          }
+          // 추가 정보
+          if (th.includes('사업내용') || th.includes('주요사업')) {
+            companyInfo.businessDescription = td
+          }
+          if (th.includes('주요제품') || th.includes('주력제품') || th.includes('대표제품')) {
+            companyInfo.mainProducts = td
           }
         })
     })

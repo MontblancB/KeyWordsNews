@@ -130,6 +130,8 @@ export async function scrapeUSCompanyInfo(symbol: string): Promise<CompanyInfo |
       marketCap: formatLargeNumber(summaryDetail.marketCap?.raw || 0),
       headquarters: `${profile.city || ''}, ${profile.country || ''}`.trim() || '-',
       website: profile.website || '-',
+      businessDescription: profile.longBusinessSummary || '-',
+      mainProducts: profile.sector || '-',
       // 추가 정보
       faceValue: '-',
       listedDate: '-',
@@ -182,6 +184,9 @@ export async function scrapeUSInvestmentIndicators(
       roe: financialData.returnOnEquity?.raw
         ? (financialData.returnOnEquity.raw * 100).toFixed(2) + '%'
         : '-',
+      roa: financialData.returnOnAssets?.raw
+        ? (financialData.returnOnAssets.raw * 100).toFixed(2) + '%'
+        : '-',
       dividendYield: summaryDetail.dividendYield?.raw
         ? (summaryDetail.dividendYield.raw * 100).toFixed(2) + '%'
         : '-',
@@ -190,6 +195,9 @@ export async function scrapeUSInvestmentIndicators(
       week52Low: keyStats.fiftyTwoWeekLow?.raw?.toFixed(2) || '-',
       psr: keyStats.priceToSalesTrailing12Months?.raw?.toFixed(2) || '-',
       dps: summaryDetail.dividendRate?.raw?.toFixed(2) || '-',
+      currentRatio: financialData.currentRatio?.raw?.toFixed(2) || '-',
+      quickRatio: financialData.quickRatio?.raw?.toFixed(2) || '-',
+      beta: keyStats.beta?.raw?.toFixed(2) || '-',
     }
   } catch (error) {
     console.error('US investment indicators scraping error:', error)
@@ -202,7 +210,7 @@ export async function scrapeUSInvestmentIndicators(
  */
 export async function scrapeUSFinancialData(symbol: string): Promise<FinancialData[]> {
   try {
-    const url = `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${symbol}?modules=incomeStatementHistory,balanceSheetHistory,financialData`
+    const url = `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${symbol}?modules=incomeStatementHistory,balanceSheetHistory,cashflowStatementHistory,financialData`
 
     const response = await fetch(url, {
       headers: {
@@ -224,6 +232,7 @@ export async function scrapeUSFinancialData(symbol: string): Promise<FinancialDa
 
     const incomeStatements = result.incomeStatementHistory?.incomeStatementHistory || []
     const balanceSheets = result.balanceSheetHistory?.balanceSheetStatements || []
+    const cashflowStatements = result.cashflowStatementHistory?.cashflowStatements || []
     const financialData = result.financialData || {}
 
     const financials: FinancialData[] = []
@@ -232,14 +241,21 @@ export async function scrapeUSFinancialData(symbol: string): Promise<FinancialDa
     for (let i = 0; i < Math.min(3, incomeStatements.length); i++) {
       const income = incomeStatements[i]
       const balance = balanceSheets[i] || {}
+      const cashflow = cashflowStatements[i] || {}
 
       const revenue = income.totalRevenue?.raw || 0
+      const costOfRevenue = income.costOfRevenue?.raw || 0
+      const grossProfit = income.grossProfit?.raw || 0
       const operatingIncome = income.operatingIncome?.raw || 0
       const netIncome = income.netIncome?.raw || 0
+      const ebitda = income.ebitda?.raw || 0
       const totalAssets = balance.totalAssets?.raw || 0
       const totalLiabilities = balance.totalLiab?.raw || 0
       const totalEquity = balance.totalStockholderEquity?.raw || 0
+      const operatingCashFlow = cashflow.totalCashFromOperatingActivities?.raw || 0
+      const freeCashFlow = cashflow.freeCashFlow?.raw || 0
 
+      const grossMargin = revenue > 0 ? (grossProfit / revenue) * 100 : 0
       const operatingMargin = revenue > 0 ? (operatingIncome / revenue) * 100 : 0
       const netMargin = revenue > 0 ? (netIncome / revenue) * 100 : 0
       const debtRatio = totalEquity > 0 ? (totalLiabilities / totalEquity) * 100 : 0
@@ -252,14 +268,20 @@ export async function scrapeUSFinancialData(symbol: string): Promise<FinancialDa
         period: `${year}`,
         periodType: 'annual',
         revenue: formatLargeNumber(revenue),
+        costOfRevenue: formatLargeNumber(costOfRevenue),
+        grossProfit: formatLargeNumber(grossProfit),
+        grossMargin: grossMargin.toFixed(2) + '%',
         operatingProfit: formatLargeNumber(operatingIncome),
-        netIncome: formatLargeNumber(netIncome),
         operatingMargin: operatingMargin.toFixed(2) + '%',
+        netIncome: formatLargeNumber(netIncome),
         netMargin: netMargin.toFixed(2) + '%',
+        ebitda: formatLargeNumber(ebitda),
         totalAssets: formatLargeNumber(totalAssets),
         totalLiabilities: formatLargeNumber(totalLiabilities),
         totalEquity: formatLargeNumber(totalEquity),
         debtRatio: debtRatio.toFixed(2) + '%',
+        operatingCashFlow: formatLargeNumber(operatingCashFlow),
+        freeCashFlow: formatLargeNumber(freeCashFlow),
       })
     }
 

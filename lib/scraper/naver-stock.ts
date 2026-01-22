@@ -365,6 +365,8 @@ export async function scrapeCompanyInfo(code: string): Promise<CompanyInfo | nul
       marketCap: '',
       headquarters: '',
       website: '',
+      businessDescription: '-',
+      mainProducts: '-',
       // 추가 정보
       faceValue: '-',
       listedDate: '-',
@@ -475,6 +477,12 @@ export async function scrapeCompanyInfo(code: string): Promise<CompanyInfo | nul
         if (th.includes('자본금') && companyInfo.capital === '-') {
           companyInfo.capital = td
         }
+        if ((th.includes('사업내용') || th.includes('주요사업')) && companyInfo.businessDescription === '-') {
+          companyInfo.businessDescription = td
+        }
+        if ((th.includes('주요제품') || th.includes('주력제품') || th.includes('대표제품')) && companyInfo.mainProducts === '-') {
+          companyInfo.mainProducts = td
+        }
       })
     }
 
@@ -546,12 +554,16 @@ export async function scrapeInvestmentIndicators(
       eps: '-',
       bps: '-',
       roe: '-',
+      roa: '-',
       dividendYield: '-',
       // 추가 지표
       week52High: '-',
       week52Low: '-',
       psr: '-',
       dps: '-',
+      currentRatio: '-',
+      quickRatio: '-',
+      beta: '-',
     }
 
     // 투자 지표 테이블 파싱
@@ -565,7 +577,11 @@ export async function scrapeInvestmentIndicators(
       if (th.includes('EPS')) indicators.eps = value || '-'
       if (th.includes('BPS')) indicators.bps = value || '-'
       if (th.includes('ROE')) indicators.roe = value || '-'
+      if (th.includes('ROA')) indicators.roa = value || '-'
       if (th.includes('배당')) indicators.dividendYield = value || '-'
+      if (th.includes('유동비율')) indicators.currentRatio = value || '-'
+      if (th.includes('당좌비율')) indicators.quickRatio = value || '-'
+      if (th.includes('베타') || th.includes('Beta')) indicators.beta = value || '-'
       // 52주 최고/최저
       if (th.includes('52주') && th.includes('최고')) {
         indicators.week52High = value || '-'
