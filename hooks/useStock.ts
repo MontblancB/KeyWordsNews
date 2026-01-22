@@ -48,6 +48,10 @@ export function useStockInfo(stock: StockSearchItem | null) {
         code: stock.code,
       })
 
+      if (stock.name) {
+        params.append('name', stock.name)
+      }
+
       if (stock.market) {
         params.append('market', stock.market)
       }

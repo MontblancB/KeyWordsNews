@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { scrapeKoreanStockPrice, scrapeUSStockPrice, scrapeUSCompanyInfo, scrapeUSInvestmentIndicators, scrapeUSFinancialData } from '@/lib/scraper/yahoo-stock'
+import { scrapeCompanyInfo, scrapeInvestmentIndicators } from '@/lib/scraper/naver-stock'
 import { getDartCompanyInfo, getDartFinancials } from '@/lib/api/dart'
 import type { StockInfo, InvestmentIndicators } from '@/types/stock'
 
@@ -235,23 +236,34 @@ export async function GET(request: NextRequest) {
         message: '한국 주식 데이터 수집 시작 (Yahoo + DART)',
       })
 
-      const [yahooPrice, dartCompanyInfo, dartFinancials] = await Promise.all([
+      const [yahooPrice, naverCompanyInfo, naverIndicators, dartCompanyInfo, dartFinancials] = await Promise.all([
         scrapeKoreanStockPrice(stockCode, market || 'KOSPI'),
+        scrapeCompanyInfo(stockCode),
+        scrapeInvestmentIndicators(stockCode),
         getDartCompanyInfo(stockCode),
         getDartFinancials(stockCode),
       ])
 
-      // 시가총액 계산 (Yahoo Finance 메타 데이터에서 가져올 수 있지만, 간단히 계산)
-      // 실제로는 Yahoo Finance Chart API에서 marketCap을 가져와야 함
-      // 여기서는 임시로 0으로 설정
-      const marketCap = 0 // TODO: Yahoo Finance에서 시가총액 가져오기
+      // 시가총액 파싱 (네이버 금융에서 가져옴)
+      const parseMarketCap = (marketCapStr: string): number => {
+        if (!marketCapStr || marketCapStr === '-') return 0
+        // "123,456억원" 형식을 숫자로 변환 (억원 단위 -> 원 단위)
+        const match = marketCapStr.match(/([\d,]+)억원/)
+        if (match) {
+          const value = parseFloat(match[1].replace(/,/g, ''))
+          return value * 100000000 // 억원 -> 원
+        }
+        return 0
+      }
+
+      const marketCap = naverCompanyInfo ? parseMarketCap(naverCompanyInfo.marketCap) : 0
 
       // 현재가 파싱
       const currentPrice = yahooPrice
         ? parseFloat(yahooPrice.current.replace(/,/g, ''))
         : 0
 
-      // 투자지표 계산
+      // 투자지표 계산 (DART 재무 데이터 기반)
       const calculatedIndicators = calculateIndicators(
         marketCap,
         currentPrice,
@@ -274,37 +286,39 @@ export async function GET(request: NextRequest) {
           prevClose: '0',
         },
         company: {
-          industry: dartCompanyInfo?.industry || '-',
-          ceo: dartCompanyInfo?.ceo || '-',
-          establishedDate: dartCompanyInfo?.establishedDate || '-',
-          fiscalMonth: dartCompanyInfo?.fiscalMonth || '-',
-          employees: '-', // DART에서 직접 제공 안 함
-          marketCap: marketCap > 0 ? marketCap.toLocaleString() + '원' : '-',
-          headquarters: dartCompanyInfo?.headquarters || '-',
-          website: dartCompanyInfo?.website || '-',
-          businessDescription: '-', // DART에서 별도 API 필요
-          mainProducts: '-', // DART에서 별도 API 필요
-          faceValue: '-',
-          listedDate: '-',
-          listedShares: '-',
-          foreignOwnership: '-',
-          capital: '-',
+          // 네이버 금융 우선, DART 보완
+          industry: naverCompanyInfo?.industry || dartCompanyInfo?.industry || '-',
+          ceo: dartCompanyInfo?.ceo || naverCompanyInfo?.ceo || '-',
+          establishedDate: dartCompanyInfo?.establishedDate || naverCompanyInfo?.establishedDate || '-',
+          fiscalMonth: dartCompanyInfo?.fiscalMonth || naverCompanyInfo?.fiscalMonth || '-',
+          employees: naverCompanyInfo?.employees || '-',
+          marketCap: naverCompanyInfo?.marketCap || (marketCap > 0 ? marketCap.toLocaleString() + '원' : '-'),
+          headquarters: dartCompanyInfo?.headquarters || naverCompanyInfo?.headquarters || '-',
+          website: dartCompanyInfo?.website || naverCompanyInfo?.website || '-',
+          businessDescription: naverCompanyInfo?.businessDescription || '-',
+          mainProducts: naverCompanyInfo?.mainProducts || '-',
+          faceValue: naverCompanyInfo?.faceValue || '-',
+          listedDate: naverCompanyInfo?.listedDate || '-',
+          listedShares: naverCompanyInfo?.listedShares || '-',
+          foreignOwnership: naverCompanyInfo?.foreignOwnership || '-',
+          capital: naverCompanyInfo?.capital || '-',
         },
         indicators: {
-          per: calculatedIndicators.per || '-',
-          pbr: calculatedIndicators.pbr || '-',
-          eps: calculatedIndicators.eps || '-',
-          bps: calculatedIndicators.bps || '-',
-          roe: calculatedIndicators.roe || '-',
-          roa: calculatedIndicators.roa || '-',
-          dividendYield: '-',
-          week52High: '-', // Yahoo Finance 메타 데이터에서 가져올 수 있음
-          week52Low: '-', // Yahoo Finance 메타 데이터에서 가져올 수 있음
-          psr: '-',
-          dps: '-',
-          currentRatio: '-',
-          quickRatio: '-',
-          beta: '-',
+          // 네이버 금융 우선, DART 계산 보완
+          per: naverIndicators?.per || calculatedIndicators.per || '-',
+          pbr: naverIndicators?.pbr || calculatedIndicators.pbr || '-',
+          eps: naverIndicators?.eps || calculatedIndicators.eps || '-',
+          bps: naverIndicators?.bps || calculatedIndicators.bps || '-',
+          roe: naverIndicators?.roe || calculatedIndicators.roe || '-',
+          roa: naverIndicators?.roa || calculatedIndicators.roa || '-',
+          dividendYield: naverIndicators?.dividendYield || '-',
+          week52High: naverIndicators?.week52High || '-',
+          week52Low: naverIndicators?.week52Low || '-',
+          psr: naverIndicators?.psr || '-',
+          dps: naverIndicators?.dps || '-',
+          currentRatio: naverIndicators?.currentRatio || '-',
+          quickRatio: naverIndicators?.quickRatio || '-',
+          beta: naverIndicators?.beta || '-',
         },
         financials: dartFinancials.length > 0 ? dartFinancials : [],
         lastUpdated: new Date().toLocaleString('ko-KR', {

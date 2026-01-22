@@ -12,14 +12,15 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
 } from '@heroicons/react/24/outline'
-import { TradingViewChart } from './TradingViewChart'
+import LightweightChart from './LightweightChart'
 import type { StockInfo } from '@/types/stock'
+
+type DateRangeType = '1D' | '1W' | '1M' | '3M' | '12M' | '60M'
+type IntervalType = '1m' | '5m' | '15m' | '30m' | '1h' | '1d' | '1w'
 
 interface StockInfoCardProps {
   stockInfo: StockInfo
 }
-
-type DateRangeType = '1D' | '1W' | '1M' | '3M' | '12M' | '60M' | 'ALL'
 
 const DATE_RANGES: { value: DateRangeType; label: string }[] = [
   { value: '1D', label: '1일' },
@@ -33,6 +34,7 @@ const DATE_RANGES: { value: DateRangeType; label: string }[] = [
 export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
   const { price, company, indicators, financials, market, code, symbol } = stockInfo
   const [dateRange, setDateRange] = useState<DateRangeType>('3M')
+  const [interval, setInterval] = useState<IntervalType>('1d')
   const [showAllCompanyInfo, setShowAllCompanyInfo] = useState(false)
   const [showAllFinancials, setShowAllFinancials] = useState(false)
 
@@ -174,7 +176,13 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
           </div>
         </div>
         <div className="rounded-lg overflow-hidden">
-          <TradingViewChart symbol={tradingViewSymbol} height={300} dateRange={dateRange} />
+          <LightweightChart
+            stockCode={code}
+            market={market as 'KOSPI' | 'KOSDAQ' | 'US'}
+            dateRange={dateRange}
+            interval={interval}
+            height={300}
+          />
         </div>
       </div>
 

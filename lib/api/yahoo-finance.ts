@@ -220,6 +220,143 @@ export async function fetchSilverPrice(): Promise<Indicator> {
 }
 
 /**
+ * 개별 종목 과거 데이터 가져오기
+ * Lightweight Charts용 OHLC 데이터
+ */
+export async function fetchStockHistory(
+  stockCode: string,
+  market: 'KOSPI' | 'KOSDAQ' | 'US' = 'KOSPI',
+  range: '1d' | '5d' | '1mo' | '3mo' | '1y' | '2y' | '5y' = '3mo',
+  intervalParam?: string
+): Promise<OHLCData[]> {
+  try {
+    // Yahoo Finance 심볼
+    let symbol: string
+    if (market === 'US') {
+      // 미국 주식은 그대로 사용
+      symbol = stockCode
+    } else {
+      // 한국 주식: {종목코드}.KS (KOSPI) or {종목코드}.KQ (KOSDAQ)
+      const suffix = market === 'KOSPI' ? '.KS' : '.KQ'
+      symbol = `${stockCode}${suffix}`
+    }
+
+    // interval 결정
+    let interval: string
+    if (intervalParam) {
+      switch (intervalParam) {
+        case '1m':
+          interval = '1m'
+          break
+        case '5m':
+          interval = '5m'
+          break
+        case '15m':
+          interval = '15m'
+          break
+        case '30m':
+          interval = '30m'
+          break
+        case '1h':
+          interval = '1h'
+          break
+        case '1d':
+          interval = '1d'
+          break
+        case '1w':
+          interval = '1wk'
+          break
+        default:
+          interval = '1d'
+      }
+    } else {
+      // range 기반 interval 결정
+      switch (range) {
+        case '1d':
+          interval = '5m'
+          break
+        case '5d':
+          interval = '15m'
+          break
+        case '1mo':
+          interval = '1h'
+          break
+        case '3mo':
+        case '1y':
+        case '2y':
+          interval = '1d'
+          break
+        case '5y':
+          interval = '1wk'
+          break
+        default:
+          interval = '1d'
+      }
+    }
+
+    console.log(`[Yahoo Finance] Fetching ${symbol} history: range=${range}, interval=${interval}`)
+
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=${interval}&range=${range}`
+
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error(`Yahoo Finance API error: ${response.status}`)
+    }
+
+    const data = await response.json()
+
+    // 데이터 추출
+    const result = data.chart?.result?.[0]
+    if (!result) {
+      console.warn(`No chart data for ${symbol}`)
+      return []
+    }
+
+    const timestamps = result.timestamp || []
+    const quote = result.indicators?.quote?.[0]
+
+    if (!quote || !timestamps.length) {
+      console.warn(`No OHLC data for ${symbol}`)
+      return []
+    }
+
+    const { open, high, low, close, volume } = quote
+
+    // OHLC 데이터 변환
+    const ohlcData: OHLCData[] = []
+    for (let i = 0; i < timestamps.length; i++) {
+      // null 값 체크
+      if (
+        open[i] != null &&
+        high[i] != null &&
+        low[i] != null &&
+        close[i] != null
+      ) {
+        ohlcData.push({
+          time: timestamps[i],
+          open: open[i],
+          high: high[i],
+          low: low[i],
+          close: close[i],
+          volume: volume?.[i] ?? undefined,
+        })
+      }
+    }
+
+    console.log(`[Yahoo Finance] ✅ Fetched ${ohlcData.length} candles for ${symbol}`)
+    return ohlcData
+  } catch (error) {
+    console.error(`Error fetching ${stockCode} history:`, error)
+    return []
+  }
+}
+
+/**
  * 국내 지수 (KOSPI/KOSDAQ) 과거 데이터 가져오기
  * Lightweight Charts용 OHLC 데이터
  */

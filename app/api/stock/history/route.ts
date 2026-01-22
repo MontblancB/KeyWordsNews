@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
-import { fetchKoreanIndexHistory } from '@/lib/api/yahoo-finance'
+import { fetchKoreanIndexHistory, fetchStockHistory } from '@/lib/api/yahoo-finance'
 
 /**
- * KOSPI/KOSDAQ 과거 차트 데이터 API
+ * KOSPI/KOSDAQ 과거 차트 데이터 API + 개별 종목 차트 데이터 API
  * Lightweight Charts용 OHLC 데이터 제공
  */
 
@@ -14,19 +14,23 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const indexCode = searchParams.get('index') as 'KOSPI' | 'KOSDAQ' | null
+    const stockCode = searchParams.get('code')
+    const market = (searchParams.get('market') as 'KOSPI' | 'KOSDAQ' | 'US') || 'KOSPI'
     const range = (searchParams.get('range') as '1d' | '5d' | '1mo' | '3mo' | '1y' | '2y' | '5y') || '3mo'
     const interval = searchParams.get('interval') || '1d'
 
-    // 유효성 검사
-    if (!indexCode || !['KOSPI', 'KOSDAQ'].includes(indexCode)) {
+    // 지수 또는 개별 종목 중 하나는 필수
+    if (!indexCode && !stockCode) {
       return NextResponse.json(
-        { success: false, error: 'Invalid index code. Use KOSPI or KOSDAQ.' },
+        { success: false, error: 'Either index or code parameter is required.' },
         { status: 400 }
       )
     }
 
-    // 캐시 키 (interval 포함)
-    const cacheKey = `${indexCode}-${range}-${interval}`
+    // 캐시 키
+    const cacheKey = stockCode
+      ? `stock-${stockCode}-${market}-${range}-${interval}`
+      : `index-${indexCode}-${range}-${interval}`
     const now = Date.now()
 
     // 캐시 확인
@@ -43,8 +47,22 @@ export async function GET(request: Request) {
     }
 
     // 데이터 가져오기
-    console.log(`[Stock History API] Fetching fresh data for ${indexCode} (${range}, ${interval})`)
-    const data = await fetchKoreanIndexHistory(indexCode, range, interval)
+    let data: any[]
+
+    if (stockCode) {
+      // 개별 종목
+      console.log(`[Stock History API] Fetching fresh data for stock ${stockCode} (${market}, ${range}, ${interval})`)
+      data = await fetchStockHistory(stockCode, market, range, interval)
+    } else if (indexCode) {
+      // 지수
+      console.log(`[Stock History API] Fetching fresh data for index ${indexCode} (${range}, ${interval})`)
+      data = await fetchKoreanIndexHistory(indexCode, range, interval)
+    } else {
+      return NextResponse.json(
+        { success: false, error: 'Invalid parameters' },
+        { status: 400 }
+      )
+    }
 
     if (!data.length) {
       return NextResponse.json(
@@ -60,7 +78,7 @@ export async function GET(request: Request) {
       success: true,
       data,
       cached: false,
-      index: indexCode,
+      ...(stockCode ? { code: stockCode, market } : { index: indexCode }),
       range,
       interval,
       dataPoints: data.length,

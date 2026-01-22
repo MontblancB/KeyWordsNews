@@ -6,7 +6,9 @@ import { useTheme } from 'next-themes'
 type Interval = '1m' | '5m' | '15m' | '30m' | '1h' | '1d' | '1w'
 
 interface LightweightChartProps {
-  indexCode: 'KOSPI' | 'KOSDAQ'
+  indexCode?: 'KOSPI' | 'KOSDAQ' // 지수 차트용 (옵션)
+  stockCode?: string // 개별 종목 차트용 (옵션)
+  market?: 'KOSPI' | 'KOSDAQ' | 'US' // 시장 구분 (개별 종목용, 기본값: KOSPI)
   dateRange: '1D' | '1W' | '1M' | '3M' | '12M' | '60M'
   interval: Interval
   height?: number
@@ -56,6 +58,8 @@ function getVisibleRangeDays(dateRange: string): number {
 
 export default function LightweightChart({
   indexCode,
+  stockCode,
+  market = 'KOSPI',
   dateRange,
   interval,
   height = 350,
@@ -191,10 +195,16 @@ export default function LightweightChart({
         setError(null)
 
         const apiRange = getApiRangeForInterval(interval)
-        console.log(`[LightweightChart] Fetching data: ${indexCode}, interval=${interval}, range=${apiRange} (display: ${dateRange})`)
+
+        // 지수 또는 개별 종목 중 하나 사용
+        const queryParam = stockCode
+          ? `code=${stockCode}&market=${market}`
+          : `index=${indexCode}`
+
+        console.log(`[LightweightChart] Fetching data: ${stockCode || indexCode}, market=${market}, interval=${interval}, range=${apiRange} (display: ${dateRange})`)
 
         const response = await fetch(
-          `/api/stock/history?index=${indexCode}&range=${apiRange}&interval=${interval}`
+          `/api/stock/history?${queryParam}&range=${apiRange}&interval=${interval}`
         )
 
         if (!response.ok) {
@@ -278,7 +288,7 @@ export default function LightweightChart({
         }
       }
     }
-  }, [indexCode, dateRange, interval, resolvedTheme, mounted, height])
+  }, [indexCode, stockCode, market, dateRange, interval, resolvedTheme, mounted, height])
 
   // 마운트 전에는 로딩 표시
   if (!mounted) {
