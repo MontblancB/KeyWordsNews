@@ -64,6 +64,15 @@ export default function TradingViewModal({
   const symbolInfo = getTradingViewSymbol(indicator.name)
   const chartSupported = isChartSupported(indicator.name)
 
+  // 디버깅: 심볼 조회 결과 로그
+  console.log('[TradingViewModal] Opening modal:', {
+    indicatorName: indicator.name,
+    symbolInfo,
+    chartSupported,
+    hasSymbol: !!symbolInfo,
+    symbol: symbolInfo?.symbol,
+  })
+
   const isUp = indicator.changeType === 'up'
   const isDown = indicator.changeType === 'down'
 

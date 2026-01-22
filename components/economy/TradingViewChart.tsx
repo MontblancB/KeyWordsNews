@@ -65,7 +65,10 @@ function TradingViewChartComponent({
 
   useEffect(() => {
     // 마운트되지 않았거나 테마가 결정되지 않은 경우 대기
-    if (!containerRef.current || !mounted) return
+    if (!containerRef.current || !mounted) {
+      console.log('[TradingView] Waiting for mount or theme...', { mounted, hasContainer: !!containerRef.current })
+      return
+    }
 
     // 기존 위젯 제거
     containerRef.current.innerHTML = ''
@@ -75,36 +78,64 @@ function TradingViewChartComponent({
     const interval = getIntervalFromDateRange(dateRange)
     const range = getRangeFromDateRange(dateRange)
 
-    // TradingView Advanced Chart 위젯 스크립트 생성
-    const script = document.createElement('script')
-    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js'
-    script.type = 'text/javascript'
-    script.async = true
-    script.innerHTML = JSON.stringify({
-      symbol: symbol,
-      width: '100%',
-      height: height,
-      locale: 'kr',
-      interval: interval,
-      range: range,
-      timezone: 'Asia/Seoul',
+    console.log('[TradingView] Initializing chart:', {
+      symbol,
       theme: colorTheme,
-      style: '1', // 1 = 캔들차트
-      enable_publishing: false,
-      hide_top_toolbar: false,
-      hide_legend: false,
-      hide_side_toolbar: true,
-      allow_symbol_change: false,
-      save_image: false,
-      calendar: false,
-      support_host: 'https://www.tradingview.com',
+      interval,
+      range,
+      height,
+      dateRange,
     })
 
-    containerRef.current.appendChild(script)
+    try {
+      // TradingView Advanced Chart 위젯 스크립트 생성
+      const script = document.createElement('script')
+      script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js'
+      script.type = 'text/javascript'
+      script.async = true
+
+      const widgetConfig = {
+        symbol: symbol,
+        width: '100%',
+        height: height,
+        locale: 'kr',
+        interval: interval,
+        range: range,
+        timezone: 'Asia/Seoul',
+        theme: colorTheme,
+        style: '1', // 1 = 캔들차트
+        enable_publishing: false,
+        hide_top_toolbar: false,
+        hide_legend: false,
+        hide_side_toolbar: true,
+        allow_symbol_change: false,
+        save_image: false,
+        calendar: false,
+        support_host: 'https://www.tradingview.com',
+      }
+
+      script.innerHTML = JSON.stringify(widgetConfig)
+
+      // 스크립트 로드 성공/실패 이벤트 리스너
+      script.onload = () => {
+        console.log('[TradingView] ✅ Script loaded successfully:', symbol)
+      }
+
+      script.onerror = (error) => {
+        console.error('[TradingView] ❌ Script load failed:', symbol, error)
+      }
+
+      console.log('[TradingView] Widget config:', widgetConfig)
+      containerRef.current.appendChild(script)
+      console.log('[TradingView] Script appended to DOM')
+    } catch (error) {
+      console.error('[TradingView] ❌ Error creating widget:', error)
+    }
 
     // Cleanup
     return () => {
       if (containerRef.current) {
+        console.log('[TradingView] Cleaning up widget:', symbol)
         containerRef.current.innerHTML = ''
       }
     }

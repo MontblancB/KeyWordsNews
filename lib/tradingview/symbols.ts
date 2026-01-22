@@ -12,30 +12,30 @@ export interface TradingViewSymbol {
 
 // 지표 이름 → TradingView 심볼 매핑
 export const TRADINGVIEW_SYMBOLS: Record<string, TradingViewSymbol> = {
-  // 국내 지수 (ETF 심볼 사용 - 실제 거래 종목이라 외부 위젯에서 안정적)
+  // 국내 지수 (INDEX 심볼 사용 - TradingView 공식 지수)
   'KOSPI': {
-    symbol: 'KRX:069500',
-    name: 'KODEX 200',
-    exchange: 'KRX',
-    description: 'KOSPI 200 추종 ETF',
+    symbol: 'INDEX:KS11',
+    name: 'KOSPI',
+    exchange: 'INDEX',
+    description: 'KOSPI 종합주가지수',
   },
   '코스피': {
-    symbol: 'KRX:069500',
-    name: 'KODEX 200',
-    exchange: 'KRX',
-    description: 'KOSPI 200 추종 ETF',
+    symbol: 'INDEX:KS11',
+    name: 'KOSPI',
+    exchange: 'INDEX',
+    description: 'KOSPI 종합주가지수',
   },
   'KOSDAQ': {
-    symbol: 'KRX:229200',
-    name: 'KODEX KOSDAQ 150',
-    exchange: 'KRX',
-    description: 'KOSDAQ 150 추종 ETF',
+    symbol: 'INDEX:KQ11',
+    name: 'KOSDAQ',
+    exchange: 'INDEX',
+    description: 'KOSDAQ 종합지수',
   },
   '코스닥': {
-    symbol: 'KRX:229200',
-    name: 'KODEX KOSDAQ 150',
-    exchange: 'KRX',
-    description: 'KOSDAQ 150 추종 ETF',
+    symbol: 'INDEX:KQ11',
+    name: 'KOSDAQ',
+    exchange: 'INDEX',
+    description: 'KOSDAQ 종합지수',
   },
 
   // 해외 지수
