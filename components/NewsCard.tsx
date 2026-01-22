@@ -4,6 +4,7 @@ import { NewsItem } from '@/types/news'
 import { useState, useEffect } from 'react'
 import AISummary from './AISummary'
 import NewsInsight from './NewsInsight'
+import ShareButton from './ShareButton'
 import { useAISummarySettings } from '@/hooks/useAISummarySettings'
 import { useNewsInsightSettings } from '@/hooks/useNewsInsightSettings'
 
@@ -42,15 +43,13 @@ export default function NewsCard({ news, hideSource = false }: NewsCardProps) {
     return () => clearInterval(interval)
   }, [news.publishedAt])
 
-  const hasAIFeatures = isAISummaryEnabled || isNewsInsightEnabled
-
   return (
     <article className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
       <a
         href={news.url}
         target="_blank"
         rel="noopener noreferrer"
-        className={`block p-4 ${hasAIFeatures ? 'pb-0' : 'pb-4'}`}
+        className="block p-4 pb-0"
       >
         <div className="flex gap-3">
           <div className="flex-1 min-w-0">
@@ -83,13 +82,13 @@ export default function NewsCard({ news, hideSource = false }: NewsCardProps) {
         </div>
       </a>
 
-      {/* AI 기능 (링크 밖에 배치) */}
-      {hasAIFeatures && news.id && (
-        <div className="px-4 pb-4">
-          {/* AI 버튼들을 가로로 배치, 내용은 아래에 순서대로 */}
-          <div className="flex flex-wrap gap-2 mt-3">
+      {/* 버튼 영역 (링크 밖에 배치) */}
+      <div className="px-4 pb-4">
+        <div className="flex items-center justify-between mt-3">
+          {/* 왼쪽: AI 버튼들 */}
+          <div className="flex flex-wrap gap-2">
             {/* AI 요약 */}
-            {isAISummaryEnabled && (
+            {isAISummaryEnabled && news.id && (
               <AISummary
                 newsId={news.id}
                 url={news.url}
@@ -102,7 +101,7 @@ export default function NewsCard({ news, hideSource = false }: NewsCardProps) {
             )}
 
             {/* 전문가 의견 */}
-            {isNewsInsightEnabled && (
+            {isNewsInsightEnabled && news.id && (
               <NewsInsight
                 newsId={news.id}
                 url={news.url}
@@ -115,8 +114,11 @@ export default function NewsCard({ news, hideSource = false }: NewsCardProps) {
               />
             )}
           </div>
+
+          {/* 오른쪽: 공유 버튼 */}
+          <ShareButton title={news.title} url={news.url} />
         </div>
-      )}
+      </div>
     </article>
   )
 }
