@@ -83,38 +83,77 @@ export default function LightweightChart({
 
         console.log('[LightweightChart] Initializing with v5 API')
 
-        // 차트 생성
+        // 차트 생성 - TradingView Advanced Chart 스타일 적용
         chart = createChart(containerRef.current, {
           width: containerRef.current.clientWidth,
           height,
           layout: {
-            background: { color: isDark ? '#1f2937' : '#ffffff' },
-            textColor: isDark ? '#d1d5db' : '#374151',
+            background: { color: isDark ? '#131722' : '#ffffff' },
+            textColor: isDark ? '#d1d5db' : '#191919',
+            fontSize: 12,
           },
           grid: {
-            vertLines: { color: isDark ? '#374151' : '#e5e7eb' },
-            horzLines: { color: isDark ? '#374151' : '#e5e7eb' },
+            vertLines: {
+              color: isDark ? '#1e222d' : '#f0f3fa',
+              style: 0, // Solid
+            },
+            horzLines: {
+              color: isDark ? '#1e222d' : '#f0f3fa',
+              style: 0, // Solid
+            },
+          },
+          crosshair: {
+            mode: 1, // Normal
+            vertLine: {
+              color: isDark ? '#758696' : '#9598a1',
+              width: 1,
+              style: 3, // Dashed
+              labelBackgroundColor: isDark ? '#363c4e' : '#4c525e',
+            },
+            horzLine: {
+              color: isDark ? '#758696' : '#9598a1',
+              width: 1,
+              style: 3, // Dashed
+              labelBackgroundColor: isDark ? '#363c4e' : '#4c525e',
+            },
           },
           timeScale: {
-            borderColor: isDark ? '#4b5563' : '#d1d5db',
+            borderColor: isDark ? '#2b2b43' : '#d1d4dc',
             timeVisible: true,
             secondsVisible: false,
           },
           rightPriceScale: {
-            borderColor: isDark ? '#4b5563' : '#d1d5db',
+            borderColor: isDark ? '#2b2b43' : '#d1d4dc',
+            scaleMargins: {
+              top: 0.1,
+              bottom: 0.1,
+            },
+          },
+          handleScroll: {
+            mouseWheel: true,
+            pressedMouseMove: true,
+            horzTouchDrag: true,
+            vertTouchDrag: true,
+          },
+          handleScale: {
+            axisPressedMouseMove: true,
+            mouseWheel: true,
+            pinch: true,
           },
         })
 
         chartRef.current = chart
 
-        // 캔들스틱 시리즈 추가 - v5 API (addSeries 사용)
+        // 캔들스틱 시리즈 추가 - v5 API (TradingView 스타일)
         candlestickSeries = chart.addSeries(CandlestickSeries, {
-          upColor: '#ef4444', // 빨강 (상승)
-          downColor: '#3b82f6', // 파랑 (하락)
-          borderUpColor: '#ef4444',
-          borderDownColor: '#3b82f6',
-          wickUpColor: '#ef4444',
-          wickDownColor: '#3b82f6',
+          upColor: '#ef5350', // 빨강 (상승) - TradingView 스타일
+          downColor: '#26a69a', // 청록 (하락) - TradingView 스타일
+          borderUpColor: '#ef5350',
+          borderDownColor: '#26a69a',
+          wickUpColor: '#ef5350',
+          wickDownColor: '#26a69a',
+          borderVisible: true,
+          wickVisible: true,
         })
 
         seriesRef.current = candlestickSeries
