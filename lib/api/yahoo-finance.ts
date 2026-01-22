@@ -253,7 +253,9 @@ export async function fetchKoreanIndexHistory(
           interval = '1h'
           break
         case '4h':
-          interval = '4h' // Yahoo Finance는 4h를 지원하지 않을 수 있음
+          // Yahoo Finance는 4h를 공식 지원하지 않음 → 1d로 폴백
+          console.warn('[Yahoo Finance] 4h interval not supported, falling back to 1d')
+          interval = '1d'
           break
         case '1d':
           interval = '1d'

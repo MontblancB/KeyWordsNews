@@ -26,7 +26,7 @@ interface TradingViewModalProps {
 }
 
 type DateRange = '1D' | '1W' | '1M' | '3M' | '12M' | '60M' | 'ALL'
-type Interval = '1m' | '5m' | '15m' | '30m' | '1h' | '4h' | '1d' | '1w'
+type Interval = '1m' | '5m' | '15m' | '30m' | '1h' | '1d' | '1w'
 
 const DATE_RANGE_OPTIONS: { value: DateRange; label: string }[] = [
   { value: '1D', label: '1일' },
@@ -43,7 +43,6 @@ const INTERVAL_OPTIONS: { value: Interval; label: string }[] = [
   { value: '15m', label: '15분' },
   { value: '30m', label: '30분' },
   { value: '1h', label: '1시간' },
-  { value: '4h', label: '4시간' },
   { value: '1d', label: '일봉' },
   { value: '1w', label: '주봉' },
 ]

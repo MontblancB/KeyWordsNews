@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTheme } from 'next-themes'
 
-type Interval = '1m' | '5m' | '15m' | '30m' | '1h' | '4h' | '1d' | '1w'
+type Interval = '1m' | '5m' | '15m' | '30m' | '1h' | '1d' | '1w'
 
 interface LightweightChartProps {
   indexCode: 'KOSPI' | 'KOSDAQ'
@@ -12,21 +12,19 @@ interface LightweightChartProps {
   height?: number
 }
 
-// interval에 따라 적절한 range 결정 (Yahoo Finance API 제한 고려)
+// interval에 따라 적절한 range 결정 (Yahoo Finance API 제한 엄격히 준수)
 function getApiRangeForInterval(interval: Interval): string {
   switch (interval) {
     case '1m':
-      return '5d' // 1분봉: 최대 5일
+      return '5d' // 1분봉: 최대 7일
     case '5m':
-      return '1mo' // 5분봉: 최대 1개월
+      return '1mo' // 5분봉: 최대 60일 (1개월은 안전)
     case '15m':
-      return '3mo' // 15분봉: 최대 3개월
+      return '1mo' // 15분봉: 최대 60일 (1개월은 안전)
     case '30m':
-      return '3mo' // 30분봉: 최대 3개월
+      return '1mo' // 30분봉: 최대 60일 (1개월은 안전)
     case '1h':
-      return '1y' // 1시간봉: 최대 1년
-    case '4h':
-      return '2y' // 4시간봉: 최대 2년
+      return '3mo' // 1시간봉: 최대 730일 (3개월은 안전)
     case '1d':
       return '5y' // 일봉: 최대 5년
     case '1w':

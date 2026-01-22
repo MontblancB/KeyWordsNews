@@ -7,11 +7,40 @@ import type {
 import type { ChangeType } from '@/types/economy'
 
 /**
- * 미국 주식 스크래퍼 (Yahoo Finance API)
+ * Yahoo Finance API 클라이언트 (미국 + 한국 주식)
  */
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+
+interface LogEntry {
+  timestamp: string
+  level: 'INFO' | 'WARN' | 'ERROR' | 'SUCCESS'
+  source: string
+  message: string
+  data?: any
+}
+
+/**
+ * 로깅 함수
+ */
+function log(entry: Omit<LogEntry, 'timestamp'>): void {
+  const logEntry: LogEntry = {
+    timestamp: new Date().toISOString(),
+    ...entry,
+  }
+
+  const prefix = `[Yahoo Finance] [${logEntry.level}] [${logEntry.source}]`
+  const message = `${prefix} ${logEntry.message}`
+
+  if (logEntry.level === 'ERROR') {
+    console.error(message, logEntry.data || '')
+  } else if (logEntry.level === 'WARN') {
+    console.warn(message, logEntry.data || '')
+  } else {
+    console.log(message, logEntry.data || '')
+  }
+}
 
 /**
  * 변동 타입 판단
@@ -36,9 +65,20 @@ function formatLargeNumber(value: number): string {
 }
 
 /**
- * 미국 주식 시세 조회 (Yahoo Finance Quote API)
+ * 한국 주식 시세 조회 (Yahoo Finance Chart API)
+ * 심볼 형식: 005930.KS (KOSPI), 035420.KQ (KOSDAQ)
  */
-export async function scrapeUSStockPrice(symbol: string): Promise<StockPrice | null> {
+export async function scrapeKoreanStockPrice(code: string, market: string): Promise<StockPrice | null> {
+  // 심볼 생성: 005930 + .KS (KOSPI) 또는 .KQ (KOSDAQ)
+  const suffix = market === 'KOSPI' || market === 'KONEX' ? '.KS' : '.KQ'
+  const symbol = code + suffix
+
+  log({
+    level: 'INFO',
+    source: 'scrapeKoreanStockPrice',
+    message: `한국 주식 시세 조회 시작: ${symbol}`,
+  })
+
   try {
     const url = `https://query2.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`
 
@@ -50,6 +90,118 @@ export async function scrapeUSStockPrice(symbol: string): Promise<StockPrice | n
     })
 
     if (!response.ok) {
+      log({
+        level: 'ERROR',
+        source: 'scrapeKoreanStockPrice',
+        message: `HTTP 오류: ${response.status} ${response.statusText}`,
+      })
+      throw new Error(`Failed to fetch Korean stock price: ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    const result = data?.chart?.result?.[0]
+
+    if (!result) {
+      log({
+        level: 'ERROR',
+        source: 'scrapeKoreanStockPrice',
+        message: 'Yahoo Finance 응답에 데이터 없음',
+        data,
+      })
+      throw new Error('No data from Yahoo Finance')
+    }
+
+    const meta = result.meta
+    const currentPrice = meta.regularMarketPrice || 0
+    const prevClose = meta.chartPreviousClose || meta.previousClose || 0
+    const change = currentPrice - prevClose
+    const changePercent = prevClose > 0 ? (change / prevClose) * 100 : 0
+
+    // 당일 고가/저가/시가
+    const quote = result.indicators?.quote?.[0]
+    const high = quote?.high?.[0] || meta.regularMarketDayHigh || 0
+    const low = quote?.low?.[0] || meta.regularMarketDayLow || 0
+    const open = quote?.open?.[0] || meta.regularMarketOpen || 0
+    const volume = quote?.volume?.[0] || meta.regularMarketVolume || 0
+
+    const changeType = getChangeType(change)
+    const sign = changeType === 'up' ? '+' : changeType === 'down' ? '-' : ''
+
+    const collectedFields: string[] = []
+    const missingFields: string[] = []
+
+    if (currentPrice > 0) collectedFields.push('현재가')
+    else missingFields.push('현재가')
+
+    if (high > 0) collectedFields.push('고가')
+    else missingFields.push('고가')
+
+    if (low > 0) collectedFields.push('저가')
+    else missingFields.push('저가')
+
+    if (open > 0) collectedFields.push('시가')
+    else missingFields.push('시가')
+
+    if (volume > 0) collectedFields.push('거래량')
+    else missingFields.push('거래량')
+
+    if (prevClose > 0) collectedFields.push('전일종가')
+    else missingFields.push('전일종가')
+
+    log({
+      level: 'SUCCESS',
+      source: 'scrapeKoreanStockPrice',
+      message: `시세 데이터 수집 완료: ${collectedFields.length}/${collectedFields.length + missingFields.length}개`,
+      data: { symbol, collected: collectedFields, missing: missingFields },
+    })
+
+    return {
+      current: Math.round(currentPrice).toLocaleString(), // 원화는 정수로
+      change: sign + Math.abs(Math.round(change)).toLocaleString(),
+      changePercent: sign + Math.abs(changePercent).toFixed(2),
+      changeType,
+      high: Math.round(high).toLocaleString(),
+      low: Math.round(low).toLocaleString(),
+      open: Math.round(open).toLocaleString(),
+      volume: Math.round(volume).toLocaleString(),
+      prevClose: Math.round(prevClose).toLocaleString(),
+    }
+  } catch (error) {
+    log({
+      level: 'ERROR',
+      source: 'scrapeKoreanStockPrice',
+      message: `시세 조회 실패: ${error instanceof Error ? error.message : String(error)}`,
+    })
+    console.error('Korean stock price scraping error:', error)
+    return null
+  }
+}
+
+/**
+ * 미국 주식 시세 조회 (Yahoo Finance Chart API)
+ */
+export async function scrapeUSStockPrice(symbol: string): Promise<StockPrice | null> {
+  log({
+    level: 'INFO',
+    source: 'scrapeUSStockPrice',
+    message: `미국 주식 시세 조회 시작: ${symbol}`,
+  })
+  try {
+    const url = `https://query2.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`
+
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      log({
+        level: 'ERROR',
+        source: 'scrapeUSStockPrice',
+        message: `HTTP 오류: ${response.status} ${response.statusText}`,
+      })
       throw new Error(`Failed to fetch US stock price: ${response.statusText}`)
     }
 
@@ -57,8 +209,21 @@ export async function scrapeUSStockPrice(symbol: string): Promise<StockPrice | n
     const result = data?.chart?.result?.[0]
 
     if (!result) {
+      log({
+        level: 'ERROR',
+        source: 'scrapeUSStockPrice',
+        message: 'Yahoo Finance 응답에 데이터 없음',
+        data,
+      })
       throw new Error('No data from Yahoo Finance')
     }
+
+    log({
+      level: 'SUCCESS',
+      source: 'scrapeUSStockPrice',
+      message: '시세 데이터 수집 완료',
+      data: { symbol },
+    })
 
     const meta = result.meta
     const currentPrice = meta.regularMarketPrice || 0
