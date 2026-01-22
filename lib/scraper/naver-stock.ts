@@ -4,6 +4,7 @@ import type {
   StockPrice,
   CompanyInfo,
   InvestmentIndicators,
+  FinancialData,
 } from '@/types/stock'
 import type { ChangeType } from '@/types/economy'
 
@@ -669,5 +670,95 @@ export async function getStockMarket(code: string): Promise<'KOSPI' | 'KOSDAQ' |
     return 'KOSPI'
   } catch {
     return 'KOSPI'
+  }
+}
+
+/**
+ * 네이버 금융 재무제표 스크래핑
+ */
+export async function scrapeFinancialData(code: string): Promise<FinancialData[]> {
+  try {
+    const url = `https://finance.naver.com/item/main.naver?code=${code}`
+    const response = await fetch(url, {
+      headers: { 'User-Agent': USER_AGENT },
+    })
+
+    if (!response.ok) {
+      return []
+    }
+
+    const html = await response.text()
+    const $ = cheerio.load(html)
+
+    const financials: FinancialData[] = []
+
+    // 재무제표 테이블 찾기
+    const tables = $('table.tb_type1_ifrs')
+
+    if (tables.length === 0) {
+      return []
+    }
+
+    // 첫 번째 테이블: 포괄손익계산서 (연간)
+    const incomeTable = tables.eq(0)
+
+    // 헤더에서 기간 정보 추출
+    const periods: string[] = []
+    incomeTable.find('thead th').each((i, th) => {
+      if (i > 0) { // 첫 번째 열은 항목명
+        const text = $(th).text().trim()
+        if (text) periods.push(text)
+      }
+    })
+
+    // 데이터 행 파싱
+    const rows: { [key: string]: string[] } = {}
+    incomeTable.find('tbody tr').each((_, tr) => {
+      const cells = $(tr).find('td, th')
+      const rowName = cells.first().text().trim()
+      const values: string[] = []
+
+      cells.each((i, td) => {
+        if (i > 0) {
+          values.push($(td).text().trim())
+        }
+      })
+
+      if (rowName && values.length > 0) {
+        rows[rowName] = values
+      }
+    })
+
+    // 재무 데이터 구성 (최근 3개 기간)
+    for (let i = 0; i < Math.min(periods.length, 3); i++) {
+      const period = periods[i]
+
+      const financial: FinancialData = {
+        period,
+        periodType: 'annual',
+        revenue: rows['매출액']?.[i] || '-',
+        costOfRevenue: '-', // 네이버 금융 기본 테이블에는 없음
+        grossProfit: '-',
+        grossMargin: '-',
+        operatingProfit: rows['영업이익']?.[i] || '-',
+        operatingMargin: '-',
+        netIncome: rows['당기순이익']?.[i] || '-',
+        netMargin: '-',
+        ebitda: '-',
+        totalAssets: '-', // 재무상태표에서 가져와야 함
+        totalLiabilities: '-',
+        totalEquity: '-',
+        debtRatio: '-',
+        operatingCashFlow: '-', // 현금흐름표에서 가져와야 함
+        freeCashFlow: '-',
+      }
+
+      financials.push(financial)
+    }
+
+    return financials
+  } catch (error) {
+    console.error('Naver financials scraping error:', error)
+    return []
   }
 }

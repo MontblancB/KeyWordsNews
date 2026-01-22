@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { scrapeKoreanStockPrice, scrapeUSStockPrice, scrapeUSCompanyInfo, scrapeUSInvestmentIndicators, scrapeUSFinancialData } from '@/lib/scraper/yahoo-stock'
-import { scrapeCompanyInfo, scrapeInvestmentIndicators } from '@/lib/scraper/naver-stock'
+import { scrapeCompanyInfo, scrapeInvestmentIndicators, scrapeFinancialData as scrapeNaverFinancials } from '@/lib/scraper/naver-stock'
 import { getDartCompanyInfo, getDartFinancials } from '@/lib/api/dart'
+import { scrapeFinancials as scrapeFnGuideFinancials } from '@/lib/scraper/fnguide'
 import type { StockInfo, InvestmentIndicators } from '@/types/stock'
 
 export const dynamic = 'force-dynamic'
@@ -236,12 +237,14 @@ export async function GET(request: NextRequest) {
         message: '한국 주식 데이터 수집 시작 (Yahoo + DART)',
       })
 
-      const [yahooPrice, naverCompanyInfo, naverIndicators, dartCompanyInfo, dartFinancials] = await Promise.all([
+      const [yahooPrice, naverCompanyInfo, naverIndicators, naverFinancials, dartCompanyInfo, dartFinancials, fnguideFinancials] = await Promise.all([
         scrapeKoreanStockPrice(stockCode, market || 'KOSPI'),
         scrapeCompanyInfo(stockCode),
         scrapeInvestmentIndicators(stockCode),
+        scrapeNaverFinancials(stockCode),
         getDartCompanyInfo(stockCode),
         getDartFinancials(stockCode),
+        scrapeFnGuideFinancials(stockCode),
       ])
 
       // 시가총액 파싱 (네이버 금융에서 가져옴)
@@ -263,11 +266,14 @@ export async function GET(request: NextRequest) {
         ? parseFloat(yahooPrice.current.replace(/,/g, ''))
         : 0
 
-      // 투자지표 계산 (DART 재무 데이터 기반)
+      // 투자지표 계산 (재무 데이터 기반 - 네이버 > FnGuide > DART)
+      const financialsForCalculation = naverFinancials.length > 0
+        ? naverFinancials
+        : (fnguideFinancials.length > 0 ? fnguideFinancials : dartFinancials)
       const calculatedIndicators = calculateIndicators(
         marketCap,
         currentPrice,
-        dartFinancials
+        financialsForCalculation
       )
 
       stockInfo = {
@@ -320,7 +326,9 @@ export async function GET(request: NextRequest) {
           quickRatio: naverIndicators?.quickRatio || '-',
           beta: naverIndicators?.beta || '-',
         },
-        financials: dartFinancials.length > 0 ? dartFinancials : [],
+        financials: naverFinancials.length > 0
+          ? naverFinancials
+          : (fnguideFinancials.length > 0 ? fnguideFinancials : dartFinancials),
         lastUpdated: new Date().toLocaleString('ko-KR', {
           timeZone: 'Asia/Seoul',
           year: 'numeric',
