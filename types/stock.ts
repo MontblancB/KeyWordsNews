@@ -66,6 +66,8 @@ export interface InvestmentIndicators {
 
 // 재무제표 데이터
 export interface FinancialData {
+  year?: string // 회계연도 (2024, 2023 등) - DART API용
+  reportType?: string // 보고서 종류 (사업보고서, 반기보고서 등) - DART API용
   period: string // 기간 (2024.3Q, 2024)
   periodType: 'quarterly' | 'annual' // 분기/연간
   revenue: string // 매출액

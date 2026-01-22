@@ -426,7 +426,14 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <TableCellsIcon className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-              <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200">재무제표</h3>
+              <div className="flex flex-col">
+                <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200">재무제표</h3>
+                {financials[0]?.year && financials[0]?.reportType && (
+                  <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                    {financials[0].year}년 {financials[0].reportType} 기준
+                  </span>
+                )}
+              </div>
             </div>
             <button
               onClick={() => setShowAllFinancials(!showAllFinancials)}

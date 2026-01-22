@@ -314,7 +314,7 @@ interface DartFinancialResponse {
  */
 export async function getDartFinancials(
   stockCode: string,
-  year: string = new Date().getFullYear().toString()
+  year?: string
 ): Promise<FinancialData[]> {
   const corpCode = getCorpCode(stockCode)
 
@@ -327,18 +327,48 @@ export async function getDartFinancials(
     return []
   }
 
-  // 사업보고서 (연간)
-  const data = await callDartAPI<DartFinancialResponse>('fnlttSinglAcnt.json', {
-    corp_code: corpCode,
-    bsns_year: year,
-    reprt_code: '11011', // 사업보고서
-  })
+  // 연도가 지정되지 않은 경우, 가장 최근 데이터 검색 (2024 → 2023 → 2022)
+  const currentYear = new Date().getFullYear()
+  const yearsToTry = year ? [year] : [
+    (currentYear - 2).toString(), // 2024
+    (currentYear - 3).toString(), // 2023
+    (currentYear - 4).toString(), // 2022
+  ]
+
+  let data: DartFinancialResponse | null = null
+  let successYear = ''
+
+  // 가장 최근 데이터를 찾을 때까지 시도
+  for (const tryYear of yearsToTry) {
+    log({
+      level: 'INFO',
+      source: 'getDartFinancials',
+      message: `재무제표 조회 시도: ${stockCode} (${tryYear}년)`,
+    })
+
+    const response = await callDartAPI<DartFinancialResponse>('fnlttSinglAcnt.json', {
+      corp_code: corpCode,
+      bsns_year: tryYear,
+      reprt_code: '11011', // 사업보고서
+    })
+
+    if (response && response.list && response.list.length > 0) {
+      data = response
+      successYear = tryYear
+      log({
+        level: 'SUCCESS',
+        source: 'getDartFinancials',
+        message: `재무제표 데이터 발견: ${stockCode} (${tryYear}년 사업보고서)`,
+      })
+      break
+    }
+  }
 
   if (!data || !data.list || data.list.length === 0) {
     log({
       level: 'WARN',
       source: 'getDartFinancials',
-      message: `재무제표 데이터 없음: ${stockCode} (${year}년)`,
+      message: `재무제표 데이터 없음: ${stockCode} (${yearsToTry.join(', ')}년 시도)`,
     })
     return []
   }
@@ -365,7 +395,9 @@ export async function getDartFinancials(
   const missingFields: string[] = []
 
   const financial: FinancialData = {
-    period: year,
+    year: successYear,
+    reportType: '사업보고서',
+    period: successYear,
     periodType: 'annual',
     revenue: findAccount(['매출액', '영업수익', '수익(매출액)']),
     costOfRevenue: findAccount(['매출원가', '영업비용']),
@@ -436,7 +468,7 @@ export async function getDartFinancials(
     level: 'SUCCESS',
     source: 'getDartFinancials',
     message: `재무제표 수집 완료: ${collectedFields.length}/${collectedFields.length + missingFields.length}개`,
-    data: { year, collected: collectedFields, missing: missingFields },
+    data: { year: successYear, reportType: '사업보고서', collected: collectedFields, missing: missingFields },
   })
 
   return financials
