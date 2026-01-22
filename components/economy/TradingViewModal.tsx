@@ -5,6 +5,7 @@ import { useTheme } from 'next-themes'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/solid'
 import { TradingViewChart } from './TradingViewChart'
+import LightweightChart from './LightweightChart'
 import type { Indicator } from '@/types/economy'
 import { getTradingViewSymbol, isChartSupported } from '@/lib/tradingview/symbols'
 
@@ -64,6 +65,10 @@ export default function TradingViewModal({
   const symbolInfo = getTradingViewSymbol(indicator.name)
   const chartSupported = isChartSupported(indicator.name)
 
+  // KOSPI/KOSDAQ은 Lightweight Charts 사용
+  const isKoreanIndex = indicator.name === 'KOSPI' || indicator.name === 'KOSDAQ'
+  const useLightweightChart = isKoreanIndex
+
   // 디버깅: 심볼 조회 결과 로그
   console.log('[TradingViewModal] Opening modal:', {
     indicatorName: indicator.name,
@@ -71,6 +76,8 @@ export default function TradingViewModal({
     chartSupported,
     hasSymbol: !!symbolInfo,
     symbol: symbolInfo?.symbol,
+    isKoreanIndex,
+    useLightweightChart,
   })
 
   const isUp = indicator.changeType === 'up'
@@ -157,7 +164,15 @@ export default function TradingViewModal({
 
         {/* 차트 영역 */}
         <div className="p-2">
-          {chartSupported && symbolInfo ? (
+          {useLightweightChart ? (
+            // KOSPI/KOSDAQ: Lightweight Charts 사용
+            <LightweightChart
+              indexCode={indicator.name as 'KOSPI' | 'KOSDAQ'}
+              dateRange={dateRange === 'ALL' ? '60M' : dateRange}
+              height={350}
+            />
+          ) : chartSupported && symbolInfo ? (
+            // 기타 지표: TradingView 위젯 사용
             <TradingViewChart
               key={`${symbolInfo.symbol}-${resolvedTheme}`}
               symbol={symbolInfo.symbol}
@@ -173,8 +188,8 @@ export default function TradingViewModal({
           )}
         </div>
 
-        {/* TradingView 저작권 표시 */}
-        {chartSupported && symbolInfo && (
+        {/* TradingView 저작권 표시 (KOSPI/KOSDAQ 제외) */}
+        {!useLightweightChart && chartSupported && symbolInfo && (
           <div className="p-2 text-center">
             <a
               href={`https://www.tradingview.com/symbols/${symbolInfo.symbol.replace(':', '-')}/`}
@@ -184,6 +199,23 @@ export default function TradingViewModal({
             >
               TradingView에서 더 보기
             </a>
+          </div>
+        )}
+
+        {/* Lightweight Charts 저작권 표시 (KOSPI/KOSDAQ만) */}
+        {useLightweightChart && (
+          <div className="p-2 text-center">
+            <p className="text-xs text-gray-400 dark:text-gray-500">
+              Powered by{' '}
+              <a
+                href="https://www.tradingview.com/lightweight-charts/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-blue-500 dark:hover:text-blue-400"
+              >
+                Lightweight Charts
+              </a>
+            </p>
           </div>
         )}
       </div>
