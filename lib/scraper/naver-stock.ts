@@ -103,8 +103,9 @@ export async function searchStocks(query: string): Promise<StockSearchItem[]> {
 
 /**
  * Yahoo Finance 검색 API
- * - 한글 종목명 검색 지원
- * - 한국 주식은 .KS (KOSPI) 또는 .KQ (KOSDAQ) 형식
+ * - 한글/영문 종목명 검색 지원
+ * - 한국 주식: .KS (KOSPI), .KQ (KOSDAQ) 형식
+ * - 미국 주식: 심볼만 (AAPL, TSLA 등)
  */
 async function searchStocksFromYahoo(query: string): Promise<StockSearchItem[]> {
   try {
@@ -135,11 +136,32 @@ async function searchStocksFromYahoo(query: string): Promise<StockSearchItem[]> 
       return []
     }
 
-    // 한국 주식만 필터링 (.KS = KOSPI, .KQ = KOSDAQ)
-    const koreanStocks = quotes
-      .filter((quote: { symbol?: string; exchange?: string }) => {
+    // 한국 + 미국 주식 필터링
+    const stocks = quotes
+      .filter((quote: { symbol?: string; exchange?: string; quoteType?: string }) => {
         const symbol = quote.symbol || ''
-        return symbol.endsWith('.KS') || symbol.endsWith('.KQ')
+        const exchange = quote.exchange || ''
+        const quoteType = quote.quoteType || ''
+
+        // 주식(EQUITY)만 포함
+        if (quoteType !== 'EQUITY') return false
+
+        // 한국 주식 (.KS, .KQ)
+        if (symbol.endsWith('.KS') || symbol.endsWith('.KQ')) return true
+
+        // 미국 주식 (NASDAQ, NYSE, AMEX)
+        if (
+          exchange === 'NMS' ||
+          exchange === 'NYQ' ||
+          exchange === 'PCX' ||
+          exchange === 'NGM' ||
+          exchange === 'NAS' ||
+          exchange === 'ASE'
+        ) {
+          return true
+        }
+
+        return false
       })
       .map(
         (quote: {
@@ -149,19 +171,35 @@ async function searchStocksFromYahoo(query: string): Promise<StockSearchItem[]> 
           exchange?: string
         }) => {
           const symbol = quote.symbol || ''
-          const code = symbol.replace('.KS', '').replace('.KQ', '')
+          const exchange = quote.exchange || ''
           const name = quote.shortname || quote.longname || ''
-          const market: 'KOSPI' | 'KOSDAQ' | 'KONEX' = symbol.endsWith('.KQ')
-            ? 'KOSDAQ'
-            : 'KOSPI'
 
-          return { code, name, market }
+          // 한국 주식
+          if (symbol.endsWith('.KS') || symbol.endsWith('.KQ')) {
+            const code = symbol.replace('.KS', '').replace('.KQ', '')
+            const market: 'KOSPI' | 'KOSDAQ' | 'KONEX' = symbol.endsWith('.KQ')
+              ? 'KOSDAQ'
+              : 'KOSPI'
+            return { code, name, market, symbol }
+          }
+
+          // 미국 주식
+          let market: 'NASDAQ' | 'NYSE' | 'AMEX' | 'US' = 'US'
+          if (exchange === 'NMS' || exchange === 'NGM' || exchange === 'NAS') {
+            market = 'NASDAQ'
+          } else if (exchange === 'NYQ') {
+            market = 'NYSE'
+          } else if (exchange === 'PCX' || exchange === 'ASE') {
+            market = 'AMEX'
+          }
+
+          return { code: symbol, name, market, symbol }
         }
       )
       .filter((stock: StockSearchItem) => stock.code && stock.name)
 
-    console.log('Yahoo Finance results:', koreanStocks.length)
-    return koreanStocks.slice(0, 10)
+    console.log('Yahoo Finance results:', stocks.length)
+    return stocks.slice(0, 20)
   } catch (error) {
     console.error('searchStocksFromYahoo error:', error)
     return []

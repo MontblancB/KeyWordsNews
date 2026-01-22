@@ -36,15 +36,27 @@ export function useStockSearch(query: string) {
 /**
  * 종목 상세 정보 훅
  */
-export function useStockInfo(code: string | null) {
+export function useStockInfo(stock: StockSearchItem | null) {
   return useQuery<StockInfo>({
-    queryKey: ['stock', 'info', code],
+    queryKey: ['stock', 'info', stock?.code, stock?.market, stock?.symbol],
     queryFn: async () => {
-      if (!code) {
-        throw new Error('Stock code is required')
+      if (!stock) {
+        throw new Error('Stock is required')
       }
 
-      const response = await fetch(`/api/stock/info?code=${code}`)
+      const params = new URLSearchParams({
+        code: stock.code,
+      })
+
+      if (stock.market) {
+        params.append('market', stock.market)
+      }
+
+      if (stock.symbol) {
+        params.append('symbol', stock.symbol)
+      }
+
+      const response = await fetch(`/api/stock/info?${params.toString()}`)
       const data = await response.json()
 
       if (!data.success) {
@@ -53,7 +65,7 @@ export function useStockInfo(code: string | null) {
 
       return data.data
     },
-    enabled: !!code,
+    enabled: !!stock,
     staleTime: 1 * 60 * 1000, // 1분
     gcTime: 5 * 60 * 1000, // 5분
   })
@@ -94,6 +106,7 @@ export function useRecentStocks() {
         code: stock.code,
         name: stock.name,
         market: stock.market,
+        symbol: stock.symbol,
         searchedAt: new Date().toISOString(),
       }
 

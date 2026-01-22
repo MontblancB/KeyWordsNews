@@ -31,13 +31,21 @@ const DATE_RANGES: { value: DateRangeType; label: string }[] = [
 ]
 
 export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
-  const { price, company, indicators, financials, market, code } = stockInfo
+  const { price, company, indicators, financials, market, code, symbol } = stockInfo
   const [dateRange, setDateRange] = useState<DateRangeType>('3M')
   const [showAllCompanyInfo, setShowAllCompanyInfo] = useState(false)
   const [showAllFinancials, setShowAllFinancials] = useState(false)
 
-  // TradingView 심볼 (한국 주식: KRX:종목코드)
-  const tradingViewSymbol = `KRX:${code}`
+  // 국내/미국 주식 구분
+  const isKoreanStock = market === 'KOSPI' || market === 'KOSDAQ' || market === 'KONEX'
+
+  // TradingView 심볼
+  // 한국 주식: KRX:종목코드
+  // 미국 주식: 심볼 그대로 (AAPL, TSLA 등)
+  const tradingViewSymbol = isKoreanStock ? `KRX:${code}` : (symbol || code)
+
+  // 통화 단위
+  const currencySymbol = isKoreanStock ? '원' : '$'
 
   // 시장 배지 색상
   const getMarketBadgeClass = (market: string) => {
@@ -46,6 +54,14 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
         return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
       case 'KOSDAQ':
         return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
+      case 'NASDAQ':
+        return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+      case 'NYSE':
+        return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+      case 'AMEX':
+        return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
+      case 'US':
+        return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
       default:
         return 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400'
     }
@@ -89,7 +105,7 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
 
         <div className="flex items-baseline gap-3">
           <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            {price.current}원
+            {currencySymbol === '$' ? `$${price.current}` : `${price.current}${currencySymbol}`}
           </span>
           <div className={`flex items-center gap-1 ${getPriceChangeClass()}`}>
             {PriceChangeIcon && <PriceChangeIcon className="w-4 h-4" />}

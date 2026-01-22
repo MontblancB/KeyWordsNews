@@ -6,9 +6,10 @@ import type { ChangeType } from './economy'
 
 // 종목 검색 결과 아이템
 export interface StockSearchItem {
-  code: string // 종목코드 (005930)
-  name: string // 종목명 (삼성전자)
-  market: 'KOSPI' | 'KOSDAQ' | 'KONEX' // 시장구분
+  code: string // 종목코드 (005930 또는 AAPL)
+  name: string // 종목명 (삼성전자 또는 Apple Inc.)
+  market: 'KOSPI' | 'KOSDAQ' | 'KONEX' | 'NASDAQ' | 'NYSE' | 'AMEX' | 'US' // 시장구분
+  symbol?: string // 전체 심볼 (AAPL, 005930.KS)
 }
 
 // 주식 시세 정보
@@ -77,7 +78,8 @@ export interface FinancialData {
 export interface StockInfo {
   code: string
   name: string
-  market: 'KOSPI' | 'KOSDAQ' | 'KONEX'
+  market: 'KOSPI' | 'KOSDAQ' | 'KONEX' | 'NASDAQ' | 'NYSE' | 'AMEX' | 'US'
+  symbol?: string // 전체 심볼 (AAPL, 005930.KS)
   price: StockPrice
   company: CompanyInfo
   indicators: InvestmentIndicators
@@ -103,6 +105,7 @@ export interface StockInfoResponse {
 export interface RecentStock {
   code: string
   name: string
-  market: 'KOSPI' | 'KOSDAQ' | 'KONEX'
+  market: 'KOSPI' | 'KOSDAQ' | 'KONEX' | 'NASDAQ' | 'NYSE' | 'AMEX' | 'US'
+  symbol?: string
   searchedAt: string
 }
