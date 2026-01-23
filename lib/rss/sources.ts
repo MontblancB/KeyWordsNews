@@ -397,6 +397,57 @@ export const RSS_FEED_SOURCES: RSSFeedSource[] = [
     priority: 7,
     updateInterval: 15,
     enabled: true
+  },
+
+  // ========== 글로벌 ==========
+  {
+    id: 'google_news_global',
+    name: 'Google News Global',
+    category: 'global',
+    url: 'https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en',
+    priority: 10,
+    updateInterval: 3,
+    enabled: true
+  },
+
+  {
+    id: 'reuters_world',
+    name: 'Reuters World',
+    category: 'global',
+    url: 'https://feeds.reuters.com/Reuters/worldNews',
+    priority: 9,
+    updateInterval: 5,
+    enabled: true
+  },
+
+  {
+    id: 'ap_news_world',
+    name: 'AP News World',
+    category: 'global',
+    url: 'https://hosted.ap.org/lineups/WORLDHEADS.rss',
+    priority: 9,
+    updateInterval: 5,
+    enabled: true
+  },
+
+  {
+    id: 'bbc_world',
+    name: 'BBC World News',
+    category: 'global',
+    url: 'https://feeds.bbci.co.uk/news/world/rss.xml',
+    priority: 8,
+    updateInterval: 10,
+    enabled: true
+  },
+
+  {
+    id: 'bloomberg_markets',
+    name: 'Bloomberg Markets',
+    category: 'global',
+    url: 'https://feeds.bloomberg.com/markets/news.rss',
+    priority: 7,
+    updateInterval: 15,
+    enabled: true
   }
 ]
 
@@ -409,6 +460,7 @@ export const CATEGORY_MAPPING: Record<string, string> = {
   'world': '국제',
   'tech': 'IT/과학',
   'crypto': '암호화폐',
+  'global': '글로벌',
   'sports': '스포츠',
   'entertainment': '연예',
   'culture': '문화'

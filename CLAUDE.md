@@ -18,7 +18,7 @@
 ### 배포 정보
 - **배포 URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
-- **현재 버전**: 2.27.0
+- **현재 버전**: 2.28.0
 - **마지막 업데이트**: 2026-01-23
 
 ---
@@ -201,6 +201,7 @@ const CATEGORIES = [
   { id: 'world', label: '국제' },
   { id: 'tech', label: 'IT' },
   { id: 'crypto', label: '암호화폐' },
+  { id: 'global', label: '글로벌' },
   { id: 'sports', label: '스포츠' },
   { id: 'entertainment', label: '연예' },
   { id: 'culture', label: '문화' },
@@ -966,6 +967,43 @@ setTimeout(async () => {
 
 ## 최근 업데이트
 
+### v2.28.0 (2026-01-23)
+**글로벌 카테고리 추가 - 해외 주요 뉴스 직접 소싱**
+
+#### 새로운 기능
+- 🌍 **글로벌 카테고리 신규 추가**: 토픽 탭에 '글로벌' 카테고리 추가
+  - 세계 주요 통신사 및 언론사 뉴스 직접 수집 (영어)
+  - 한국 언론사 필터링 없는 실시간 글로벌 속보
+  - 기존 '국제' 카테고리와 차별화 (해외 직접 소스)
+
+#### RSS 소스 (5개)
+- 🌐 **Google News Global**: 전세계 톱 뉴스 집계 (영어)
+- 📰 **Reuters World News**: 세계 1위 통신사, 실시간 속보
+- 📰 **AP News World Headlines**: 미국 1위 통신사, 정확성 최고
+- 📺 **BBC World News**: 영국 공영, 심층 분석 뉴스
+- 💰 **Bloomberg Markets**: 글로벌 금융 뉴스 전문
+
+#### 카테고리 구성
+- 기존 10개 → **11개 카테고리**
+- 순서: 정치, 경제, 사회, 국제, IT, 암호화폐, **글로벌**, 스포츠, 연예, 문화
+
+#### 주요 특징
+- ⚡ **속보 속도**: 한국 언론사보다 수 시간 빠른 글로벌 속보
+- 🎯 **차별화**: 국내 뉴스 앱에 없는 독보적 가치
+- 📊 **신뢰도**: Reuters, AP, BBC 등 세계 최고 신뢰도 언론사
+- 💰 **비용**: $0 (무료 RSS)
+- 🌐 **언어**: 영어 원문 (향후 AI 번역 추가 예정)
+
+#### 향후 계획
+- Phase 2 (1-2개월): AI 제목 번역 (Groq/Gemini 무료)
+- Phase 3 (3-6개월): 전문 번역 API 도입 (DeepL)
+
+#### 수정된 파일
+- 📄 `components/CategoryTabs.tsx`: 글로벌 카테고리 추가
+- 📄 `lib/rss/sources.ts`: 글로벌 RSS 소스 5개 추가, CATEGORY_MAPPING 업데이트
+
+---
+
 ### v2.27.0 (2026-01-23)
 **암호화폐 카테고리 추가**
 
@@ -1373,4 +1411,4 @@ git commit -m "fix: 버그 수정
 ---
 
 **Last Updated**: 2026-01-23
-**Version**: 2.27.0
+**Version**: 2.28.0
