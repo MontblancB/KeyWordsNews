@@ -84,9 +84,9 @@ export default function NewsCard({ news, hideSource = false }: NewsCardProps) {
 
       {/* 버튼 영역 (링크 밖에 배치) */}
       <div className="px-4 pb-4">
-        <div className="flex items-center justify-between mt-3">
+        <div className="relative mt-3">
           {/* 왼쪽: AI 버튼들 */}
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 pr-12">
             {/* AI 요약 */}
             {isAISummaryEnabled && news.id && (
               <AISummary
@@ -115,8 +115,10 @@ export default function NewsCard({ news, hideSource = false }: NewsCardProps) {
             )}
           </div>
 
-          {/* 오른쪽: 공유 버튼 */}
-          <ShareButton title={news.title} url={news.url} />
+          {/* 오른쪽: 공유 버튼 (절대 위치로 고정) */}
+          <div className="absolute top-0 right-0">
+            <ShareButton title={news.title} url={news.url} />
+          </div>
         </div>
       </div>
     </article>
