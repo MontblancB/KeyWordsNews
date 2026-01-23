@@ -138,9 +138,12 @@ export async function POST(request: NextRequest) {
     if (newsKeywordsMap.size === 0) {
       return NextResponse.json(
         {
-          error: '키워드를 추출할 수 없습니다. 뉴스가 너무 적거나 AI 서비스에 문제가 있습니다.',
+          error:
+            'AI 서비스 일일 사용량 한도에 도달했습니다. 내일 다시 시도해주세요.',
+          details:
+            'Groq 및 Gemini AI 서비스 모두 응답하지 않습니다. 약 7시간 후 자동으로 복구됩니다.',
         },
-        { status: 400 }
+        { status: 503 }
       )
     }
 
@@ -346,7 +349,7 @@ ${newsTexts}
         temperature: 0.3,
         maxOutputTokens: 2000,
         responseMimeType: 'application/json',
-        responseSchema: {
+        responseJsonSchema: {
           type: 'object',
           properties: {
             keywords: {
@@ -364,11 +367,19 @@ ${newsTexts}
   })
 
   if (!response.ok) {
-    throw new Error(`Gemini API error: ${response.status}`)
+    const errorData = await response.json().catch(() => ({}))
+    throw new Error(
+      `Gemini API error: ${response.status} - ${JSON.stringify(errorData)}`
+    )
   }
 
   const data = await response.json()
   const content = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+
+  if (!content) {
+    throw new Error('Gemini returned empty response')
+  }
+
   const result: { keywords: Record<string, string[]> } = JSON.parse(content)
 
   // Map으로 변환

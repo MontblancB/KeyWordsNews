@@ -21,13 +21,15 @@ interface KeywordLink {
 interface BubbleModalProps {
   isOpen: boolean
   onClose: () => void
-  keywords: KeywordNode[]
-  links: KeywordLink[]
-  metadata: {
+  keywords?: KeywordNode[]
+  links?: KeywordLink[]
+  metadata?: {
     totalNews: number
     totalKeywords: number
     generatedAt: string
   }
+  isLoading?: boolean
+  error?: string | null
   onKeywordClick?: (keyword: KeywordNode) => void
 }
 
@@ -40,9 +42,11 @@ interface BubbleModalProps {
 export default function BubbleModal({
   isOpen,
   onClose,
-  keywords,
-  links,
+  keywords = [],
+  links = [],
   metadata,
+  isLoading = false,
+  error = null,
   onKeywordClick,
 }: BubbleModalProps) {
   // ESC 키로 닫기
@@ -103,9 +107,14 @@ export default function BubbleModal({
               🗺️ 키워드 버블맵
             </h2>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              총 <span className="font-semibold">{keywords.length}개</span> 키워드
-              {' | '}
-              <span className="font-semibold">{metadata.totalNews}개</span> 뉴스 분석
+              {metadata && (
+                <>
+                  총 <span className="font-semibold">{keywords.length}개</span> 키워드
+                  {' | '}
+                  <span className="font-semibold">{metadata.totalNews}개</span> 뉴스 분석
+                </>
+              )}
+              {!metadata && '키워드 분석 중...'}
             </p>
           </div>
 
@@ -132,32 +141,62 @@ export default function BubbleModal({
 
         {/* 버블맵 영역 */}
         <div className="flex-1 p-6 overflow-hidden">
-          <BubbleMapVisualization
-            keywords={keywords}
-            links={links}
-            onKeywordClick={onKeywordClick}
-          />
+          {/* 에러 메시지 */}
+          {error && (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center max-w-md px-6">
+                <div className="text-6xl mb-4">⚠️</div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  키워드 분석 실패
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-line">
+                  {error}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* 로딩 중 */}
+          {!error && isLoading && (
+            <div className="flex flex-col items-center justify-center h-full gap-4">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 dark:border-orange-400"></div>
+              <p className="text-gray-600 dark:text-gray-400">
+                키워드를 분석하고 있습니다...
+              </p>
+            </div>
+          )}
+
+          {/* 버블맵 */}
+          {!error && !isLoading && keywords.length > 0 && (
+            <BubbleMapVisualization
+              keywords={keywords}
+              links={links}
+              onKeywordClick={onKeywordClick}
+            />
+          )}
         </div>
 
         {/* 푸터 안내 */}
-        <div className="px-6 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-          <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
-            <div>
-              💡 <span className="font-semibold">드래그</span>하여 위치 조정,{' '}
-              <span className="font-semibold">휠</span>로 줌 조절,{' '}
-              <span className="font-semibold">클릭</span>하여 관련 뉴스 확인
-            </div>
-            <div>
-              생성 시간:{' '}
-              {new Date(metadata.generatedAt).toLocaleString('ko-KR', {
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
+        {!isLoading && !error && metadata && (
+          <div className="px-6 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+            <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
+              <div>
+                💡 <span className="font-semibold">드래그</span>하여 위치 조정,{' '}
+                <span className="font-semibold">휠</span>로 줌 조절,{' '}
+                <span className="font-semibold">클릭</span>하여 관련 뉴스 확인
+              </div>
+              <div>
+                생성 시간:{' '}
+                {new Date(metadata.generatedAt).toLocaleString('ko-KR', {
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
                 minute: '2-digit',
               })}
             </div>
           </div>
         </div>
+        )}
       </div>
     </div>
   )

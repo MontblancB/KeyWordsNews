@@ -405,13 +405,15 @@ export default function TopicPage() {
       )}
 
       {/* BubbleNow 모달 (Feature Flag로 제어) */}
-      {FEATURE_FLAGS.ENABLE_DAILY_INSIGHT && bubbleData && (
+      {FEATURE_FLAGS.ENABLE_DAILY_INSIGHT && (
         <BubbleModal
           isOpen={isBubbleModalOpen}
           onClose={handleCloseBubble}
-          keywords={bubbleData.keywords}
-          links={bubbleData.links}
-          metadata={bubbleData.metadata}
+          keywords={bubbleData?.keywords}
+          links={bubbleData?.links}
+          metadata={bubbleData?.metadata}
+          isLoading={isBubbleLoading}
+          error={bubbleError}
         />
       )}
     </div>
