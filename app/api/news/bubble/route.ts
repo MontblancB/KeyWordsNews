@@ -39,19 +39,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 2. 뉴스 수 제한 (최대 200개로 증가)
-    const limitedNews = newsList.slice(0, 200)
+    // 2. 중복 제거 및 뉴스 수 제한
+    const uniqueNews = Array.from(
+      new Map(newsList.map((n: any) => [n.id, n])).values()
+    ).slice(0, 200)
 
     console.log(
-      `[BubbleNow] 요청: ${limitedNews.length}개 뉴스 (원본: ${newsList.length}개)`
+      `[BubbleNow] 요청: ${newsList.length}개 뉴스 → 중복 제거 후 ${uniqueNews.length}개`
     )
     console.log(
-      `[BubbleNow] 첫 5개 ID: ${JSON.stringify(limitedNews.slice(0, 5).map((n: any) => n.id))}`
+      `[BubbleNow] 첫 5개 ID: ${JSON.stringify(uniqueNews.slice(0, 5).map((n: any) => n.id))}`
     )
 
     // 3. 캐시 키 생성 (뉴스 개수 포함)
-    const newsIds = limitedNews.map((n: any) => n.id)
-    const newsCount = limitedNews.length
+    const newsIds = uniqueNews.map((n: any) => n.id)
+    const newsCount = uniqueNews.length
     const cacheKey = category
       ? `category:${category}:${newsCount}`
       : keyword
@@ -81,7 +83,7 @@ export async function POST(request: NextRequest) {
     console.log(`[BubbleNow] 캐시 miss: ${cacheKey}`)
 
     // 5. 전달받은 뉴스 데이터 사용
-    console.log(`[BubbleNow] 전달받은 뉴스: ${limitedNews.length}개`)
+    console.log(`[BubbleNow] 전달받은 뉴스: ${uniqueNews.length}개`)
 
     // 6. 키워드 추출
     const newsKeywordsMap = new Map<string, string[]>()
@@ -91,7 +93,7 @@ export async function POST(request: NextRequest) {
       summary: string
     }> = []
 
-    for (const news of limitedNews) {
+    for (const news of uniqueNews) {
       // 기존 키워드가 있으면 사용
       const existingKeywords = [
         ...(news.aiKeywords || []),
@@ -140,7 +142,7 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(
-      `[BubbleNow] 최종 키워드 보유 뉴스: ${newsKeywordsMap.size}개 / 전체 ${limitedNews.length}개`
+      `[BubbleNow] 최종 키워드 보유 뉴스: ${newsKeywordsMap.size}개 / 전체 ${uniqueNews.length}개`
     )
 
     // 8. 키워드가 하나도 없으면 에러
@@ -172,7 +174,7 @@ export async function POST(request: NextRequest) {
         data: {
           cacheKey,
           data: result as any, // JSON 타입
-          newsCount: limitedNews.length,
+          newsCount: uniqueNews.length,
           generatedAt: new Date(),
           expiresAt,
           provider: 'groq',
@@ -302,16 +304,33 @@ IMPORTANT: index는 0부터 시작하며, 반드시 모든 뉴스에 대해 결�
 
     // 인덱스 기반으로 실제 뉴스 ID와 매칭
     const keywordsMap = new Map<string, string[]>()
+    let skippedCount = 0
+    const skipReasons: string[] = []
+
     for (const item of result.results || []) {
       const newsId = batch[item.index]?.id
-      if (newsId && item.keywords && item.keywords.length > 0) {
-        keywordsMap.set(newsId, item.keywords)
+
+      if (!newsId) {
+        skippedCount++
+        skipReasons.push(`index ${item.index} 범위 초과 (배치 크기: ${batch.length})`)
+        continue
       }
+
+      if (!item.keywords || item.keywords.length === 0) {
+        skippedCount++
+        skipReasons.push(`index ${item.index} 키워드 비어있음`)
+        continue
+      }
+
+      keywordsMap.set(newsId, item.keywords)
     }
 
     console.log(
-      `[BubbleNow] Groq 배치 결과: ${result.results?.length || 0}개 응답, ${keywordsMap.size}개 매칭 성공`
+      `[BubbleNow] Groq 배치 결과: ${result.results?.length || 0}개 응답, ${keywordsMap.size}개 매칭 성공, ${skippedCount}개 스킵`
     )
+    if (skipReasons.length > 0) {
+      console.log(`[BubbleNow] 스킵 이유: ${skipReasons.slice(0, 3).join(', ')}${skipReasons.length > 3 ? '...' : ''}`)
+    }
 
     return keywordsMap
   } catch (error) {
@@ -424,16 +443,33 @@ IMPORTANT: index는 0부터 시작하며, 반드시 모든 뉴스에 대해 결�
 
   // 인덱스 기반으로 실제 뉴스 ID와 매칭
   const keywordsMap = new Map<string, string[]>()
+  let skippedCount = 0
+  const skipReasons: string[] = []
+
   for (const item of result.results || []) {
     const newsId = batch[item.index]?.id
-    if (newsId && item.keywords && item.keywords.length > 0) {
-      keywordsMap.set(newsId, item.keywords)
+
+    if (!newsId) {
+      skippedCount++
+      skipReasons.push(`index ${item.index} 범위 초과 (배치 크기: ${batch.length})`)
+      continue
     }
+
+    if (!item.keywords || item.keywords.length === 0) {
+      skippedCount++
+      skipReasons.push(`index ${item.index} 키워드 비어있음`)
+      continue
+    }
+
+    keywordsMap.set(newsId, item.keywords)
   }
 
   console.log(
-    `[BubbleNow] Gemini 배치 결과: ${result.results?.length || 0}개 응답, ${keywordsMap.size}개 매칭 성공`
+    `[BubbleNow] Gemini 배치 결과: ${result.results?.length || 0}개 응답, ${keywordsMap.size}개 매칭 성공, ${skippedCount}개 스킵`
   )
+  if (skipReasons.length > 0) {
+    console.log(`[BubbleNow] 스킵 이유: ${skipReasons.slice(0, 3).join(', ')}${skipReasons.length > 3 ? '...' : ''}`)
+  }
 
   return keywordsMap
 }
