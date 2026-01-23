@@ -10,7 +10,7 @@ import Groq from 'groq-sdk'
  * 현재 리스트의 모든 뉴스로부터 키워드를 추출하고 관계 분석
  *
  * Body: {
- *   newsIds: string[],
+ *   newsList: NewsItem[],  // 뉴스 전체 데이터 배열
  *   category?: string,
  *   keyword?: string,
  * }
@@ -29,32 +29,33 @@ import Groq from 'groq-sdk'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { newsIds, category, keyword } = body
+    const { newsList, category, keyword } = body
 
     // 1. 입력 검증
-    if (!newsIds || !Array.isArray(newsIds) || newsIds.length === 0) {
+    if (!newsList || !Array.isArray(newsList) || newsList.length === 0) {
       return NextResponse.json(
-        { error: 'newsIds 배열이 필요합니다.' },
+        { error: 'newsList 배열이 필요합니다.' },
         { status: 400 }
       )
     }
 
     // 2. 뉴스 수 제한 (최대 100개)
-    const limitedNewsIds = newsIds.slice(0, 100)
+    const limitedNews = newsList.slice(0, 100)
 
     console.log(
-      `[BubbleNow] 요청: ${limitedNewsIds.length}개 뉴스 (원본: ${newsIds.length}개)`
+      `[BubbleNow] 요청: ${limitedNews.length}개 뉴스 (원본: ${newsList.length}개)`
     )
     console.log(
-      `[BubbleNow] 첫 5개 ID: ${JSON.stringify(limitedNewsIds.slice(0, 5))}`
+      `[BubbleNow] 첫 5개 ID: ${JSON.stringify(limitedNews.slice(0, 5).map((n: any) => n.id))}`
     )
 
     // 3. 캐시 키 생성
+    const newsIds = limitedNews.map((n: any) => n.id)
     const cacheKey = category
       ? `category:${category}`
       : keyword
         ? `keyword:${keyword}`
-        : `custom:${limitedNewsIds.slice(0, 5).join(',')}`
+        : `custom:${newsIds.slice(0, 5).join(',')}`
 
     // 4. 캐시 조회 (10분 이내)
     const cached = await prisma.keywordMap.findFirst({
@@ -78,40 +79,8 @@ export async function POST(request: NextRequest) {
 
     console.log(`[BubbleNow] 캐시 miss: ${cacheKey}`)
 
-    // 5. DB에서 뉴스 조회
-    const newsList = await prisma.news.findMany({
-      where: {
-        id: {
-          in: limitedNewsIds,
-        },
-      },
-      select: {
-        id: true,
-        title: true,
-        summary: true,
-        aiKeywords: true,
-        aiInsightKeywords: true,
-      },
-    })
-
-    console.log(`[BubbleNow] DB 조회: ${newsList.length}개 뉴스`)
-
-    if (newsList.length === 0) {
-      console.error(
-        `[BubbleNow] ⚠️  DB에서 뉴스를 찾을 수 없습니다. 조회 ID: ${JSON.stringify(limitedNewsIds.slice(0, 3))}`
-      )
-      return NextResponse.json(
-        {
-          error: 'DB에서 뉴스를 찾을 수 없습니다. 뉴스 ID가 올바른지 확인해주세요.',
-          details: `조회 시도: ${limitedNewsIds.length}개 ID, 결과: 0개`,
-        },
-        { status: 404 }
-      )
-    }
-
-    console.log(
-      `[BubbleNow] 조회된 뉴스 ID: ${JSON.stringify(newsList.slice(0, 3).map((n) => n.id))}`
-    )
+    // 5. 전달받은 뉴스 데이터 사용
+    console.log(`[BubbleNow] 전달받은 뉴스: ${limitedNews.length}개`)
 
     // 6. 키워드 추출
     const newsKeywordsMap = new Map<string, string[]>()
@@ -121,7 +90,7 @@ export async function POST(request: NextRequest) {
       summary: string
     }> = []
 
-    for (const news of newsList) {
+    for (const news of limitedNews) {
       // 기존 키워드가 있으면 사용
       const existingKeywords = [
         ...(news.aiKeywords || []),
@@ -191,7 +160,7 @@ export async function POST(request: NextRequest) {
         data: {
           cacheKey,
           data: result as any, // JSON 타입
-          newsCount: newsList.length,
+          newsCount: limitedNews.length,
           generatedAt: new Date(),
           expiresAt,
           provider: 'groq',

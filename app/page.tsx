@@ -209,22 +209,11 @@ export default function HomePage() {
     setBubbleError(null)
 
     try {
-      // 뉴스 ID 배열 생성
-      const newsIds = allNewsForBubble.map((news) => news.id)
-
-      console.log(
-        `[BubbleNow Client] 전송할 뉴스 ID (총 ${newsIds.length}개):`,
-        newsIds.slice(0, 5)
-      )
-      console.log(
-        `[BubbleNow Client] 첫 번째 뉴스 전체:`,
-        allNewsForBubble[0]
-      )
-
+      // 뉴스 전체 데이터 전송 (realtime-collector 모드 지원)
       const response = await fetch('/api/news/bubble', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ newsIds }),
+        body: JSON.stringify({ newsList: allNewsForBubble }),
       })
 
       const result = await response.json()

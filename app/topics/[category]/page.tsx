@@ -213,13 +213,11 @@ export default function TopicPage() {
     setBubbleError(null)
 
     try {
-      // 뉴스 ID 배열 생성
-      const newsIds = allNewsForBubble.map((news) => news.id)
-
+      // 뉴스 전체 데이터 전송 (realtime-collector 모드 지원)
       const response = await fetch('/api/news/bubble', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ newsIds, category }),
+        body: JSON.stringify({ newsList: allNewsForBubble, category }),
       })
 
       const result = await response.json()
