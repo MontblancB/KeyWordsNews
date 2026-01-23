@@ -108,14 +108,14 @@ export default function BubbleMapVisualization({
         d3
           .forceLink(linkData)
           .id((d: any) => d.id)
-          .distance(100)
+          .distance(60) // 100 → 60: 간격 40% 좁힘
           .strength((d: any) => d.strength * 0.5)
       )
-      .force('charge', d3.forceManyBody().strength(-300))
+      .force('charge', d3.forceManyBody().strength(-150)) // -300 → -150: 반발력 50% 약화
       .force('center', d3.forceCenter(width / 2, height / 2))
       .force(
         'collision',
-        d3.forceCollide().radius((d: any) => Math.sqrt(d.value) * 8 + 5)
+        d3.forceCollide().radius((d: any) => Math.sqrt(d.value) * 12 + 8) // 버블 크기 증가 반영
       )
 
     // 링크 그리기
@@ -156,7 +156,7 @@ export default function BubbleMapVisualization({
     // 버블 원 그리기
     node
       .append('circle')
-      .attr('r', (d) => Math.sqrt(d.value) * 8)
+      .attr('r', (d) => Math.sqrt(d.value) * 12) // 8 → 12: 버블 크기 50% 증가
       .attr('fill', (d) => colorScale(d.count))
       .attr('stroke', '#fff')
       .attr('stroke-width', 2)
@@ -179,7 +179,7 @@ export default function BubbleMapVisualization({
     node
       .append('text')
       .text((d) => d.text)
-      .attr('font-size', (d) => Math.max(10, Math.sqrt(d.value) * 2))
+      .attr('font-size', (d) => Math.max(12, Math.sqrt(d.value) * 3)) // 폰트 크기 50% 증가
       .attr('text-anchor', 'middle')
       .attr('dy', '0.3em')
       .attr('fill', '#fff')
@@ -191,7 +191,7 @@ export default function BubbleMapVisualization({
     node
       .append('text')
       .text((d) => `(${d.count})`)
-      .attr('font-size', (d) => Math.max(8, Math.sqrt(d.value) * 1.5))
+      .attr('font-size', (d) => Math.max(10, Math.sqrt(d.value) * 2)) // 폰트 크기 증가
       .attr('text-anchor', 'middle')
       .attr('dy', '1.5em')
       .attr('fill', '#fff')

@@ -252,8 +252,8 @@ export class KeywordAnalyzer {
       }
     }
 
-    // 연결 강도 상위 100개만 반환 (너무 많으면 시각화 복잡)
-    return links.sort((a, b) => b.strength - a.strength).slice(0, 100)
+    // 연결 강도 상위 200개만 반환 (시각화 풍부함 증가)
+    return links.sort((a, b) => b.strength - a.strength).slice(0, 200)
   }
 
   /**
