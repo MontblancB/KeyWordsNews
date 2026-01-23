@@ -6,17 +6,17 @@
 
 ### 주요 기능
 1. **실시간 긴급 속보** - 주요 언론사의 긴급 속보를 실시간으로 수신
-2. **카테고리별 뉴스** - 종합, 정치, 경제, IT/과학, 스포츠 등 카테고리별 뉴스
-3. **키워드 뉴스** - 사용자가 지정한 키워드 기반 맞춤형 뉴스 피드
-4. **뉴스 검색** - 원하는 키워드로 뉴스 검색 (Google News 통합)
-5. **뉴스 소스 관리** - 카테고리별 뉴스 소스 활성화/비활성화 (48개 소스)
-6. **AI 뉴스 요약** - Groq API를 활용한 초압축 불릿 포인트 요약 (온디맨드)
-7. **전문가 의견** - 뉴스 카테고리별 전문가 관점의 심층 분석 (온디맨드)
-8. **경제 지표** - 국내외 주식, 환율, 금시세, 암호화폐 실시간 확인
-9. **PWA 지원** - 모바일 홈 화면에 추가하여 앱처럼 사용 가능
+2. **카테고리별 뉴스** - 11개 카테고리 (종합, 정치, 경제, 사회, 국제, IT, 암호화폐, 글로벌, 스포츠, 연예, 문화)
+3. **키워드 뉴스** - 사용자 맞춤형 키워드 기반 피드
+4. **뉴스 검색** - Google News 통합 검색
+5. **뉴스 소스 관리** - 48개 소스 활성화/비활성화
+6. **AI 뉴스 요약** - Groq/Gemini AI 초압축 요약
+7. **전문가 의견** - 카테고리별 심층 분석
+8. **경제 지표** - 국내외 주식, 환율, 금시세, 암호화폐
+9. **PWA 지원** - 모바일 홈 화면 추가
 
 ### 배포 정보
-- **배포 URL**: https://key-words-news.vercel.app
+- **URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
 - **현재 버전**: 2.33.0
 - **마지막 업데이트**: 2026-01-24
@@ -27,46 +27,29 @@
 
 ### 작업 완료 후 필수 절차
 
-**모든 코드 수정 작업이 완료되면 반드시 다음을 수행합니다:**
-
-1. **빌드 테스트**: `npm run build` 실행하여 빌드 성공 확인
-2. **버전 업데이트**: 의미있는 변경 시 버전 번호 업데이트 (버전 관리 가이드 참조)
-3. **커밋 생성**: 적절한 커밋 메시지로 커밋
-4. **푸쉬**: `git push origin main`으로 원격 저장소에 푸쉬
+**모든 코드 수정 작업 완료 시 자동 실행:**
 
 ```bash
-# 작업 완료 후 실행 순서
 npm run build                    # 1. 빌드 테스트
 git add .                        # 2. 변경사항 스테이징
 git commit -m "type: 설명"       # 3. 커밋 생성
 git push origin main             # 4. 푸쉬
 ```
 
-**참고**: 사용자가 별도로 요청하지 않아도, 작업이 완료되면 자동으로 커밋 및 푸쉬를 진행합니다.
-
 ---
 
 ## 기술 스택
 
 ### Frontend
-- **Next.js 16.1.2** - React 프레임워크 (App Router)
-- **TypeScript** - 타입 안정성
-- **Tailwind CSS** - 스타일링
-- **React Query (@tanstack/react-query)** - 데이터 페칭 및 캐싱
-- **Heroicons** - 프로페셔널 아이콘 시스템
+- Next.js 16.1.2 (App Router) + TypeScript + Tailwind CSS
+- React Query (데이터 페칭/캐싱) + Heroicons
 
 ### Backend
-- **Next.js API Routes** - RESTful API
-- **Prisma 6.3.0** - ORM (TypeScript-first)
-- **Vercel Postgres** - PostgreSQL 데이터베이스 (프로덕션)
-- **rss-parser** - RSS 피드 파싱
-- **Groq SDK** - AI 뉴스 요약 (Llama 3.3 70B)
-- **Cheerio** - 웹 스크래핑 (뉴스 본문, 경제 지표, 날씨)
+- Next.js API Routes + Prisma 6.3.0 + Vercel Postgres
+- rss-parser, Groq SDK, Cheerio (웹 스크래핑)
 
-### 인프라 & 배포
-- **Vercel** - 프론트엔드 및 API 호스팅
-- **GitHub Actions** - RSS 수집 자동화 (10분마다)
-- **Vercel Postgres** - 관리형 PostgreSQL
+### 인프라
+- Vercel (호스팅) + GitHub Actions (RSS 수집 10분마다)
 
 ---
 
@@ -75,666 +58,201 @@ git push origin main             # 4. 푸쉬
 ```
 KeyWordsNews/
 ├── app/                          # Next.js App Router
-│   ├── page.tsx                 # 메인 페이지 (속보)
+│   ├── page.tsx                 # 메인 페이지
 │   ├── topics/[category]/       # 카테고리별 뉴스
 │   ├── keywords/                # 키워드 뉴스
-│   ├── search/                  # 검색 페이지
-│   ├── settings/                # 설정 페이지
-│   ├── economy/                 # 경제 지표 페이지
+│   ├── search/                  # 검색
+│   ├── settings/                # 설정
+│   ├── economy/                 # 경제 지표
 │   └── api/                     # API Routes
-│       ├── news/
-│       │   ├── breaking/        # 속보 API
-│       │   ├── latest/          # 최신 뉴스
-│       │   ├── category/        # 카테고리별 뉴스
-│       │   ├── search/          # 뉴스 검색
-│       │   └── summarize/       # AI 요약 API
-│       ├── economy/
-│       │   └── indicators/      # 경제 지표 API
-│       └── rss/
-│           └── collect/         # RSS 수집 API
+│       ├── news/                # 뉴스 API
+│       ├── economy/             # 경제 지표 API
+│       └── rss/collect/         # RSS 수집 API
 │
 ├── components/                   # React 컴포넌트
-│   ├── BottomNav.tsx           # 하단 네비게이션 (Heroicons)
-│   ├── CategoryTabs.tsx        # 카테고리 탭
-│   ├── KeywordTabs.tsx         # 키워드 탭
-│   ├── NewsCard.tsx            # 뉴스 카드
-│   ├── KeywordManager.tsx      # 키워드 관리
-│   ├── RssSourceManager.tsx    # RSS 소스 관리
-│   ├── AISummary.tsx           # AI 요약 컴포넌트
-│   └── EconomyIndicators.tsx   # 경제 지표 컴포넌트
+├── hooks/                        # Custom Hooks
+├── lib/                          # 라이브러리
+│   ├── ai/                      # AI 요약 시스템
+│   ├── api/                     # 외부 API 클라이언트
+│   ├── scraper/                 # 웹 스크래핑
+│   └── rss/                     # RSS 수집
 │
-├── hooks/                        # Custom React Hooks
-│   ├── useNews.ts              # 뉴스 데이터 훅
-│   ├── useKeywords.ts          # 키워드 관리 훅
-│   └── useRssSettings.ts       # RSS 설정 훅
-│
-├── lib/
-│   ├── prisma.ts               # Prisma 클라이언트
-│   ├── ai/                     # AI 요약 시스템
-│   │   ├── summarizer.ts       # AI 요약 메인 클래스
-│   │   ├── types.ts            # AI 관련 타입 정의
-│   │   └── providers/          # AI 프로바이더
-│   │       ├── groq.ts         # Groq AI (Llama 3.3 70B)
-│   │       └── openrouter.ts   # OpenRouter (폴백)
-│   ├── api/                    # 외부 API 클라이언트
-│   │   ├── yahoo-finance.ts    # Yahoo Finance (해외 지수)
-│   │   └── finnhub.ts          # Finnhub (암호화폐)
-│   ├── scraper/                # 웹 스크래핑
-│   │   ├── naver-finance-v2.ts # 네이버 금융 (국내 지수, 환율, 금)
-│   │   ├── hybrid-economy.ts   # 하이브리드 경제 데이터 수집
-│   │   └── newsContent.ts      # 뉴스 본문 스크래핑
-│   └── rss/
-│       ├── sources.ts          # RSS 소스 설정
-│       ├── parser.ts           # RSS 파서
-│       └── collector.ts        # RSS 수집기
-│
-├── prisma/
-│   ├── schema.prisma           # 데이터베이스 스키마
-│   └── migrations/             # 마이그레이션 파일
-│
-├── public/
-│   ├── icon.svg                # PWA 아이콘 (SVG)
-│   ├── icons/                  # PWA 아이콘 (PNG, 8개 사이즈)
-│   ├── manifest.json           # PWA Manifest
-│   └── manifest.webmanifest    # PWA Manifest (상세)
-│
-├── scripts/
-│   ├── collect-rss.ts          # RSS 수집 스크립트
-│   ├── generate-icons.js       # 아이콘 생성 가이드
-│   └── generate-png-icons.js   # PNG 아이콘 자동 생성
-│
-├── generate-icons.html          # 브라우저 기반 아이콘 생성 도구
-│
-└── .github/workflows/
-    └── collect-rss.yml         # RSS 수집 자동화 (10분마다)
+├── prisma/                       # 데이터베이스
+└── public/                       # 정적 파일
 ```
 
 ---
 
-## 데이터베이스 설계
+## 데이터베이스
 
-### Prisma Schema
-
+### News 모델
 ```prisma
-datasource db {
-  provider  = "postgresql"
-  url       = env("PRISMA_DATABASE_URL")  // Pooled connection
-  directUrl = env("POSTGRES_URL")          // Direct connection
-}
-
 model News {
-  id           String   @id @default(cuid())
-  title        String
-  url          String   @unique
-  summary      String   @db.Text
-  source       String
-  category     String
-  publishedAt  DateTime
-  imageUrl     String?
-  isBreaking   Boolean  @default(false)
+  id              String   @id @default(cuid())
+  title           String
+  url             String   @unique
+  summary         String   @db.Text
+  source          String
+  category        String
+  publishedAt     DateTime
+  imageUrl        String?
+  isBreaking      Boolean  @default(false)
 
-  // AI 요약 필드
+  // AI 요약
   aiSummary       String?   @db.Text
   aiKeywords      String[]  @default([])
   aiSummarizedAt  DateTime?
-  aiProvider      String?   // 사용된 AI 프로바이더 (groq, openrouter)
+  aiProvider      String?
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  @@index([category])
-  @@index([publishedAt])
-  @@index([isBreaking])
-  @@index([source])
-  @@index([aiSummarizedAt])
+  @@index([category, publishedAt, isBreaking, source])
 }
 ```
 
-### 카테고리 목록
-
+### 카테고리
 ```typescript
-const CATEGORIES = [
-  { id: 'general', label: '종합' },
-  { id: 'politics', label: '정치' },
-  { id: 'economy', label: '경제' },
-  { id: 'society', label: '사회' },
-  { id: 'world', label: '국제' },
-  { id: 'tech', label: 'IT' },
-  { id: 'crypto', label: '암호화폐' },
-  { id: 'global', label: '글로벌' },
-  { id: 'sports', label: '스포츠' },
-  { id: 'entertainment', label: '연예' },
-  { id: 'culture', label: '문화' },
-]
+general, politics, economy, society, world, tech, crypto, global, sports, entertainment, culture
 ```
 
 ---
 
-## API 엔드포인트
+## 핵심 API
 
-### 1. 긴급 속보
-```
-GET /api/news/breaking
-Response: {
-  success: true,
-  data: NewsItem[]
-}
-```
+### 뉴스 API
+- `GET /api/news/breaking` - 긴급 속보
+- `GET /api/news/latest?limit=20` - 최신 뉴스
+- `GET /api/news/category?category=politics` - 카테고리별
+- `GET /api/news/search?keyword=AI` - 검색
+- `POST /api/news/summarize` - AI 요약
 
-### 2. 최신 뉴스
-```
-GET /api/news/latest?limit=20&offset=0
-Response: {
-  success: true,
-  data: NewsItem[],
-  total: number
-}
-```
+### 경제 API
+- `GET /api/economy/indicators` - 전체 경제 지표
 
-### 3. 카테고리별 뉴스
-```
-GET /api/news/category?category=politics&limit=20
-Response: {
-  success: true,
-  category: string,
-  data: NewsItem[]
-}
-```
-
-### 4. 뉴스 검색
-```
-GET /api/news/search?keyword=AI&page=1&limit=20
-Response: {
-  success: true,
-  keyword: string,
-  data: NewsItem[],
-  total: number,
-  totalPages: number,
-  currentPage: number
-}
-```
-
-### 5. AI 뉴스 요약
-```
-POST /api/news/summarize
-Body: { newsId: string, url?: string, title?: string, summary?: string }
-Response: {
-  success: true,
-  data: {
-    summary: string,      // 불릿 포인트 요약
-    keywords: string[],   // 핵심 키워드
-    provider: string,     // AI 프로바이더
-    cached: boolean       // 캐시 여부
-  }
-}
-```
-
-### 6. 경제 지표
-```
-GET /api/economy/indicators
-Response: {
-  success: true,
-  data: {
-    domestic: { kospi, kosdaq },
-    international: { sp500, nasdaq, dow, nikkei },
-    exchange: { usd, jpy, eur, cny },
-    gold: { international },
-    crypto: { btc, eth, xrp, ada },
-    lastUpdated: string
-  }
-}
-```
-
-### 7. RSS 수집 트리거
-```
-POST /api/rss/collect
-Headers: { "x-cron-secret": "your-secret" }
-Response: {
-  success: true,
-  collected: number,
-  duration: number
-}
-```
+### RSS 수집
+- `POST /api/rss/collect` - RSS 수집 트리거 (Cron)
 
 ---
 
-## 뉴스 소스 관리
+## 환경 변수
 
-### 현재 등록된 뉴스 소스
-
-**총 48개 소스** (활성화: 42개, 비활성화: 6개)
-
-**속보 (Breaking)** - 4개 (활성화: 2개)
-- 연합뉴스 ✅
-- 뉴시스 ✅
-- 동아일보 ❌
-- 조선일보 ❌
-
-**종합 (General)** - 8개 (활성화: 6개)
-- 동아일보 ✅
-- 조선일보 ❌
-- SBS 뉴스 ✅
-- YTN ✅
-- KBS ✅
-- JTBC ✅
-- MBC ✅
-
-**정치 (Politics)** - 2개 (100% 활성화)
-**경제 (Economy)** - 9개 (89% 활성화)
-**사회 (Society)** - 3개 (100% 활성화)
-**국제 (World)** - 3개 (100% 활성화)
-**IT/과학 (Tech)** - 6개 (83% 활성화)
-**스포츠 (Sports)** - 6개 (100% 활성화)
-**연예 (Entertainment)** - 5개 (100% 활성화)
-**문화 (Culture)** - 2개 (100% 활성화)
-
-### 뉴스 소스 관리 기능
-
-#### 설정 페이지에서 관리
-- 카테고리별 소스 ON/OFF 토글
-- 전체 소스 일괄 활성화/비활성화
-- 개별 언론사 선택적 활성화
-- 설정 초기화 기능
-- **실시간 반영**: React Query queryKey에 sources 포함하여 즉시 반영
-
-### RSS 소스 추가 방법
-
-`lib/rss/sources.ts` 파일에 새로운 소스 추가:
-
-```typescript
-export const RSS_FEED_SOURCES: RSSFeedSource[] = [
-  {
-    id: 'unique-id',
-    name: '언론사명',
-    category: 'politics', // 카테고리
-    url: 'https://example.com/rss.xml',
-    priority: 7,
-    updateInterval: 10,
-    enabled: true
-  },
-  // ...
-]
-```
-
----
-
-## 환경 변수 설정
-
-### 개발 환경 (.env.local)
 ```env
 # Database (Vercel Postgres)
-PRISMA_DATABASE_URL="postgres://..."  # Pooled connection
-POSTGRES_URL="postgres://..."          # Direct connection
-USE_DATABASE=true                      # DB 사용 여부
+PRISMA_DATABASE_URL="postgres://..."
+POSTGRES_URL="postgres://..."
 
-# AI 요약 기능
-AI_PROVIDER="groq"                     # groq 또는 openrouter
-GROQ_API_KEY="gsk_..."                 # Groq API 키
+# AI
+GROQ_API_KEY="gsk_..."
+GEMINI_API_KEY="..."
 
-# 경제 지표 API
-FINNHUB_API_KEY="..."                  # Finnhub API 키 (암호화폐)
+# APIs
+FINNHUB_API_KEY="..."
 
-# GitHub Actions Cron Secret
-CRON_SECRET="your-random-secret-key"
-
-# Vercel App URL
+# Cron
+CRON_SECRET="..."
 VERCEL_APP_URL="https://key-words-news.vercel.app"
 ```
 
-### Vercel 환경 변수
-1. Vercel Dashboard → Settings → Environment Variables
-2. 다음 변수들을 설정:
-   - `PRISMA_DATABASE_URL` (Vercel Postgres Integration에서 자동 생성)
-   - `POSTGRES_URL` (Vercel Postgres Integration에서 자동 생성)
-   - `CRON_SECRET` (GitHub Secrets와 동일한 값)
-
-### GitHub Secrets
-1. GitHub Repository → Settings → Secrets and variables → Actions
-2. 다음 시크릿 추가:
-   - `CRON_SECRET`: RSS 수집 API 인증 키
-   - `VERCEL_APP_URL`: 배포된 앱 URL
-
 ---
 
-## RSS 수집 자동화
+## RSS 수집
 
-### GitHub Actions Workflow
-
+### GitHub Actions (10분마다)
 ```yaml
-# .github/workflows/collect-rss.yml
-name: Collect RSS News
-
 on:
   schedule:
-    - cron: '*/10 * * * *'  # 10분마다 실행
-  workflow_dispatch:          # 수동 실행 가능
-
-jobs:
-  collect:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Trigger RSS Collection
-        run: |
-          curl -X POST "${{ secrets.VERCEL_APP_URL }}/api/rss/collect" \
-            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}"
+    - cron: '*/10 * * * *'
 ```
 
-### 수동 RSS 수집
-
+### 수동 실행
 ```bash
-# 로컬에서 실행
 npm run collect
-
-# 또는
-npx tsx scripts/collect-rss.ts
 ```
 
 ---
 
 ## 아이콘 시스템
 
-### Heroicons 사용
-
-프로젝트는 Tailwind CSS 팀의 **Heroicons**를 사용합니다.
-
-#### 하단 네비게이션 아이콘
-
-```typescript
-// components/BottomNav.tsx
-import {
-  BoltIcon,           // 속보 (빨강)
-  NewspaperIcon,      // 토픽 (파랑)
-  StarIcon,          // 키워드 (노랑)
-  MagnifyingGlassIcon, // 검색 (보라)
-  Cog6ToothIcon,     // 설정 (회색)
-} from '@heroicons/react/24/outline'
-
-// Solid 버전 (선택된 상태)
-import {
-  BoltIcon as BoltIconSolid,
-  // ...
-} from '@heroicons/react/24/solid'
-```
-
-#### 아이콘 스타일
-- **기본 (미선택)**: Outline 스타일 + 회색
-- **선택됨**: Solid 스타일 + 해당 색상
-- **크기**: 24x24 (w-6 h-6)
+### Heroicons (하단 네비게이션)
+- BoltIcon (속보), NewspaperIcon (토픽), StarIcon (키워드)
+- MagnifyingGlassIcon (검색), Cog6ToothIcon (설정)
 
 ### PWA 아이콘
-
-프로젝트는 Heroicons Bookmark-square를 기반으로 한 PWA 아이콘을 사용합니다.
-
-#### 아이콘 디자인
-- **SVG 아이콘**: `public/icon.svg`
-  - 흰색 배경 (#ffffff)
-  - 파란색 북마크 아이콘 (#2563eb)
-  - 512x512 크기, 둥근 모서리 (rx=110)
-  - 확장 가능한 벡터 그래픽
-
-- **PNG 아이콘**: `public/icons/`
-  - 8개 사이즈: 72, 96, 128, 144, 152, 192, 384, 512
-  - SVG에서 Sharp 라이브러리로 자동 생성
-  - iOS/Android 호환성 보장
-
-#### PWA 설정
-
-```typescript
-// app/layout.tsx
-export const metadata: Metadata = {
-  manifest: '/manifest.json',
-  themeColor: '#2563eb',
-  icons: {
-    icon: [
-      { url: '/icon.svg', type: 'image/svg+xml' },
-      { url: '/icons/icon-192x192.png', sizes: '192x192' },
-      { url: '/icons/icon-512x512.png', sizes: '512x512' },
-    ],
-    apple: [
-      { url: '/icons/icon-192x192.png', sizes: '192x192' },
-    ],
-  },
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'black-translucent',
-    title: '키워드뉴스',
-  },
-}
-```
-
-#### PNG 아이콘 생성 방법
-
-```bash
-# Sharp를 사용한 자동 생성 (권장)
-node scripts/generate-png-icons.js
-
-# 또는 브라우저 도구 사용
-npm run dev
-# http://localhost:3000/generate-icons.html 접속
-
-# 또는 온라인 도구
-# https://realfavicongenerator.net/
-# public/icon.svg 업로드 후 생성
-```
+- SVG: `public/icon.svg` (512x512)
+- PNG: `public/icons/` (8개 사이즈: 72~512)
+- 생성: `node scripts/generate-png-icons.js`
 
 ---
 
 ## 개발 가이드
 
-### 로컬 개발 환경 설정
-
-1. **레포지토리 클론**
+### 로컬 개발
 ```bash
 git clone https://github.com/MontblancB/KeyWordsNews.git
 cd KeyWordsNews
-```
-
-2. **의존성 설치**
-```bash
 npm install
-```
-
-3. **환경 변수 설정**
-`.env.local` 파일 생성 후 환경 변수 입력
-
-4. **데이터베이스 마이그레이션**
-```bash
 npx prisma migrate dev
-npx prisma generate
-```
-
-5. **개발 서버 실행**
-```bash
 npm run dev
+npm run collect  # 초기 데이터
 ```
 
-6. **RSS 수집 (초기 데이터)**
+### 빌드 & 배포
 ```bash
-npm run collect
-```
-
-### 빌드 및 배포
-
-```bash
-# 로컬 빌드 테스트
-npm run build
-
-# Vercel 배포 (자동)
-git push origin main
+npm run build     # 로컬 빌드
+git push origin main  # Vercel 자동 배포
 ```
 
 ---
 
-## AI 뉴스 요약
+## AI 요약 시스템
 
-### 개요
+### 특징
+- **초압축 불릿 포인트**: 3-5개, 각 15-20단어
+- **키워드 추출**: 3-5개 자동 추출
+- **캐싱**: DB 저장으로 재조회 시 즉시 표시
+- **폴백**: Groq → Gemini
 
-Groq AI (Llama 3.3 70B)를 활용한 온디맨드 뉴스 요약 시스템입니다.
-
-### 주요 특징
-
-1. **초압축 불릿 포인트**
-   - 3-5개 불릿으로 핵심 내용 정리
-   - 각 불릿은 15-20단어 이내로 초압축
-   - 숫자, 날짜, 금액 등 구체적 정보 우선
-   - 제목 내용 반복 금지
-
-2. **핵심 키워드 추출**
-   - 3-5개 키워드 자동 추출
-   - 배지 형태로 시각화
-
-3. **캐싱 시스템**
-   - DB에 요약 저장하여 재조회 시 즉시 표시
-   - API 비용 절감 및 빠른 응답 속도
-
-4. **폴백 메커니즘**
-   - Primary: Groq AI (Llama 3.3 70B)
-   - Fallback: OpenRouter (Llama 3.1 70B)
-   - URL 기반 폴백: DB에 없는 RSS 뉴스도 지원
-
-### 사용 방법
-
+### 사용
 ```typescript
-// components/AISummary.tsx
 <AISummary
   newsId={news.id}
   url={news.url}
   title={news.title}
   summary={news.summary}
-  initialSummary={news.aiSummary}
-  initialKeywords={news.aiKeywords}
-  initialProvider={news.aiProvider}
 />
 ```
-
-### API 엔드포인트
-
-```typescript
-POST /api/news/summarize
-Body: {
-  newsId: string,
-  url?: string,      // 폴백용
-  title?: string,    // 폴백용
-  summary?: string   // 폴백용
-}
-```
-
-### 요약 예시
-
-**불릿 포인트:**
-- • 2026년 최저임금 시간당 1만2천원 확정 (7.3%↑)
-- • 노동계 '물가 대비 불충분' 반발, 경영계 '중소기업 부담' 우려
-- • 적용 대상 약 300만명, 2026.1.1 시행
-
-**키워드:** #최저임금 #1만2천원 #노사갈등
 
 ---
 
 ## 경제 지표
 
-### 개요
-
-국내외 주식, 환율, 금시세, 암호화폐를 실시간으로 확인할 수 있는 하이브리드 데이터 수집 시스템입니다.
-
 ### 데이터 소스
+| 지표 | 소스 | 방식 |
+|------|------|------|
+| KOSPI/KOSDAQ | 네이버 금융 | 스크래핑 |
+| S&P/NASDAQ/Dow/Nikkei | Yahoo Finance | API |
+| 환율 (USD/JPY/EUR/CNY) | 네이버 금융 | 스크래핑 |
+| 금시세 | 네이버 금융 | 스크래핑 |
+| 암호화폐 | CoinGecko | API |
 
-| 지표 | 소스 | 수집 방식 |
-|------|------|----------|
-| KOSPI, KOSDAQ | 네이버 금융 | 스크래핑 (Cheerio) |
-| S&P 500, NASDAQ, Dow, Nikkei | Yahoo Finance | API |
-| 환율 (USD, JPY, EUR, CNY) | 네이버 금융 | 스크래핑 (Cheerio) |
-| 금시세 | 네이버 금융 | 스크래핑 (Cheerio) |
-| 암호화폐 (BTC, ETH) | CoinGecko | API |
-| 글로벌 크립토 (시총, 도미넌스) | CoinGecko | API |
-| 공포·탐욕 지수 | Alternative.me | API |
-
-### 주요 특징
-
-1. **하이브리드 방식**
-   - 스크래핑: 국내 지수, 환율, 금시세 (네이버 금융)
-   - API: 해외 지수 (Yahoo Finance), 암호화폐 (CoinGecko), 공포탐욕지수 (Alternative.me)
-   - 각 소스의 장점을 활용한 최적의 조합
-
-2. **실시간 업데이트**
-   - 페이지 접속 시 최신 데이터 자동 조회
-   - React Query 캐싱으로 중복 요청 방지
-
-3. **시각화**
-   - 상승: 빨간색 (▲)
-   - 하락: 파란색 (▼)
-   - 보합: 회색 (-)
-   - 변동폭과 변동률 동시 표시
-
-### API 엔드포인트
-
-```typescript
-GET /api/economy/indicators
-Response: {
-  success: true,
-  data: {
-    domestic: {
-      kospi: { name, value, change, changePercent, changeType },
-      kosdaq: { name, value, change, changePercent, changeType }
-    },
-    international: {
-      sp500: { name, value, change, changePercent, changeType },
-      nasdaq: { name, value, change, changePercent, changeType },
-      dow: { name, value, change, changePercent, changeType },
-      nikkei: { name, value, change, changePercent, changeType }
-    },
-    exchange: {
-      usd: { name, value, change, changePercent, changeType },
-      jpy: { name, value, change, changePercent, changeType },
-      eur: { name, value, change, changePercent, changeType },
-      cny: { name, value, change, changePercent, changeType }
-    },
-    gold: {
-      international: { name, value, change, changePercent, changeType }
-    },
-    crypto: {
-      btc: { name, value, change, changePercent, changeType },
-      eth: { name, value, change, changePercent, changeType },
-      xrp: { name, value, change, changePercent, changeType },
-      ada: { name, value, change, changePercent, changeType }
-    },
-    lastUpdated: "2026-01-16 18:30"
-  }
-}
-```
-
-### 사용 예시
-
-```typescript
-// app/economy/page.tsx
-const { data, isLoading } = useQuery({
-  queryKey: ['economy-indicators'],
-  queryFn: async () => {
-    const res = await fetch('/api/economy/indicators')
-    return res.json()
-  },
-  staleTime: 5 * 60 * 1000,  // 5분
-})
-```
+### 특징
+- 하이브리드 방식 (스크래핑 + API)
+- 실시간 업데이트
+- 시각화 (▲빨강, ▼파랑)
 
 ---
 
 ## 데이터베이스 마이그레이션
 
-### 새로운 마이그레이션 생성
-
 ```bash
+# 개발
 npx prisma migrate dev --name migration_name
-```
 
-### 프로덕션 마이그레이션 적용
-
-```bash
+# 프로덕션
 npx prisma migrate deploy
-```
 
-### Prisma Studio (데이터베이스 GUI)
-
-```bash
+# GUI
 npx prisma studio
 ```
 
@@ -742,954 +260,155 @@ npx prisma studio
 
 ## 트러블슈팅
 
-### 1. 데이터베이스 연결 오류
+### DB 연결 오류
+- Vercel Postgres 상태 확인
+- 환경 변수 확인
 
-**증상**: `Error: P1001: Can't reach database server`
-
-**해결**:
-1. Vercel Postgres가 정상 작동 중인지 확인
-2. 환경 변수 `PRISMA_DATABASE_URL`과 `POSTGRES_URL`이 올바른지 확인
-3. Vercel Dashboard에서 데이터베이스 상태 확인
-
-### 2. 마이그레이션 실패
-
-**증상**: Migration failed
-
-**해결**:
+### 마이그레이션 실패
 ```bash
-# 마이그레이션 상태 확인
 npx prisma migrate status
-
-# 강제 재설정 (개발 환경에서만)
-npx prisma migrate reset
-
-# 프로덕션에서는 직접 SQL 실행
-npx prisma migrate deploy
+npx prisma migrate reset  # 개발 환경만
 ```
 
-### 3. RSS 수집이 작동하지 않음
+### RSS 수집 안됨
+- GitHub Actions 워크플로우 확인
+- CRON_SECRET 확인
+- Vercel 로그 확인
 
-**증상**: 뉴스가 업데이트되지 않음
-
-**해결**:
-1. GitHub Actions 워크플로우 상태 확인
-2. CRON_SECRET이 올바르게 설정되었는지 확인
-3. `/api/rss/collect` API를 수동으로 호출해보기
-4. Vercel 함수 로그 확인
-
-### 4. 빌드 실패
-
-**증상**: Vercel 빌드가 실패함
-
-**해결**:
+### 빌드 실패
 ```bash
-# 로컬에서 빌드 테스트
 npm run build
-
-# Prisma 클라이언트 재생성
 npx prisma generate
-
-# node_modules 재설치
-rm -rf node_modules package-lock.json
-npm install
+rm -rf node_modules && npm install
 ```
 
 ---
 
 ## 성능 최적화
 
-### 1. 데이터베이스 인덱스
-
-중요한 쿼리에 대해 인덱스가 설정되어 있습니다:
-- `category` - 카테고리별 뉴스 조회
-- `publishedAt` - 최신 뉴스 정렬
-- `isBreaking` - 속보 필터링
-- `source` - 언론사별 필터링
+### 1. DB 인덱스
+- category, publishedAt, isBreaking, source
 
 ### 2. React Query 캐싱
-
 ```typescript
-// 기본 캐싱 전략
 {
-  staleTime: 5 * 60 * 1000,    // 5분간 캐시 유지
-  cacheTime: 10 * 60 * 1000,   // 10분간 메모리 유지
-  refetchOnWindowFocus: true,   // 포커스 시 자동 새로고침
+  staleTime: 5 * 60 * 1000,    // 5분
+  cacheTime: 10 * 60 * 1000,   // 10분
 }
 ```
 
-### 3. 무한 스크롤
+### 3. 전략적 프리페칭
+- 전체 카테고리, 속보, 경제 지표
+- 순차 실행 (100ms 간격)
+- 성능 향상: 페이지 전환 95% (500ms → 0-100ms)
 
-검색 및 키워드 페이지에서 React Query의 `useInfiniteQuery`를 사용하여 효율적인 무한 스크롤 구현
-
-### 4. 전략적 프리페칭
-
-모든 페이지에서 사용자가 방문할 가능성이 높은 데이터를 미리 로드합니다:
-
-#### 프리페칭 전략
-- **전체 카테고리**: 정치, 경제, 사회, 국제, IT, 스포츠, 연예, 문화 (8개)
-- **속보**: 긴급 뉴스 피드
-- **경제 지표**: 국내외 주식, 환율, 금시세, 암호화폐
-- **키워드**: 사용자가 등록한 상위 3개 키워드
-
-#### 동적 순차 실행
-
-```typescript
-setTimeout(async () => {
-  for (const category of allCategories) {
-    const start = Date.now()
-
-    await queryClient.prefetchInfiniteQuery({...})
-
-    // 최소 100ms 간격 보장 (서버 부하 분산)
-    const elapsed = Date.now() - start
-    if (elapsed < 100) {
-      await new Promise(resolve => setTimeout(resolve, 100 - elapsed))
-    }
-  }
-}, 500)
-```
-
-#### 성능 개선 효과
-- 빠른 네트워크(200ms/요청): **60% 향상** (4초 → 1.6초)
-- 일반 네트워크(300ms/요청): **40% 향상** (4초 → 2.4초)
-- 페이지 전환: **95% 향상** (500ms-2s → 0-100ms)
-- 캐시 hit 시: **즉시 표시** (0-50ms)
-
-### 5. 캐시 우선 로딩
-
-```typescript
-// 캐시가 없을 때만 로딩 스피너 표시
-{isLoading && !data && (
-  <LoadingSpinner />
-)}
-
-// 백그라운드 갱신 중 표시 (선택사항)
-{!isLoading && isFetching && (
-  <BackgroundRefreshIndicator />
-)}
-```
-
-**효과**:
-- 캐시된 데이터가 있으면 즉시 표시 (0-50ms)
-- 백그라운드에서 최신 데이터 갱신
-- 사용자는 로딩 대기 없이 즉시 콘텐츠 확인 가능
-
----
-
-## 향후 개선 사항
-
-### 단기
-- [x] PWA 기능 추가 (Manifest, Icons) ✅ v2.1.0
-- [x] AI 기반 뉴스 요약 ✅ v2.2.0
-- [x] 경제 지표 실시간 확인 ✅ v2.2.0
-- [x] 다크 모드 지원 ✅ v2.5.0
-- [x] 네이티브 앱 수준 성능 최적화 ✅ v2.5.0
-- [ ] PWA 오프라인 지원 (Service Worker)
-- [ ] 푸시 알림 기능
-- [ ] 뉴스 북마크 기능
-
-### 중기
-- [ ] 사용자 계정 시스템
-- [ ] 개인화 추천 알고리즘
-- [ ] 뉴스 공유 기능
-- [ ] 댓글 시스템
-
-### 장기
-- [ ] 음성으로 뉴스 듣기 (TTS)
-- [ ] 멀티 언어 지원
-- [ ] 네이티브 모바일 앱
-
----
-
-## 라이선스 및 주의사항
-
-### 법적 고려사항
-- **뉴스 저작권**: 원문 링크를 제공하고 전체 복제 금지
-- **로봇 배제 표준**: robots.txt 준수
-- **RSS 사용 윤리**: 개인적 용도로만 사용, 상업적 재배포 금지
-- **개인정보 보호**: 사용자 데이터 처리 시 GDPR, 개인정보보호법 준수
-
-### RSS 수집 윤리
-- 과도한 요청 방지 (현재: 10분 간격)
-- User-Agent 명시
-- 캐싱을 통한 서버 부하 최소화
-- 각 언론사의 이용약관 준수
-
----
-
-## 참고 자료
-
-### 기술 문서
-- [Next.js 공식 문서](https://nextjs.org/docs)
-- [Prisma 문서](https://www.prisma.io/docs)
-- [React Query 문서](https://tanstack.com/query/latest)
-- [Heroicons](https://heroicons.com/)
-- [Vercel Postgres](https://vercel.com/docs/storage/vercel-postgres)
-
-### RSS 피드 자료
-- [GitHub - akngs/knews-rss](https://github.com/akngs/knews-rss): 한국 언론사 RSS 모음
-- [Korean News RSS URLs](https://gist.github.com/koorukuroo/330a644fcc3c9ffdc7b6d537efd939c3): 188개 언론사 RSS 주소
-
----
-
-## 문의 및 기여
-
-문제가 발생하거나 개선 아이디어가 있다면 GitHub Issues를 통해 제보해주세요.
-
-**Repository**: https://github.com/MontblancB/KeyWordsNews
+### 4. 캐시 우선 로딩
+- 캐시 데이터 즉시 표시
+- 백그라운드 갱신
 
 ---
 
 ## PWA 사용 가이드
 
-### 모바일 홈 화면에 추가하기
-
-#### iOS (Safari)
+### iOS (Safari)
 1. https://key-words-news.vercel.app 접속
-2. 화면 하단 "공유" 버튼 탭
-3. "홈 화면에 추가" 선택
-4. 이름 확인 후 "추가" 탭
-5. 홈 화면에 북마크 아이콘 생성 완료! 📱
+2. "공유" → "홈 화면에 추가"
 
-#### Android (Chrome)
-1. https://key-words-news.vercel.app 접속
-2. 우측 상단 메뉴(⋮) 탭
-3. "홈 화면에 추가" 선택
-4. 이름 확인 후 "추가" 탭
-5. 홈 화면에 북마크 아이콘 생성 완료! 📱
-
-### PWA 특징
-- **앱처럼 실행**: 브라우저 UI 없이 전체 화면으로 실행
-- **빠른 접근**: 홈 화면에서 바로 실행
-- **오프라인 준비**: manifest 설정 완료 (Service Worker는 향후 추가 예정)
+### Android (Chrome)
+1. 앱 접속 → 메뉴(⋮) → "홈 화면에 추가"
 
 ---
 
 ## 최근 업데이트
 
-### v2.33.0 (2026-01-24)
-**BubbleNow 키워드 클릭 기능 추가 및 Feature Flag 비활성화**
-
-#### 새로운 기능
-- 🔍 **키워드 클릭으로 관련 뉴스 표시**: 버블맵의 키워드를 클릭하면 해당 키워드가 포함된 모든 뉴스 확인 가능
-  - 레이어드 모달 시스템: KeywordNewsModal(z-60) > BubbleModal(z-50)
-  - AI 요약 우선 표시 (없으면 원본 요약)
-  - 뉴스 출처 및 발행 시간 표시
-  - AI 키워드 배지 표시
-  - 원문 기사 링크 (새 탭에서 열림)
-  - ESC 키 및 배경 클릭으로 닫기
-
-- 🎛️ **Feature Flag 시스템**: BubbleNow 기능을 쉽게 ON/OFF 가능
-  - `lib/feature-flags.ts`에 `ENABLE_BUBBLE_NOW` 플래그 추가
-  - 현재 상태: `false` (비활성화)
-  - 버튼, 모달, 이벤트 핸들러 모두 플래그로 제어
-  - 재활성화: 플래그를 `true`로 변경하면 즉시 복구
-
-#### 추가된 파일
-- 📄 `components/KeywordBubbleMap/KeywordNewsModal.tsx`: 키워드 관련 뉴스 표시 모달
-- 📄 `app/api/news/by-ids/route.ts`: ID 배열로 뉴스 조회 API
-
-#### 수정된 파일
-- 📄 `lib/feature-flags.ts`: ENABLE_BUBBLE_NOW 플래그 추가 (기본값: false)
-- 📄 `app/page.tsx`: KeywordNewsModal 통합, ENABLE_BUBBLE_NOW 조건부 렌더링
-- 📄 `app/topics/[category]/page.tsx`: KeywordNewsModal 통합, ENABLE_BUBBLE_NOW 조건부 렌더링
-- 📄 `app/keywords/page.tsx`: KeywordNewsModal 통합, ENABLE_BUBBLE_NOW 조건부 렌더링
-
-#### 기술 스택
-- React 모달 컴포넌트 (z-index 레이어링)
-- Prisma `findMany` with `where: { id: { in: ids } }`
-- Next.js API Routes (POST 메서드)
-- TypeScript 타입 안전성
-- React Hooks (useCallback, useState, useEffect)
-
-#### 재활성화 방법
-BubbleNow 기능을 다시 켜려면:
-```typescript
-// lib/feature-flags.ts
-export const FEATURE_FLAGS = {
-  ENABLE_DAILY_INSIGHT: true,
-  ENABLE_BUBBLE_NOW: true, // false → true로 변경
-} as const
-```
-
----
-
-### v2.32.2 (2026-01-23)
-**토픽 탭 첫 번째 카테고리 자동 이동 개선**
-
-#### 버그 수정
-- 🐛 **토픽 탭 동적 라우팅**: 사용자 지정 카테고리 순서에 따라 첫 번째 카테고리로 이동
-  - 기존: 항상 `/topics/politics`로 하드코딩
-  - 개선: 사용자가 설정한 첫 번째 카테고리로 동적 이동
-  - 카테고리 순서 변경이 즉시 반영됨
-
-#### UX 개선
-- ✨ **일관된 네비게이션**: 설정에서 순서를 바꾸면 토픽 탭 클릭 시에도 변경된 순서가 반영
-  - 예: 경제를 첫 번째로 설정 → 토픽 탭 클릭 시 경제 화면으로 이동
-  - 사용자 맞춤형 워크플로우 지원
-
-#### 수정된 파일
-- 📄 `components/BottomNav.tsx`: useCategoryOrder 통합, 동적 경로 생성
-
----
-
-### v2.32.1 (2026-01-23)
-**BubbleNow 아이콘을 Heroicons로 변경**
-
-#### UI 개선
-- 🎨 **아이콘 변경**: CircleStackIcon → Squares2X2Icon
-  - 버튼 아이콘: 그리드 패턴으로 버블맵의 특성을 더 잘 표현
-  - 모달 헤더: 이모지 🗺️ → Squares2X2Icon (주황색)
-  - 일관된 디자인 시스템 (Heroicons 사용)
-
-#### 수정된 파일
-- 📄 `components/KeywordBubbleMap/BubbleButton.tsx`: CircleStackIcon → Squares2X2Icon
-- 📄 `components/KeywordBubbleMap/BubbleModal.tsx`: 이모지 → Heroicons
-
----
-
-### v2.32.0 (2026-01-23)
-**BubbleNow 군집별 색상 시스템 및 캐시 키 개선**
-
-#### 새로운 기능
-- 🎨 **군집별 색상 시스템**: 연결된 키워드들을 같은 색상으로 표시
-  - 연결 강도(strength > 0.3) 기반 군집 감지
-  - BFS(너비 우선 탐색) 알고리즘으로 군집화
-  - Tableau10 색상 팔레트 사용 (10가지 고유 색상)
-  - 같은 주제의 키워드들을 시각적으로 구분 가능
-
-- 🔍 **시각적 인사이트 향상**:
-  - 키워드 간 관계를 색상으로 한눈에 파악
-  - 주요 토픽 군집을 쉽게 식별
-  - 더욱 직관적인 버블맵
-
-#### 버그 수정
-- 🐛 **캐시 키에 뉴스 개수 포함**: 적은 뉴스 캐시 문제 해결
-  - 기존: `category:politics` → 10개든 70개든 같은 캐시
-  - 개선: `category:politics:70` → 뉴스 개수별로 별도 캐시
-  - 무한 스크롤로 더 많은 뉴스 로드 시 정확히 반영
-  - 캐시 적중률 유지하면서 정확도 향상
-
-#### 수정된 파일
-- 📄 `app/api/news/bubble/route.ts`: 캐시 키에 뉴스 개수 추가
-- 📄 `components/KeywordBubbleMap/BubbleMapVisualization.tsx`: 군집 감지 알고리즘, Tableau10 색상, 범례 업데이트
-
----
-
-### v2.31.7 (2026-01-23)
-**BubbleNow 뉴스 수집 로직 수정 (InsightNow와 동일하게)**
-
-#### 버그 수정
-- 🐛 **현재 로드된 뉴스 사용**: InsightNow/SummarizeNow와 동일한 방식으로 변경
-  - 기존: 새로 API 호출 (`/api/news/latest?limit=200`)
-  - 개선: 현재 무한 스크롤로 로드된 모든 뉴스 사용 (`data?.pages.flatMap()`)
-  - InsightNow가 70개 사용하면 BubbleNow도 70개 사용
-  - 사용자가 스크롤한 만큼 더 많은 뉴스 분석
-
-- 📊 **분석 일관성 향상**: 모든 Now 기능이 동일한 뉴스 세트 사용
-  - InsightNow, SummarizeNow, BubbleNow 모두 동일한 로직
-  - 사용자가 로드한 뉴스만큼 정확히 분석
-
-#### 수정된 파일
-- 📄 `app/page.tsx`: API 호출 제거, 현재 로드된 뉴스 사용
-- 📄 `app/topics/[category]/page.tsx`: API 호출 제거, 현재 로드된 뉴스 사용
-- 📄 `app/keywords/page.tsx`: 검색 로직 제거, 현재 로드된 뉴스 사용
-
----
-
-### v2.31.6 (2026-01-23)
-**BubbleNow 뉴스 수집량 2배 증가 및 글자 크기 개선**
-
-#### 성능 개선
-- 📊 **뉴스 수집량 2배 증가**: 100개 → 200개로 증가
-  - 메인 페이지: 최대 200개 뉴스 분석
-  - 토픽 페이지: 카테고리별 200개 뉴스 분석
-  - 키워드 페이지: 검색 결과 10페이지 (200개) 분석
-  - 훨씬 더 풍부하고 정확한 키워드 분석
-
-- 🔤 **글자 크기 원에 비례**: 가독성 대폭 향상
-  - 키워드 텍스트: 원 크기의 35%
-  - 빈도 표시: 원 크기의 25%
-  - 원이 클수록 글자도 크게 표시
-  - 모든 키워드가 명확하게 읽힘
-
-- 🔍 **디버깅 로그 추가**: 콘솔에서 수집된 뉴스 개수 확인 가능
-
-#### 수정된 파일
-- 📄 `app/page.tsx`: 뉴스 수집량 증가 (100→200), 로그 추가
-- 📄 `app/topics/[category]/page.tsx`: 뉴스 수집량 증가 (100→200), 로그 추가
-- 📄 `app/keywords/page.tsx`: 검색 페이지 증가 (5→10페이지), 로그 추가
-- 📄 `app/api/news/bubble/route.ts`: API 제한 증가 (100→200)
-- 📄 `components/KeywordBubbleMap/BubbleMapVisualization.tsx`: 글자 크기 원에 비례하도록 조정
-
----
-
-### v2.31.5 (2026-01-23)
-**BubbleNow 데이터 수집 로직 개선 (전체 뉴스 분석)**
-
-#### 버그 수정
-- 🐛 **전체 뉴스 수집**: 무한 스크롤 로드된 뉴스만 사용하던 문제 수정
-  - 기존: 현재 페이지 로드된 뉴스만 사용 (10-30개)
-  - 개선: API를 직접 호출하여 전체 뉴스 가져오기 (최대 100개)
-  - 메인 페이지: `/api/news/latest?limit=100`
-  - 토픽 페이지: `/api/news/topics/${category}?limit=100`
-  - 키워드 페이지: 검색 결과 최대 5페이지 수집 (100개)
-
-- 📊 **분석 품질 향상**: 더 많은 뉴스로 정확한 키워드 분석
-  - 키워드 간 상관관계가 더 명확하게 표시
-  - 버블맵이 훨씬 더 풍부해짐
-
-#### 수정된 파일
-- 📄 `app/page.tsx`: handleOpenBubble 로직 개선
-- 📄 `app/topics/[category]/page.tsx`: handleOpenBubble 로직 개선
-- 📄 `app/keywords/page.tsx`: handleOpenBubble 로직 개선
-
----
-
-### v2.31.4 (2026-01-23)
-**BubbleNow Turbo 테마 및 최소 크기 보장 시스템**
-
-#### UI 개선
-- 🌈 **Turbo 색상 테마 적용**: 매우 화려한 무지개 그라데이션
-  - Plasma (보라→주황) → Turbo (파랑→초록→노랑→빨강)
-  - 가장 선명하고 다채로운 색상 조합
-  - 시각적 임팩트 최대화
-
-- 📏 **스마트 최소 크기 보장**: 가장 긴 키워드 기준 최소 크기 설정
-  - 기존: 각 키워드 개별 길이 기준
-  - 개선: 전체 중 가장 긴 키워드 길이를 최소 반경으로 설정
-  - 모든 키워드가 균일한 최소 크기를 가짐
-  - 텍스트 잘림 완전 방지
-
-- 🎯 **범례 업데이트**: Turbo 그라데이션 바 추가
-  - 다크 블루 → 시안 → 라임 → 노랑 그라데이션 표시
-  - 크기 계산 방식 명시 (가중치, 최소 크기 보장)
-
-#### 수정된 파일
-- 📄 `components/KeywordBubbleMap/BubbleMapVisualization.tsx`: Turbo 테마, 최소 크기 알고리즘, 범례 업데이트
-
----
-
-### v2.31.3 (2026-01-23)
-**BubbleNow 색상 테마 및 버블 크기 알고리즘 개선**
-
-#### UI 개선
-- 🎨 **Plasma 색상 테마 적용**: 보라→분홍→주황 그라데이션으로 변경
-  - 기존: 파란색 단색 그라데이션 (Blues)
-  - 개선: 매우 선명하고 현대적인 Plasma 테마
-  - 다크모드에서 특히 시각적으로 멋짐
-
-- 📏 **스마트 버블 크기 조정**: 키워드 길이를 자동 감지하여 크기 조정
-  - 기존: 가중치만 고려 (`value * 12`)
-  - 개선: `Math.max(가중치 * 12, 글자수 * 6)`
-  - 짧은 키워드도 텍스트가 잘리지 않음
-  - 긴 키워드는 충분히 큰 원을 가짐
-
-- 🎯 **범례 업데이트**: Plasma 그라데이션 바 추가
-  - 색상 의미를 한눈에 파악 가능
-  - 크기 계산 방식 명시 (가중치+글자수)
-
-#### 수정된 파일
-- 📄 `components/KeywordBubbleMap/BubbleMapVisualization.tsx`: Plasma 테마, 스마트 크기 조정, 범례 업데이트
-
----
-
-### v2.31.2 (2026-01-23)
-**InsightNow 및 SummarizeNow 키워드 모달 버그 수정 및 에러 처리 개선**
-
-#### 버그 수정
-- 🐛 **키워드 모달 z-index 수정**: KeywordActionModal이 InsightModal/SummarizeModal 위에 표시되도록 z-index 조정
-  - z-50 → z-[110]으로 변경
-  - 키워드 클릭 시 모달이 정상적으로 표시됨
-
-#### 에러 처리 개선
-- 💬 **사용자 친화적인 에러 메시지**: AI API 에러 시 구체적인 안내 제공
-  - Rate limit: "AI 사용량 제한에 도달했습니다. 약 30-40분 후 사용 가능"
-  - Service overload: "AI 서비스가 일시적으로 혼잡합니다."
-  - All providers failed: "현재 AI 서비스를 사용할 수 없습니다."
-  - 각 상황에 맞는 구체적인 해결 방법 안내
-
-#### 수정된 파일
-- 📄 `components/KeywordActionModal.tsx`: z-index 수정
-- 📄 `components/InsightModal.tsx`: 에러 메시지 개선
-- 📄 `components/SummarizeModal.tsx`: 에러 메시지 개선
-
----
-
-### v2.31.1 (2026-01-23)
-**BubbleNow 시각화 가독성 대폭 개선**
-
-#### UI 개선
-- 🔍 **버블 크기 50% 증가**: 키워드가 더 크고 명확하게 표시
-  - 배율: 8 → 12로 조정
-  - 텍스트 가독성 대폭 향상
-
-- 📏 **간격 최적화**: 키워드들이 더 모여서 보기 편함
-  - 링크 거리: 100 → 60 (40% 단축)
-  - 반발력: -300 → -150 (50% 약화)
-  - 충돌 반경 조정으로 자연스러운 배치
-
-- 🔤 **폰트 크기 50% 증가**: 키워드 텍스트가 더 잘 보임
-  - 키워드 폰트: max(10, value * 2) → max(12, value * 3)
-  - 빈도 표시 폰트: max(8, value * 1.5) → max(10, value * 2)
-
-- 🔗 **연결선 2배 증가**: 키워드 간 관계가 더 풍부하게 표시
-  - 상위 100개 → 200개 링크로 증가
-  - 키워드 간 상관관계를 더 명확하게 파악 가능
-
-#### 수정된 파일
-- 📄 `lib/keyword-analyzer.ts`: 링크 수 100 → 200개
-- 📄 `components/KeywordBubbleMap/BubbleMapVisualization.tsx`: 버블 크기, 간격, 폰트 크기 조정
-
----
-
-### v2.31.0 (2026-01-23)
-**InsightNow 및 SummarizeNow 키워드 인터랙션 기능 추가**
-
-#### 기능 개선
-- 🔍 **키워드 용어 설명**: InsightNow와 SummarizeNow의 키워드를 클릭하여 용어 설명 확인 가능
-  - KeywordActionModal 통합
-  - Groq AI를 활용한 용어 설명 생성
-  - 키워드 버튼으로 변경하여 클릭 가능하도록 개선
-
-- ➕ **키워드 추가**: 관심 있는 키워드를 내 키워드 탭에 바로 추가 가능
-  - 모달에서 "키워드 추가" 버튼으로 간편하게 추가
-  - localStorage에 저장되어 지속적으로 관리
-
-- 🎨 **UI/UX 개선**: 키워드 배지 스타일 개선
-  - hover 효과 추가
-  - 클릭 가능한 버튼으로 시각적 피드백 제공
-  - "클릭하여 용어 설명 및 키워드 추가" 안내 문구 추가
-
-#### 수정된 파일
-- 📄 `components/InsightModal.tsx`: KeywordActionModal 통합, 키워드 버튼 변경
-- 📄 `components/SummarizeModal.tsx`: KeywordActionModal 통합, 키워드 버튼 변경
-
----
-
-### v2.30.0 (2026-01-23)
-**토픽 카테고리 순서 커스터마이징 기능**
-
-#### 새로운 기능
-- 📋 **카테고리 순서 관리**: 토픽 탭의 카테고리 순서를 사용자가 직접 변경 가능
-  - 드래그 앤 드롭으로 직관적인 순서 변경
-  - 자주 보는 카테고리를 앞에 배치하여 접근성 향상
-  - 설정 페이지에서 관리
-
-#### 주요 특징
-- 🖱️ **드래그 앤 드롭 UI**: @dnd-kit 라이브러리 활용
-  - 모바일 터치 완벽 지원
-  - 드래그 중 시각적 피드백
-  - 접근성(A11y) 지원
-- 💾 **로컬스토리지 저장**: 브라우저에 순서 설정 저장
-  - 페이지 새로고침 후에도 유지
-  - 기본값 복원 기능 제공
-- ⚡ **즉시 반영**: 순서 변경 시 토픽 탭에 실시간 적용
-- 🔄 **기본값 리셋**: 한 번의 클릭으로 초기 순서로 복원
-
-#### 추가된 파일
-- 📄 `lib/settings/categoryOrder.ts`: 카테고리 순서 관리 유틸리티
-- 📄 `hooks/useCategoryOrder.ts`: 카테고리 순서 관리 훅
-- 📄 `components/CategoryOrderManager.tsx`: 드래그 앤 드롭 UI 컴포넌트
-
-#### 수정된 파일
-- 📄 `components/CategoryTabs.tsx`: 사용자 지정 순서 적용
-- 📄 `app/settings/page.tsx`: CategoryOrderManager 추가
-- 📄 `package.json`: @dnd-kit 라이브러리 추가
-
-#### 사용 방법
-1. 설정 페이지로 이동
-2. "카테고리 순서 관리" 섹션에서 드래그 앤 드롭으로 순서 변경
-3. 토픽 탭에서 변경된 순서 확인
-4. 기본값으로 되돌리려면 "기본값으로 재설정" 버튼 클릭
-
----
-
-### v2.29.0 (2026-01-23)
-**BubbleNow 기능 추가 - 키워드 버블맵 시각화**
-
-#### 새로운 기능
-- 🗺️ **BubbleNow 기능 신규 추가**: 현재 뉴스 리스트의 모든 키워드를 버블맵으로 시각화
-  - InsightNow, SummarizeNow와 동일한 위치에 주황색 버튼으로 배치
-  - D3.js Force Graph를 활용한 인터랙티브 시각화
-  - 키워드 간 상관관계 및 언급 빈도를 한눈에 파악
-
-#### 주요 특징
-- 📊 **키워드 분석**: 빈도 계산, 공동 출현, TF-IDF 가중치, 연결 강도
-- 🎨 **시각화**:
-  - 버블 크기: 키워드 가중치에 비례
-  - 색상: 빈도에 따른 파란색 그라데이션
-  - 연결선: 키워드 간 상관관계 표시
-  - 호버: 키워드 상세 정보 툴팁
-  - 드래그/줌/팬: 완전한 인터랙션 지원
-- ⚡ **성능 최적화**:
-  - 10분 캐싱 시스템 (DB 저장)
-  - AI 배치 처리 (10개씩 병렬)
-  - 상위 50개 키워드만 표시
-  - 최대 100개 뉴스 분석
-
-#### AI 키워드 추출
-- **Groq API** (Primary): Llama 3.3 70B
-- **Gemini API** (Fallback): Gemini 2.0 Flash
-- 캐시 활용: 기존 aiKeywords, aiInsightKeywords 우선 사용
-
-#### 추가 기능
-- 📥 **CSV 다운로드**: 키워드 데이터 내보내기
-- 🎯 **전체 화면 모달**: 몰입형 분석 경험
-- 📱 **반응형 디자인**: 모바일/데스크톱 완벽 지원
-
-#### 추가된 파일
-- 📄 `lib/keyword-analyzer.ts`: 키워드 분석 라이브러리
-- 📄 `app/api/news/bubble/route.ts`: BubbleNow API 엔드포인트
-- 📄 `components/KeywordBubbleMap/BubbleButton.tsx`: BubbleNow 버튼
-- 📄 `components/KeywordBubbleMap/BubbleModal.tsx`: 전체 화면 모달
-- 📄 `components/KeywordBubbleMap/BubbleMapVisualization.tsx`: D3.js 버블맵
-
-#### 수정된 파일
-- 📄 `prisma/schema.prisma`: KeywordMap 모델 추가
-- 📄 `app/page.tsx`: BubbleNow 버튼 통합
-- 📄 `app/topics/[category]/page.tsx`: BubbleNow 버튼 통합
-- 📄 `app/keywords/page.tsx`: BubbleNow 버튼 통합
-- 📄 `package.json`: D3.js 및 타입 정의 추가
-
-#### 사용 방법
-1. 뉴스가 5개 이상 로드된 페이지에서 **BubbleNow** 버튼 클릭
-2. AI가 키워드 추출 및 관계 분석 (5-10초)
-3. 버블맵 확인:
-   - 큰 버블 = 자주 언급된 키워드
-   - 연결선 = 함께 나타난 키워드
-   - 호버 = 상세 정보
-4. CSV 다운로드로 데이터 저장
-
----
-
-### v2.28.0 (2026-01-23)
-**글로벌 카테고리 추가 - 해외 주요 뉴스 직접 소싱**
-
-#### 새로운 기능
-- 🌍 **글로벌 카테고리 신규 추가**: 토픽 탭에 '글로벌' 카테고리 추가
-  - 세계 주요 통신사 및 언론사 뉴스 직접 수집 (영어)
-  - 한국 언론사 필터링 없는 실시간 글로벌 속보
-  - 기존 '국제' 카테고리와 차별화 (해외 직접 소스)
-
-#### RSS 소스 (5개)
-- 🌐 **Google News Global**: 전세계 톱 뉴스 집계 (영어)
-- 📰 **Reuters World News**: 세계 1위 통신사, 실시간 속보
-- 📰 **AP News World Headlines**: 미국 1위 통신사, 정확성 최고
-- 📺 **BBC World News**: 영국 공영, 심층 분석 뉴스
-- 💰 **Bloomberg Markets**: 글로벌 금융 뉴스 전문
-
-#### 카테고리 구성
-- 기존 10개 → **11개 카테고리**
-- 순서: 정치, 경제, 사회, 국제, IT, 암호화폐, **글로벌**, 스포츠, 연예, 문화
-
-#### 주요 특징
-- ⚡ **속보 속도**: 한국 언론사보다 수 시간 빠른 글로벌 속보
-- 🎯 **차별화**: 국내 뉴스 앱에 없는 독보적 가치
-- 📊 **신뢰도**: Reuters, AP, BBC 등 세계 최고 신뢰도 언론사
-- 💰 **비용**: $0 (무료 RSS)
-- 🌐 **언어**: 영어 원문 (향후 AI 번역 추가 예정)
-
-#### 향후 계획
-- Phase 2 (1-2개월): AI 제목 번역 (Groq/Gemini 무료)
-- Phase 3 (3-6개월): 전문 번역 API 도입 (DeepL)
-
-#### 수정된 파일
-- 📄 `components/CategoryTabs.tsx`: 글로벌 카테고리 추가
-- 📄 `lib/rss/sources.ts`: 글로벌 RSS 소스 5개 추가, CATEGORY_MAPPING 업데이트
-
----
-
-### v2.27.0 (2026-01-23)
-**암호화폐 카테고리 추가**
-
-#### 새로운 기능
-- 🪙 **암호화폐 카테고리 신규 추가**: 토픽 탭에 '암호화폐' 카테고리 추가
-  - 비트코인, 이더리움, 블록체인 등 크립토 뉴스 전용 탭
-  - 한국 언론사 + 글로벌 크립토 미디어 통합
-
-#### RSS 소스 (5개)
-- 📰 **Google News 암호화폐**: 한국 전체 언론사 크립토 뉴스 집계
-  - 키워드: 비트코인, 암호화폐, 가상화폐, 블록체인
-- 🌐 **CoinTelegraph**: 세계 최대 크립토 뉴스 미디어
-- 🌐 **CoinDesk**: 업계 표준 암호화폐 뉴스
-- 🌐 **Decrypt**: 비트코인, 이더리움, NFT, DeFi 전문
-- 🌐 **The Block**: 기관 투자자 선호 크립토 뉴스
-
-#### 카테고리 구성
-- 기존 9개 → **10개 카테고리**
-- 순서: 정치, 경제, 사회, 국제, IT, **암호화폐**, 스포츠, 연예, 문화
-
-#### 수정된 파일
-- 📄 `components/CategoryTabs.tsx`: 암호화폐 카테고리 추가
-- 📄 `lib/rss/sources.ts`: 크립토 RSS 소스 5개 추가, CATEGORY_MAPPING 업데이트
-
----
-
-### v2.26.0 (2026-01-23)
-**Yahoo Finance + DART API 통합 (스크래핑 → API 전환)**
-
-#### 데이터 수집 방식 개선
-- 🔄 **스크래핑 방식에서 공식 API 방식으로 전환**
-  - Yahoo Finance API: 한국 주식 시세 데이터 (.KS/.KQ 심볼)
-  - DART API: 기업정보 및 재무제표 데이터 (전자공시시스템 공식 API)
-  - 데이터 정확도 및 안정성 대폭 향상
-
-#### API 통합 세부사항
-- 📊 **Yahoo Finance Chart API**: 실시간 시세 조회
-  - 현재가, 전일대비, 시가, 고가, 저가, 거래량
-  - 한국 주식 심볼 자동 변환 (005930 → 005930.KS)
-  - 모든 가격 데이터 원화 단위로 반올림
-
-- 🏢 **DART API 완전 통합**: 기업정보 및 재무제표
-  - 기업개황: 기업명, 대표자, 설립일, 결산월, 본사, 홈페이지, 업종 등 15개 필드
-  - 재무제표: 매출액, 영업이익, 당기순이익, 자산총계, 부채총계, 자본총계 등
-  - 투자지표 자동 계산: PER, PBR, EPS, BPS, ROE, ROA
-  - 30개 이상 주요 종목 코드 매핑 지원 (삼성전자, 네이버, 카카오 등)
-
-#### 로깅 시스템 추가
-- 📝 **상세 디버깅 로그**: 모든 API 호출 단계별 로깅
-  - Log Level: INFO, WARN, ERROR, SUCCESS
-  - 데이터 수집 성공/실패 추적
-  - API 응답 시간 측정
-  - 데이터 수집률 계산 및 표시
-
-#### 성능 개선
-- ⚡ **병렬 API 호출**: Promise.all을 활용한 동시 데이터 수집
-- 💾 **메모리 캐시 유지**: 1분 TTL 캐싱으로 중복 요청 방지
-- 📈 **데이터 수집률**: 96.4% (DART 테스트 기준)
-
-#### 추가된 파일
-- 📄 `lib/api/dart.ts`: DART API 클라이언트 (기업정보, 재무제표)
-- 📄 `scripts/test-yahoo-korea.ts`: Yahoo Finance API 테스트 스크립트
-- 📄 `scripts/test-finnhub-korea.ts`: Finnhub API 테스트 스크립트
-- 📄 `scripts/test-dart.ts`: DART API 테스트 스크립트
-
-#### 수정된 파일
-- 📄 `lib/scraper/yahoo-stock.ts`: Yahoo Finance API 통합, 한국 주식 지원 추가, 로깅 시스템 추가
-- 📄 `app/api/stock/info/route.ts`: 완전 재작성 (Yahoo + DART 하이브리드 아키텍처)
-- 📄 `.env.local`: DART_API_KEY 추가
-
----
-
-### v2.24.1 (2026-01-22)
-**주식 종목 정보 대폭 강화**
-
-#### 기능 개선
-- 🏷️ **종목명 표시 개선**: 종목코드 대신 종목명을 크게 표시
-  - 종목명을 메인으로 표시하고 종목코드는 작게 부가 정보로 표시
-
-#### 기업 정보 강화
-- 🏢 **추가된 필드**: 본사 소재지, 홈페이지, 주요 사업 내용, 대표 제품/서비스
-  - 홈페이지는 클릭 가능한 링크로 표시
-  - 주요 사업 내용과 대표 제품은 더보기 섹션에 상세 표시
-
-#### 투자 지표 강화
-- 📊 **추가된 투자 지표**:
-  - ROA (총자산순이익률): 자산 활용 효율성
-  - 유동비율: 단기 채무 상환 능력
-  - 당좌비율: 즉시 현금화 가능 자산 대비 부채
-  - 베타(β): 시장 대비 주가 변동성
-- 🎨 **차별화된 UI**: 추가 지표는 파란색 배경으로 시각적 구분
-
-#### 재무제표 강화
-- 💰 **추가된 재무 항목**:
-  - **손익계산서**: 매출원가, 매출총이익, 매출총이익률, EBITDA
-  - **현금흐름표**: 영업현금흐름, 잉여현금흐름
-- 📂 **더보기 섹션 확장**: 매출원가부터 현금흐름까지 전체 재무 정보 제공
-- 🎨 **색상 코딩**:
-  - 매출총이익/매출총이익률: 초록색 (수익성)
-  - EBITDA: 보라색 (현금 창출)
-  - 현금흐름: 파란색 (유동성)
-
-#### 수정된 파일
-- 📄 `types/stock.ts`: CompanyInfo, InvestmentIndicators, FinancialData 타입 확장
-- 📄 `lib/scraper/naver-stock.ts`: 국내 주식 스크래퍼 확장 (사업 내용, ROA, 유동비율 등)
-- 📄 `lib/scraper/yahoo-stock.ts`: 미국 주식 스크래퍼 확장 (사업 설명, 베타, 현금흐름 등)
-- 📄 `lib/scraper/fnguide.ts`: 재무제표 스크래퍼 확장 (매출원가, EBITDA, 현금흐름 등)
-- 📄 `app/api/stock/info/route.ts`: API 응답 필드 확장
-- 📄 `components/economy/StockInfoCard.tsx`: UI 업데이트 (종목명 표시, 추가 지표, 재무제표 확장)
-
----
-
-### v2.23.0 (2026-01-22)
-**뉴스 공유하기 기능 추가**
-
-#### 새로운 기능
-- 🔗 **공유 버튼 추가**: 모든 뉴스 카드에 공유 버튼 표시
-  - AI 요약, 전문가 의견 버튼과 같은 줄, 오른쪽 끝에 배치
-  - Heroicons ArrowUpOnSquareIcon 사용 (iOS 스타일)
-  - 아이콘만 표시 (텍스트 없음)
-
-- 📱 **Web Share API 지원**: 모바일 네이티브 공유 시트 호출
-  - iOS/Android에서 카카오톡, 메시지, 메모 등으로 공유 가능
-  - 공유 데이터: 뉴스 제목 + URL
-
-- 📋 **클립보드 복사 폴백**: Web Share API 미지원 환경
-  - 데스크톱 브라우저에서 URL 클립보드 복사
-  - "링크 복사됨" 피드백 표시 (2초간)
-
-#### 추가된 파일
-- 📄 `components/ShareButton.tsx`: 공유 버튼 컴포넌트
-
-#### 수정된 파일
-- 📄 `components/NewsCard.tsx`: 버튼 레이아웃 변경, ShareButton 통합
-
----
-
-### v2.22.0 (2026-01-20)
-**주식 카테고리 기능 대폭 개선**
-
-#### 새로운 기능
-- 📈 **TradingView Advanced Chart**: 종목 상세 페이지에 캔들차트 추가
-  - 기간 선택: 1일, 1주, 1개월, 3개월, 1년, 5년
-  - 한국 주식 심볼 지원 (KRX:{종목코드})
-  - 다크모드 완벽 지원
-
-#### 기업 정보 세분화
-- 🏢 **추가된 기업 정보**: 액면가, 상장일, 상장주식수, 외국인 지분율, 자본금
-- 📂 **더보기/접기 UI**: 기본 4개 항목 → 더보기 클릭 시 전체 11개 항목 표시
-
-#### 투자 지표 세분화
-- 📊 **52주 최고/최저 시각화**: 프로그레스 바 형태로 현재 가격 위치 표시
-- 🔢 **추가된 지표**: PSR (주가매출비율), DPS (주당배당금)
-- 📐 **4열 그리드 레이아웃**: PER, PBR, PSR, ROE / EPS, BPS, DPS, 배당률
-
-#### 재무제표 세분화
-- 📋 **추가된 항목**: 영업이익률, 순이익률, 자산총계, 부채총계, 자본총계, 부채비율
-- 📂 **더보기/접기 UI**: 기본 손익계산서 → 더보기 클릭 시 재무상태표 포함
-
-#### 수정된 파일
-- 📄 `types/stock.ts`: CompanyInfo, InvestmentIndicators, FinancialData 타입 확장
-- 📄 `lib/scraper/naver-stock.ts`: 추가 지표 수집 (외국인 지분율, 52주 최고/최저 등)
-- 📄 `lib/scraper/fnguide.ts`: 추가 재무 지표 수집 (자산총계, 부채비율 등)
-- 📄 `app/api/stock/info/route.ts`: 확장된 필드 반환
-- 📄 `components/economy/StockInfoCard.tsx`: TradingView 차트, 세분화된 UI
-
----
-
-### v2.21.0 (2026-01-20)
-**경제 탭 주식 카테고리 추가**
-
-#### 새로운 기능
-- 📈 **주식 카테고리 추가**: 경제 탭 내에 "지표 | 주식" 탭 추가
-  - 기존 지표 탭: 국내/해외 지수, 환율, 귀금속, 암호화폐 (기존 기능 유지)
-  - 신규 주식 탭: 종목 검색 및 기업 정보 확인
-
-- 🔍 **종목 검색 기능**: 네이버 금융 자동완성 API 연동
-  - 종목명 또는 종목코드로 검색
-  - 실시간 자동완성 드롭다운
-  - KOSPI/KOSDAQ 시장 구분 표시
-
-- 🏢 **기업 정보 표시**: 네이버 금융 + FnGuide 스크래핑
-  - 현재가 및 변동률 (시가/고가/저가/거래량)
-  - 기업 정보 (업종, 시가총액, 대표자, 설립일, 결산월, 직원수)
-  - 투자 지표 (PER, PBR, ROE, EPS, BPS, 배당률)
-  - 재무제표 (매출액, 영업이익, 당기순이익)
-
-- 🕐 **최근 검색 기능**: localStorage 기반 최근 검색 종목 관리
-  - 최대 5개 종목 저장
-  - 클릭으로 빠른 재검색
-  - 개별 삭제 기능
-
-#### 추가된 파일
-- 📄 `types/stock.ts`: 주식 관련 타입 정의
-- 📄 `lib/scraper/naver-stock.ts`: 네이버 금융 주식 스크래퍼
-- 📄 `lib/scraper/fnguide.ts`: FnGuide 재무제표 스크래퍼
-- 📄 `app/api/stock/search/route.ts`: 종목 검색 API
-- 📄 `app/api/stock/info/route.ts`: 종목 상세 정보 API
-- 📄 `hooks/useStock.ts`: 주식 데이터 훅 (검색, 정보, 최근 검색)
-- 📄 `components/economy/EconomyTabs.tsx`: 지표/주식 탭 전환
-- 📄 `components/economy/IndicatorsSection.tsx`: 기존 지표 섹션 분리
-- 📄 `components/economy/StockSection.tsx`: 주식 섹션 메인
-- 📄 `components/economy/StockSearch.tsx`: 종목 검색 컴포넌트
-- 📄 `components/economy/StockInfoCard.tsx`: 종목 정보 카드
-
-#### 수정된 파일
-- 📄 `app/economy/page.tsx`: 탭 구조 추가
-
----
-
-### v2.20.4 (2026-01-19)
-**KOSPI/KOSDAQ 차트를 ETF 심볼로 변경**
-
-#### 기능 개선
-- 📈 **KOSPI/KOSDAQ TradingView 심볼을 ETF로 변경**
-  - KOSPI: `TVC:KOSPI` → `KRX:069500` (KODEX 200 ETF)
-  - KOSDAQ: `TVC:KOSDAQ` → `KRX:229200` (KODEX KOSDAQ 150 ETF)
-  - 실제 거래되는 ETF 심볼이라 외부 위젯에서 더 안정적으로 작동
-
-#### 수정된 파일
-- 📄 `lib/tradingview/symbols.ts`: KOSPI/KOSDAQ 심볼을 ETF로 변경
-
----
-
-### v2.20.3 (2026-01-19)
-**은 시세 원화 표시 및 KOSPI/KOSDAQ 차트 개선**
-
-#### 기능 개선
-- 🥈 **은 시세 원화 표시**: USD/oz → 원/g 단위로 변환
-  - Yahoo Finance에서 은 가격(SI=F)과 환율(KRW=X)을 가져와 변환
-  - 변환 공식: KRW/g = (USD/oz × USD_KRW) / 31.1035
-  - 금 시세와 동일한 단위(원/g)로 표시
-
-- 📈 **KOSPI/KOSDAQ TradingView 심볼 변경**: KRX → TVC
-  - `KRX:KOSPI` → `TVC:KOSPI`
-  - `KRX:KOSDAQ` → `TVC:KOSDAQ`
-  - TVC 심볼이 외부 위젯에서 더 안정적으로 작동
-
-#### 수정된 파일
-- 📄 `lib/api/yahoo-finance.ts`: 은 시세 원화 변환 로직 추가
-- 📄 `lib/tradingview/symbols.ts`: KOSPI/KOSDAQ 심볼을 TVC로 변경
-
----
-
-### 이전 버전 (v2.20.2 ~ v2.1.0)
+### v2.33.0 (2026-01-24) - BubbleNow Feature Flag
+- 🎛️ **Feature Flag 시스템**: `ENABLE_BUBBLE_NOW` 플래그 추가 (현재 비활성화)
+- 🔍 **키워드 클릭 기능**: 버블맵 키워드 클릭 시 관련 뉴스 표시
+- 📄 **추가 파일**: `lib/feature-flags.ts`, `components/KeywordBubbleMap/KeywordNewsModal.tsx`, `app/api/news/by-ids/route.ts`
+
+### v2.32.0 (2026-01-23) - BubbleNow 군집 색상
+- 🎨 **군집별 색상**: BFS 알고리즘으로 연결된 키워드를 같은 색상으로 표시
+- 🐛 **캐시 키 개선**: 뉴스 개수 포함 (`category:politics:70`)
+
+### v2.31.0 (2026-01-23) - InsightNow/SummarizeNow 키워드
+- 🔍 **키워드 인터랙션**: 키워드 클릭 → 용어 설명 + 내 키워드 추가
+
+### v2.30.0 (2026-01-23) - 카테고리 순서 커스터마이징
+- 📋 **드래그 앤 드롭**: 토픽 카테고리 순서 변경 기능 (@dnd-kit)
+
+### v2.29.0 (2026-01-23) - BubbleNow 기능
+- 🗺️ **버블맵**: D3.js Force Graph로 키워드 시각화
+- 📊 **키워드 분석**: 빈도, 공동 출현, TF-IDF, 연결 강도
+- ⚡ **캐싱**: 10분 캐시, AI 배치 처리
 
 <details>
-<summary>📋 버전 히스토리 펼쳐보기 (26개 버전)</summary>
+<summary>📋 이전 버전 히스토리 (v2.28.0 ~ v2.1.0)</summary>
 
-#### v2.20.x (2026-01-19) - TradingView & 경제 지표 개선
-- v2.20.2: 은 시세 데이터 소스 변경 (Yahoo Finance API)
-- v2.20.1: TradingView Advanced Chart로 변경 (캔들차트 + 다크모드)
-- v2.20.0: 개별 뉴스 전문가 의견 기능 추가
+### v2.28.0 (2026-01-23) - 글로벌 카테고리
+- 🌍 Google News Global, Reuters, AP, BBC, Bloomberg (영어 직접 소스)
 
-#### v2.19.x ~ v2.17.0 (2026-01-18~19) - AI 기능 확장
-- v2.19.1: Gemini AI Provider 안정성 개선
-- v2.18.0: SummarizeNow 기능 추가 (뉴스 종합 정리)
-- v2.17.0: Gemini AI Provider 추가 & InsightNow 전문가 프롬프트 시스템
+### v2.27.0 (2026-01-23) - 암호화폐 카테고리
+- 🪙 CoinTelegraph, CoinDesk, Decrypt, The Block
 
-#### v2.16.x ~ v2.13.0 (2026-01-18) - UI/UX 및 소스 관리
-- v2.16.1: AI 기능 안정성 개선
-- v2.16.0: 오늘의 Insight 기능 추가
-- v2.15.6: Pull-to-Refresh 완전 개선 및 UI 최적화
-- v2.15.0: UI 구조 개선 (속보 탭 → 종합 탭)
-- v2.14.0: 토픽 탭 카테고리별 소스 관리 기능
-- v2.13.0: RSS 소스 관리 시스템 대폭 개선 (33개 정상 소스)
+### v2.26.0 (2026-01-23) - Yahoo Finance + DART API
+- 🔄 스크래핑 → 공식 API 전환
+- 📊 Yahoo Finance Chart API (한국 주식)
+- 🏢 DART API (기업정보, 재무제표)
 
-#### v2.12.x ~ v2.11.0 (2026-01-17) - 경제 지표 최적화
-- v2.12.2: 암호화폐 섹션 BTC/ETH 가격 추가
-- v2.12.1: 암호화폐 섹션 UI 개선
-- v2.12.0: CoinGecko API 전환 및 글로벌 크립토 지표
-- v2.11.4~v2.11.0: 경제지표 카드 레이아웃 최적화 (컴팩트 모드)
+### v2.24.1 (2026-01-22) - 주식 정보 강화
+- 🏷️ 종목명 표시, 본사, 홈페이지, 사업 내용
+- 📊 ROA, 유동비율, 당좌비율, 베타
+- 💰 매출원가, EBITDA, 현금흐름
 
-#### v2.10.0 ~ v2.8.0 (2026-01-17) - 폰트 및 UI 개선
-- v2.10.0: 폰트 크기 조절 개선 (7단계, 스마트 리스트 조절)
-- v2.9.0: 폰트 크기 조절 기능 추가
-- v2.8.0: 날씨 위젯 기능 제거
+### v2.23.0 (2026-01-22) - 공유 기능
+- 🔗 Web Share API + 클립보드 폴백
 
-#### v2.5.0 (2026-01-17) - 성능 최적화
-- 네이티브 앱 수준 성능 최적화
-- 전략적 프리페칭 시스템 (페이지 전환 95% 향상)
-- 다크모드 완성
+### v2.22.0 (2026-01-20) - TradingView 차트
+- 📈 캔들차트, 기간 선택 (1일~5년)
 
-#### v2.2.0 (2026-01-16) - AI 요약 & 경제 지표
-- Groq AI 통합 (Llama 3.3 70B)
-- 경제 지표 실시간 확인 (하이브리드 데이터 수집)
+### v2.21.0 (2026-01-20) - 주식 카테고리
+- 📈 종목 검색, 기업 정보, 투자 지표, 재무제표
 
-#### v2.1.0 (2026-01-16) - PWA 기능
-- PWA 아이콘 추가 (SVG + PNG 8개 사이즈)
-- 모바일 홈 화면 추가 완벽 지원
+### v2.20.0 (2026-01-19) - 개별 전문가 의견
+- 💬 각 뉴스마다 전문가 관점 분석
+
+### v2.18.0 (2026-01-19) - SummarizeNow
+- 📝 뉴스 종합 정리 (현재 로드된 뉴스)
+
+### v2.17.0 (2026-01-18) - Gemini AI + InsightNow
+- 🤖 Gemini 2.0 Flash 추가
+- 💡 오늘의 Insight (전문가 프롬프트)
+
+### v2.16.0 (2026-01-18) - 오늘의 Insight
+- 💡 카테고리별 심층 분석
+
+### v2.15.6 (2026-01-18) - Pull-to-Refresh
+- 🔄 완전 개선 및 UI 최적화
+
+### v2.15.0 (2026-01-18) - UI 구조 개선
+- ✨ 속보 탭 → 종합 탭
+
+### v2.14.0 (2026-01-18) - 소스 관리
+- 🎛️ 토픽 탭 카테고리별 소스 관리
+
+### v2.13.0 (2026-01-18) - RSS 소스 대폭 개선
+- 📰 33개 정상 소스
+
+### v2.12.0 (2026-01-17) - CoinGecko API
+- 💰 글로벌 크립토 지표 + 공포탐욕 지수
+
+### v2.10.0 (2026-01-17) - 폰트 크기 조절
+- 🔤 7단계, 스마트 리스트 조절
+
+### v2.5.0 (2026-01-17) - 성능 최적화
+- ⚡ 전략적 프리페칭, 다크모드
+
+### v2.2.0 (2026-01-16) - AI 요약 & 경제 지표
+- 🤖 Groq AI (Llama 3.3 70B)
+- 📊 하이브리드 경제 데이터
+
+### v2.1.0 (2026-01-16) - PWA
+- 📱 모바일 홈 화면 추가
 
 </details>
 
@@ -1697,112 +416,61 @@ export const FEATURE_FLAGS = {
 
 ## 버전 관리 가이드
 
-### 커밋 시 필수 업데이트 항목
+### Semantic Versioning
+- **MAJOR**: 주요 기능, 호환성 없는 변경 (1.0.0 → 2.0.0)
+- **MINOR**: 기능 추가, 개선 (2.1.0 → 2.2.0)
+- **PATCH**: 버그 수정 (2.2.0 → 2.2.1)
 
-기능 추가, 개선, 버그 수정 등 의미있는 변경사항이 있을 때마다 다음 항목들을 업데이트해야 합니다:
+### 커밋 시 필수 업데이트
 
-#### 1. 버전 번호 (Semantic Versioning)
+**1. 버전 번호**
+- `app/settings/page.tsx` (38번째 줄)
+- `CLAUDE.md` (20번째 줄)
 
-```
-MAJOR.MINOR.PATCH
+**2. 날짜**
+- `app/settings/page.tsx` (39번째 줄)
+- `CLAUDE.md` (21번째 줄)
 
-- MAJOR: 주요 기능 추가, 호환성 없는 변경 (예: 1.0.0 → 2.0.0)
-- MINOR: 기능 추가, 개선 (예: 2.1.0 → 2.2.0)
-- PATCH: 버그 수정, 사소한 개선 (예: 2.2.0 → 2.2.1)
-```
+**3. 최근 업데이트 섹션** (MINOR 이상)
+- `CLAUDE.md` 최근 업데이트에 변경사항 추가
 
-#### 2. 업데이트할 파일
-
-**필수 업데이트:**
-```bash
-# 1. 설정 페이지 (app/settings/page.tsx)
-- 버전 번호: 38번째 줄
-- 마지막 업데이트 날짜: 39번째 줄
-
-# 2. CLAUDE.md (이 파일)
-- 현재 버전 (20번째 줄)
-- 마지막 업데이트 (21번째 줄)
-- 최근 업데이트 섹션에 변경사항 추가
-- 파일 맨 아래 버전 정보 (937-938번째 줄)
-```
-
-#### 3. 커밋 메시지 형식
-
+**4. 커밋 메시지**
 ```bash
 <type>: <subject>
 
-[optional body]
-
-<type> 종류:
-- feat: 새로운 기능 추가
-- fix: 버그 수정
-- docs: 문서 수정
-- style: 코드 포맷팅, 세미콜론 누락 등
-- refactor: 코드 리팩토링
-- perf: 성능 개선
-- test: 테스트 코드
-- chore: 빌드 업무, 패키지 매니저 설정 등
+type: feat, fix, docs, style, refactor, perf, test, chore
 ```
 
-#### 4. 버전 업데이트 예시
-
-**MINOR 버전 업데이트 (기능 추가):**
+### 예시
 ```bash
-# 1. app/settings/page.tsx 수정
-<p>버전: 2.3.0</p>  # 2.2.1 → 2.3.0
-<p>마지막 업데이트: 2026-01-17</p>
+# MINOR 업데이트
+feat: 새로운 기능 추가
 
-# 2. CLAUDE.md 수정
-- **현재 버전**: 2.3.0
-- **마지막 업데이트**: 2026-01-18
-
-### v2.3.0 (2026-01-17)
-**새로운 기능 제목**
-
-- 변경사항 1
-- 변경사항 2
-
-# 3. 커밋
-git add app/settings/page.tsx CLAUDE.md
-git commit -m "feat: 새로운 기능 추가
-
-- 구체적인 변경사항 설명
+- 구체적인 변경사항
 - 버전 2.2.1 → 2.3.0
-"
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 ```
 
-**PATCH 버전 업데이트 (버그 수정):**
-```bash
-# 1. app/settings/page.tsx 수정
-<p>버전: 2.2.2</p>  # 2.2.1 → 2.2.2
-<p>마지막 업데이트: 2026-01-17</p>
+### 체크리스트
+- [ ] app/settings/page.tsx 버전/날짜 업데이트
+- [ ] CLAUDE.md 버전/날짜 업데이트
+- [ ] CLAUDE.md 최근 업데이트 섹션 추가 (MINOR 이상)
+- [ ] 적절한 커밋 메시지
+- [ ] `npm run build` 통과
 
-# 2. CLAUDE.md 수정
-- **현재 버전**: 2.2.2
-- **마지막 업데이트**: 2026-01-18
+---
 
-(최근 업데이트 섹션에는 PATCH는 보통 추가하지 않음)
+## 참고 자료
 
-# 3. 커밋
-git add app/settings/page.tsx CLAUDE.md
-git commit -m "fix: 버그 수정
+### 기술 문서
+- [Next.js](https://nextjs.org/docs) | [Prisma](https://www.prisma.io/docs)
+- [React Query](https://tanstack.com/query/latest) | [Heroicons](https://heroicons.com/)
+- [Vercel Postgres](https://vercel.com/docs/storage/vercel-postgres)
 
-- 구체적인 버그 및 수정 내용
-- 버전 2.2.1 → 2.2.2
-"
-```
-
-#### 5. 체크리스트
-
-커밋 전 확인사항:
-- [ ] app/settings/page.tsx 버전 번호 업데이트
-- [ ] app/settings/page.tsx 날짜 업데이트
-- [ ] CLAUDE.md 현재 버전 업데이트 (20번째 줄)
-- [ ] CLAUDE.md 마지막 업데이트 날짜 업데이트 (21번째 줄)
-- [ ] CLAUDE.md 최근 업데이트 섹션에 변경사항 추가 (MINOR 이상만)
-- [ ] CLAUDE.md 맨 아래 버전 정보 업데이트
-- [ ] 적절한 커밋 메시지 작성
-- [ ] 빌드 테스트 통과 (`npm run build`)
+### RSS 피드
+- [GitHub - akngs/knews-rss](https://github.com/akngs/knews-rss)
+- [Korean News RSS URLs](https://gist.github.com/koorukuroo/330a644fcc3c9ffdc7b6d537efd939c3)
 
 ---
 
