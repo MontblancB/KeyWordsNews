@@ -674,7 +674,10 @@ export async function getStockMarket(code: string): Promise<'KOSPI' | 'KOSDAQ' |
 }
 
 /**
- * 네이버 금융 재무제표 스크래핑
+ * 네이버 금융 재무제표 스크래핑 (개선 버전)
+ * - 손익계산서: 매출액, 영업이익, 당기순이익, 영업이익률, 순이익률
+ * - 재무 비율: 부채비율, 당좌비율 등
+ * - 자동 계산: 매출총이익률, 영업이익률, 순이익률 (데이터 있을 시)
  */
 export async function scrapeFinancialData(code: string): Promise<FinancialData[]> {
   try {
@@ -684,6 +687,7 @@ export async function scrapeFinancialData(code: string): Promise<FinancialData[]
     })
 
     if (!response.ok) {
+      console.log('[scrapeFinancialData] Failed to fetch:', response.status)
       return []
     }
 
@@ -696,69 +700,126 @@ export async function scrapeFinancialData(code: string): Promise<FinancialData[]
     const tables = $('table.tb_type1_ifrs')
 
     if (tables.length === 0) {
+      console.log('[scrapeFinancialData] No financial tables found')
       return []
     }
 
-    // 첫 번째 테이블: 포괄손익계산서 (연간)
-    const incomeTable = tables.eq(0)
+    // 첫 번째 테이블: 주요 재무 정보 (연간 + 분기)
+    const financialTable = tables.eq(0)
 
     // 헤더에서 기간 정보 추출
     const periods: string[] = []
-    incomeTable.find('thead th').each((i, th) => {
-      if (i > 0) { // 첫 번째 열은 항목명
-        const text = $(th).text().trim()
-        if (text) periods.push(text)
+    const periodTypes: ('annual' | 'quarterly')[] = []
+
+    // 2번째 행에서 실제 기간 추출
+    financialTable.find('thead tr').eq(1).find('th').each((i, th) => {
+      const text = $(th).text().trim()
+      if (text && text !== '주요재무정보') {
+        periods.push(text)
+        // "2024.12" 형식이면 연간, "2024.09" 등 분기 표시가 있으면 분기
+        // 실제로는 테이블 구조상 앞 4개는 연간, 뒤는 분기
+        periodTypes.push(i < 4 ? 'annual' : 'quarterly')
       }
     })
 
+    console.log('[scrapeFinancialData] Found periods:', periods)
+
     // 데이터 행 파싱
     const rows: { [key: string]: string[] } = {}
-    incomeTable.find('tbody tr').each((_, tr) => {
+    financialTable.find('tbody tr').each((_, tr) => {
       const cells = $(tr).find('td, th')
-      const rowName = cells.first().text().trim()
+      const rowName = cells.first().find('strong').text().trim() || cells.first().text().trim()
       const values: string[] = []
 
-      cells.each((i, td) => {
+      cells.each((i, cell) => {
         if (i > 0) {
-          values.push($(td).text().trim())
+          // td 안의 숫자 추출 (쉼표 포함)
+          const text = $(cell).text().trim()
+          values.push(text)
         }
       })
 
       if (rowName && values.length > 0) {
         rows[rowName] = values
+        console.log(`[scrapeFinancialData] Row "${rowName}":`, values.slice(0, 3))
       }
     })
 
-    // 재무 데이터 구성 (최근 3개 기간)
-    for (let i = 0; i < Math.min(periods.length, 3); i++) {
+    console.log('[scrapeFinancialData] Available row names:', Object.keys(rows))
+
+    // 재무 데이터 구성 (연간 데이터 우선, 최근 3개)
+    const annualCount = Math.min(4, periods.filter((_, i) => periodTypes[i] === 'annual').length)
+
+    for (let i = 0; i < Math.min(annualCount, 3); i++) {
       const period = periods[i]
+      const periodType = periodTypes[i]
+
+      // 기본 손익계산서 항목
+      const revenue = rows['매출액']?.[i] || '-'
+      const operatingProfit = rows['영업이익']?.[i] || '-'
+      const netIncome = rows['당기순이익']?.[i] || '-'
+      const operatingMarginStr = rows['영업이익률']?.[i] || rows['영업이익률(%)']?.[i] || ''
+      const netMarginStr = rows['순이익률']?.[i] || rows['당기순이익률']?.[i] || rows['당기순이익률(%)']?.[i] || ''
+
+      // 재무상태표 비율
+      const debtRatioStr = rows['부채비율']?.[i] || ''
+
+      // 숫자 파싱 함수
+      const parseNumber = (str: string): number => {
+        if (!str || str === '-') return 0
+        // 쉼표 제거하고 숫자만 추출
+        const cleaned = str.replace(/,/g, '').replace(/[^\d.-]/g, '')
+        return parseFloat(cleaned) || 0
+      }
+
+      const revenueNum = parseNumber(revenue)
+      const operatingProfitNum = parseNumber(operatingProfit)
+      const netIncomeNum = parseNumber(netIncome)
+
+      // 비율 계산 (값이 없으면 계산)
+      let operatingMargin = operatingMarginStr ? operatingMarginStr : '-'
+      let netMargin = netMarginStr ? netMarginStr : '-'
+
+      if (operatingMargin === '-' && revenueNum > 0 && operatingProfitNum !== 0) {
+        const calculated = ((operatingProfitNum / revenueNum) * 100).toFixed(2)
+        operatingMargin = calculated + '%'
+      }
+
+      if (netMargin === '-' && revenueNum > 0 && netIncomeNum !== 0) {
+        const calculated = ((netIncomeNum / revenueNum) * 100).toFixed(2)
+        netMargin = calculated + '%'
+      }
 
       const financial: FinancialData = {
         period,
-        periodType: 'annual',
-        revenue: rows['매출액']?.[i] || '-',
-        costOfRevenue: '-', // 네이버 금융 기본 테이블에는 없음
-        grossProfit: '-',
-        grossMargin: '-',
-        operatingProfit: rows['영업이익']?.[i] || '-',
-        operatingMargin: '-',
-        netIncome: rows['당기순이익']?.[i] || '-',
-        netMargin: '-',
-        ebitda: '-',
-        totalAssets: '-', // 재무상태표에서 가져와야 함
+        periodType,
+        // 손익계산서
+        revenue,
+        costOfRevenue: '-', // 네이버 금융 메인 페이지에는 없음
+        grossProfit: '-', // 매출총이익 = 매출액 - 매출원가 (데이터 없음)
+        grossMargin: '-', // 매출총이익률 (데이터 없음)
+        operatingProfit,
+        operatingMargin,
+        netIncome,
+        netMargin,
+        ebitda: '-', // 네이버 금융 메인 페이지에는 없음
+        // 재무상태표
+        totalAssets: '-', // 별도 API나 페이지 필요
         totalLiabilities: '-',
         totalEquity: '-',
-        debtRatio: '-',
-        operatingCashFlow: '-', // 현금흐름표에서 가져와야 함
+        debtRatio: debtRatioStr || '-',
+        // 현금흐름표
+        operatingCashFlow: '-', // 별도 API나 페이지 필요
         freeCashFlow: '-',
       }
 
       financials.push(financial)
     }
 
+    console.log(`[scrapeFinancialData] Parsed ${financials.length} financial periods`)
     return financials
   } catch (error) {
-    console.error('Naver financials scraping error:', error)
+    console.error('[scrapeFinancialData] Error:', error)
     return []
   }
 }

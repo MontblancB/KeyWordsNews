@@ -3,6 +3,7 @@ import { scrapeKoreanStockPrice, scrapeUSStockPrice, scrapeUSCompanyInfo, scrape
 import { scrapeCompanyInfo, scrapeInvestmentIndicators, scrapeFinancialData as scrapeNaverFinancials } from '@/lib/scraper/naver-stock'
 import { getDartCompanyInfo, getDartFinancials } from '@/lib/api/dart'
 import { scrapeFinancials as scrapeFnGuideFinancials } from '@/lib/scraper/fnguide'
+import { fetchUSFinancialStatements } from '@/lib/api/finnhub'
 import type { StockInfo, InvestmentIndicators } from '@/types/stock'
 
 export const dynamic = 'force-dynamic'
@@ -363,19 +364,19 @@ export async function GET(request: NextRequest) {
       })
     } else {
       // ========================================
-      // 미국 주식: Yahoo Finance (기존 로직)
+      // 미국 주식: Yahoo Finance (시세/기업정보) + Finnhub (재무제표)
       // ========================================
       log({
         level: 'INFO',
         source: 'GET',
-        message: '미국 주식 데이터 수집 시작 (Yahoo Finance)',
+        message: '미국 주식 데이터 수집 시작 (Yahoo Finance + Finnhub)',
       })
 
       const [priceData, companyInfo, indicators, financials] = await Promise.all([
         scrapeUSStockPrice(stockCode),
         scrapeUSCompanyInfo(stockCode),
         scrapeUSInvestmentIndicators(stockCode),
-        scrapeUSFinancialData(stockCode),
+        fetchUSFinancialStatements(stockCode), // Finnhub API로 변경
       ])
 
       stockInfo = {
