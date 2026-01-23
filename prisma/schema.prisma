@@ -29,6 +29,7 @@ model News {
   // AI 전문가 의견 필드
   aiInsight         String?   @db.Text  // 전문가 의견 내용
   aiInsightExpert   String?             // 전문가 이름/직함
+  aiInsightKeywords String[]  @default([]) // 전문가 의견 키워드
   aiInsightAt       DateTime?           // 생성 시간
   aiInsightProvider String?             // 사용된 AI 프로바이더
 

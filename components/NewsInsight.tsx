@@ -17,6 +17,7 @@ import {
   BoltIcon as BoltIconSolid,
   EyeIcon as EyeIconSolid,
 } from '@heroicons/react/24/solid'
+import KeywordActionModal from './KeywordActionModal'
 
 interface NewsInsightProps {
   newsId: string
@@ -26,12 +27,14 @@ interface NewsInsightProps {
   category: string
   initialInsight?: string | null
   initialExpert?: string | null
+  initialKeywords?: string[]
   initialProvider?: string | null
 }
 
 interface InsightData {
   insight: string
   expert: string
+  keywords: string[]
   provider: string
   cached?: boolean
 }
@@ -44,6 +47,7 @@ export default function NewsInsight({
   category,
   initialInsight,
   initialExpert,
+  initialKeywords,
   initialProvider,
 }: NewsInsightProps) {
   const [insightData, setInsightData] = useState<InsightData | null>(
@@ -51,6 +55,7 @@ export default function NewsInsight({
       ? {
           insight: initialInsight,
           expert: initialExpert || '',
+          keywords: initialKeywords || [],
           provider: initialProvider || 'unknown',
           cached: true,
         }
@@ -59,6 +64,7 @@ export default function NewsInsight({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isExpanded, setIsExpanded] = useState(!!initialInsight)
+  const [selectedKeyword, setSelectedKeyword] = useState<string | null>(null)
 
   const handleGetInsight = async () => {
     setLoading(true)
@@ -90,6 +96,7 @@ export default function NewsInsight({
         setInsightData({
           insight: data.data.insight,
           expert: data.data.expert,
+          keywords: data.data.keywords || [],
           provider: data.provider,
           cached: data.cached,
         })
@@ -172,6 +179,14 @@ export default function NewsInsight({
   if (insightData) {
     return (
       <>
+        {/* 키워드 액션 모달 */}
+        {selectedKeyword && (
+          <KeywordActionModal
+            keyword={selectedKeyword}
+            onClose={() => setSelectedKeyword(null)}
+          />
+        )}
+
         {/* 버튼 (order: 2) */}
         <div style={{ order: 2 }}>
           <button
@@ -207,6 +222,27 @@ export default function NewsInsight({
 
               {/* 인사이트 내용 */}
               {renderInsight(insightData.insight)}
+
+              {/* 키워드 배지 (클릭 가능) */}
+              {insightData.keywords && insightData.keywords.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-amber-200 dark:border-amber-700">
+                  <div className="flex flex-wrap gap-1.5">
+                    {insightData.keywords.map((keyword, index) => (
+                      <button
+                        key={index}
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          setSelectedKeyword(keyword)
+                        }}
+                        className="px-2 py-0.5 text-xs font-medium bg-amber-100 dark:bg-amber-800 text-amber-700 dark:text-amber-300 rounded-full hover:bg-amber-200 dark:hover:bg-amber-700 transition-colors cursor-pointer"
+                      >
+                        #{keyword}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Provider 정보 (디버그용) */}
               {process.env.NODE_ENV === 'development' && (

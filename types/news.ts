@@ -18,6 +18,7 @@ export interface NewsItem {
   // AI 전문가 의견 필드
   aiInsight?: string | null
   aiInsightExpert?: string | null
+  aiInsightKeywords?: string[]
   aiInsightAt?: Date | string | null
   aiInsightProvider?: string | null
 

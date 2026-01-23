@@ -110,6 +110,7 @@ export default function NewsCard({ news, hideSource = false }: NewsCardProps) {
                 category={news.category}
                 initialInsight={news.aiInsight}
                 initialExpert={news.aiInsightExpert}
+                initialKeywords={news.aiInsightKeywords}
                 initialProvider={news.aiInsightProvider}
               />
             )}

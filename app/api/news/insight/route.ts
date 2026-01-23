@@ -6,6 +6,7 @@ import { scrapeNewsContent } from '@/lib/scraper/newsContent'
 interface InsightResult {
   insight: string
   expert: string
+  keywords?: string[]
 }
 
 // 카테고리별 전문가 설정
@@ -119,8 +120,14 @@ ${content}
 
 **출력 형식 (반드시 JSON):**
 {
-  "insight": "📌 **배경/맥락**\\n• (1-2줄)\\n\\n📊 **전문가 분석**\\n• (2-3줄)\\n\\n⚡ **핵심 시사점**\\n• (1-2줄)\\n\\n🔮 **전망**\\n• (1줄)"
-}`
+  "insight": "📌 **배경/맥락**\\n• (1-2줄)\\n\\n📊 **전문가 분석**\\n• (2-3줄)\\n\\n⚡ **핵심 시사점**\\n• (1-2줄)\\n\\n🔮 **전망**\\n• (1줄)",
+  "keywords": ["핵심키워드1", "핵심키워드2", "핵심키워드3"]
+}
+
+**키워드 선정 기준:**
+- 이 뉴스의 핵심 개념이나 쟁점을 나타내는 단어 3-5개
+- 검색이나 분류에 유용한 단어
+- 한글로만 작성 (외국어 금지)`
 }
 
 // Groq API 호출
@@ -142,7 +149,7 @@ async function generateWithGroq(prompt: string, systemPrompt: string): Promise<I
 
   const content = response.choices[0]?.message?.content || ''
 
-  let result: { insight: string } | null = null
+  let result: { insight: string; keywords?: string[] } | null = null
 
   try {
     result = JSON.parse(content)
@@ -162,7 +169,11 @@ async function generateWithGroq(prompt: string, systemPrompt: string): Promise<I
     throw new Error('Failed to parse insight from response')
   }
 
-  return { insight: result.insight, expert: '' }
+  return {
+    insight: result.insight,
+    expert: '',
+    keywords: result.keywords || []
+  }
 }
 
 // Gemini API 호출
@@ -192,8 +203,13 @@ async function generateWithGemini(prompt: string, systemPrompt: string): Promise
             type: 'object',
             properties: {
               insight: { type: 'string' },
+              keywords: {
+                type: 'array',
+                items: { type: 'string' },
+                description: '핵심 키워드 3-5개'
+              }
             },
-            required: ['insight'],
+            required: ['insight', 'keywords'],
           },
         },
       }),
@@ -208,7 +224,7 @@ async function generateWithGemini(prompt: string, systemPrompt: string): Promise
   const data = await response.json()
   const content = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
 
-  let result: { insight: string } | null = null
+  let result: { insight: string; keywords?: string[] } | null = null
 
   try {
     result = JSON.parse(content)
@@ -227,7 +243,11 @@ async function generateWithGemini(prompt: string, systemPrompt: string): Promise
     throw new Error('Failed to parse insight from Gemini response')
   }
 
-  return { insight: result.insight, expert: '' }
+  return {
+    insight: result.insight,
+    expert: '',
+    keywords: result.keywords || []
+  }
 }
 
 // OpenRouter API 호출
@@ -259,7 +279,7 @@ async function generateWithOpenRouter(prompt: string, systemPrompt: string): Pro
   const data = await response.json()
   const content = data.choices?.[0]?.message?.content || ''
 
-  let result: { insight: string } | null = null
+  let result: { insight: string; keywords?: string[] } | null = null
 
   // JSON 추출 (마크다운 코드 블록 처리)
   const jsonMatch = content.match(/\{[\s\S]*\}/)
@@ -283,7 +303,11 @@ async function generateWithOpenRouter(prompt: string, systemPrompt: string): Pro
     throw new Error('Failed to parse insight from OpenRouter response')
   }
 
-  return { insight: result.insight, expert: '' }
+  return {
+    insight: result.insight,
+    expert: '',
+    keywords: result.keywords || []
+  }
 }
 
 /**
@@ -321,6 +345,7 @@ export async function POST(request: NextRequest) {
           data: {
             insight: news.aiInsight,
             expert: news.aiInsightExpert || '',
+            keywords: news.aiInsightKeywords || [],
           },
           provider: news.aiInsightProvider || 'cached',
           cached: true,
@@ -381,6 +406,7 @@ export async function POST(request: NextRequest) {
             data: {
               aiInsight: result.insight,
               aiInsightExpert: expert.name,
+              aiInsightKeywords: result.keywords || [],
               aiInsightAt: new Date(),
               aiInsightProvider: 'groq',
             },
@@ -416,6 +442,7 @@ export async function POST(request: NextRequest) {
             data: {
               aiInsight: result.insight,
               aiInsightExpert: expert.name,
+              aiInsightKeywords: result.keywords || [],
               aiInsightAt: new Date(),
               aiInsightProvider: 'gemini',
             },
@@ -451,6 +478,7 @@ export async function POST(request: NextRequest) {
             data: {
               aiInsight: result.insight,
               aiInsightExpert: expert.name,
+              aiInsightKeywords: result.keywords || [],
               aiInsightAt: new Date(),
               aiInsightProvider: 'openrouter',
             },
