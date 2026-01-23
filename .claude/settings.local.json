@@ -79,7 +79,9 @@
       "Bash(git checkout:*)",
       "WebFetch(domain:finance.naver.com)",
       "Bash(export FINNHUB_API_KEY=\"d5kv8vhr01qt47mfomh0d5kv8vhr01qt47mfomhg\")",
-      "Bash(export DART_API_KEY=\"1d014b793b2e176ef78409b8d4a2c9c968784ff7\")"
+      "Bash(export DART_API_KEY=\"1d014b793b2e176ef78409b8d4a2c9c968784ff7\")",
+      "WebFetch(domain:www.blockmedia.co.kr)",
+      "Bash(wc:*)"
     ]
   },
   "hooks": {

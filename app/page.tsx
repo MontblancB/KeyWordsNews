@@ -15,6 +15,8 @@ import InsightButton from '@/components/InsightButton'
 import InsightModal from '@/components/InsightModal'
 import SummarizeButton from '@/components/SummarizeButton'
 import SummarizeModal from '@/components/SummarizeModal'
+import BubbleButton from '@/components/KeywordBubbleMap/BubbleButton'
+import BubbleModal from '@/components/KeywordBubbleMap/BubbleModal'
 
 // 인사이트 데이터 타입
 interface InsightData {
@@ -26,6 +28,27 @@ interface InsightData {
 interface SummaryData {
   summary: string
   keywords: string[]
+}
+
+// 버블맵 데이터 타입
+interface BubbleMapData {
+  keywords: Array<{
+    id: string
+    text: string
+    count: number
+    value: number
+    newsIds: string[]
+  }>
+  links: Array<{
+    source: string
+    target: string
+    strength: number
+  }>
+  metadata: {
+    totalNews: number
+    totalKeywords: number
+    generatedAt: string
+  }
 }
 
 export default function HomePage() {
@@ -59,6 +82,14 @@ export default function HomePage() {
   const [isSummarizeLoading, setIsSummarizeLoading] = useState(false)
   const [summaryData, setSummaryData] = useState<SummaryData | null>(null)
   const [summarizeError, setSummarizeError] = useState<string | null>(null)
+
+  // ==========================================
+  // BubbleNow 기능 (Feature Flag로 제어)
+  // ==========================================
+  const [isBubbleModalOpen, setIsBubbleModalOpen] = useState(false)
+  const [isBubbleLoading, setIsBubbleLoading] = useState(false)
+  const [bubbleData, setBubbleData] = useState<BubbleMapData | null>(null)
+  const [bubbleError, setBubbleError] = useState<string | null>(null)
 
   // 인사이트 모달 열기 및 API 호출
   const handleOpenInsight = useCallback(async () => {
@@ -164,6 +195,49 @@ export default function HomePage() {
     setIsSummarizeModalOpen(false)
   }, [isSummarizeLoading])
 
+  // 버블맵 모달 열기 및 API 호출
+  const handleOpenBubble = useCallback(async () => {
+    if (!FEATURE_FLAGS.ENABLE_DAILY_INSIGHT) return
+
+    const allNewsForBubble = data?.pages.flatMap((page) => page.data) || []
+    if (allNewsForBubble.length < 5) return
+
+    // 상태 초기화
+    setIsBubbleModalOpen(true)
+    setIsBubbleLoading(true)
+    setBubbleData(null)
+    setBubbleError(null)
+
+    try {
+      // 뉴스 ID 배열 생성
+      const newsIds = allNewsForBubble.map((news) => news.id)
+
+      const response = await fetch('/api/news/bubble', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newsIds }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || `HTTP ${response.status}`)
+      }
+
+      setBubbleData(result.data)
+    } catch (error) {
+      setBubbleError(error instanceof Error ? error.message : '알 수 없는 오류')
+    } finally {
+      setIsBubbleLoading(false)
+    }
+  }, [data])
+
+  // 버블맵 모달 닫기
+  const handleCloseBubble = useCallback(() => {
+    if (isBubbleLoading) return // 로딩 중에는 닫지 않음
+    setIsBubbleModalOpen(false)
+  }, [isBubbleLoading])
+
   // Pull-to-Refresh: 쿼리 리셋으로 완전히 새로 가져오기
   const pullToRefresh = usePullToRefresh({
     onRefresh: async () => {
@@ -219,7 +293,7 @@ export default function HomePage() {
 
         <BreakingBanner />
 
-        {/* InsightNow & SummarizeNow 버튼 (Feature Flag로 제어) */}
+        {/* InsightNow & SummarizeNow & BubbleNow 버튼 (Feature Flag로 제어) */}
         {FEATURE_FLAGS.ENABLE_DAILY_INSIGHT && allNews.length >= 5 && (
           <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
             <div className="flex gap-2 p-3 overflow-x-auto">
@@ -231,6 +305,11 @@ export default function HomePage() {
               <SummarizeButton
                 onClick={handleOpenSummarize}
                 isLoading={isSummarizeLoading}
+                disabled={allNews.length < 5}
+              />
+              <BubbleButton
+                onClick={handleOpenBubble}
+                isLoading={isBubbleLoading}
                 disabled={allNews.length < 5}
               />
             </div>
@@ -310,6 +389,17 @@ export default function HomePage() {
           summaryData={summaryData}
           error={summarizeError}
           newsCount={allNews.length}
+        />
+      )}
+
+      {/* BubbleNow 모달 (Feature Flag로 제어) */}
+      {FEATURE_FLAGS.ENABLE_DAILY_INSIGHT && bubbleData && (
+        <BubbleModal
+          isOpen={isBubbleModalOpen}
+          onClose={handleCloseBubble}
+          keywords={bubbleData.keywords}
+          links={bubbleData.links}
+          metadata={bubbleData.metadata}
         />
       )}
     </div>

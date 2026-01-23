@@ -43,3 +43,24 @@ model News {
   @@index([aiSummarizedAt])
   @@index([aiInsightAt])
 }
+
+model KeywordMap {
+  id          String   @id @default(cuid())
+
+  // 캐시 키 (카테고리 or 키워드별)
+  cacheKey    String   @unique  // "category:politics" or "keyword:AI"
+
+  // 분석 데이터 (JSON)
+  data        Json     // { keywords: [...], links: [...], metadata: {...} }
+
+  // 메타데이터
+  newsCount   Int      // 분석된 뉴스 개수
+  generatedAt DateTime @default(now())
+  expiresAt   DateTime // 캐시 만료 시간
+
+  // AI 프로바이더
+  provider    String   // groq, gemini 등
+
+  @@index([cacheKey])
+  @@index([expiresAt])
+}

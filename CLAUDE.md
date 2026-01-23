@@ -18,7 +18,7 @@
 ### 배포 정보
 - **배포 URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
-- **현재 버전**: 2.28.0
+- **현재 버전**: 2.29.0
 - **마지막 업데이트**: 2026-01-23
 
 ---
@@ -967,6 +967,64 @@ setTimeout(async () => {
 
 ## 최근 업데이트
 
+### v2.29.0 (2026-01-23)
+**BubbleNow 기능 추가 - 키워드 버블맵 시각화**
+
+#### 새로운 기능
+- 🗺️ **BubbleNow 기능 신규 추가**: 현재 뉴스 리스트의 모든 키워드를 버블맵으로 시각화
+  - InsightNow, SummarizeNow와 동일한 위치에 주황색 버튼으로 배치
+  - D3.js Force Graph를 활용한 인터랙티브 시각화
+  - 키워드 간 상관관계 및 언급 빈도를 한눈에 파악
+
+#### 주요 특징
+- 📊 **키워드 분석**: 빈도 계산, 공동 출현, TF-IDF 가중치, 연결 강도
+- 🎨 **시각화**:
+  - 버블 크기: 키워드 가중치에 비례
+  - 색상: 빈도에 따른 파란색 그라데이션
+  - 연결선: 키워드 간 상관관계 표시
+  - 호버: 키워드 상세 정보 툴팁
+  - 드래그/줌/팬: 완전한 인터랙션 지원
+- ⚡ **성능 최적화**:
+  - 10분 캐싱 시스템 (DB 저장)
+  - AI 배치 처리 (10개씩 병렬)
+  - 상위 50개 키워드만 표시
+  - 최대 100개 뉴스 분석
+
+#### AI 키워드 추출
+- **Groq API** (Primary): Llama 3.3 70B
+- **Gemini API** (Fallback): Gemini 2.0 Flash
+- 캐시 활용: 기존 aiKeywords, aiInsightKeywords 우선 사용
+
+#### 추가 기능
+- 📥 **CSV 다운로드**: 키워드 데이터 내보내기
+- 🎯 **전체 화면 모달**: 몰입형 분석 경험
+- 📱 **반응형 디자인**: 모바일/데스크톱 완벽 지원
+
+#### 추가된 파일
+- 📄 `lib/keyword-analyzer.ts`: 키워드 분석 라이브러리
+- 📄 `app/api/news/bubble/route.ts`: BubbleNow API 엔드포인트
+- 📄 `components/KeywordBubbleMap/BubbleButton.tsx`: BubbleNow 버튼
+- 📄 `components/KeywordBubbleMap/BubbleModal.tsx`: 전체 화면 모달
+- 📄 `components/KeywordBubbleMap/BubbleMapVisualization.tsx`: D3.js 버블맵
+
+#### 수정된 파일
+- 📄 `prisma/schema.prisma`: KeywordMap 모델 추가
+- 📄 `app/page.tsx`: BubbleNow 버튼 통합
+- 📄 `app/topics/[category]/page.tsx`: BubbleNow 버튼 통합
+- 📄 `app/keywords/page.tsx`: BubbleNow 버튼 통합
+- 📄 `package.json`: D3.js 및 타입 정의 추가
+
+#### 사용 방법
+1. 뉴스가 5개 이상 로드된 페이지에서 **BubbleNow** 버튼 클릭
+2. AI가 키워드 추출 및 관계 분석 (5-10초)
+3. 버블맵 확인:
+   - 큰 버블 = 자주 언급된 키워드
+   - 연결선 = 함께 나타난 키워드
+   - 호버 = 상세 정보
+4. CSV 다운로드로 데이터 저장
+
+---
+
 ### v2.28.0 (2026-01-23)
 **글로벌 카테고리 추가 - 해외 주요 뉴스 직접 소싱**
 
@@ -1411,4 +1469,4 @@ git commit -m "fix: 버그 수정
 ---
 
 **Last Updated**: 2026-01-23
-**Version**: 2.28.0
+**Version**: 2.29.0
