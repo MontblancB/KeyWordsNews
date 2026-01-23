@@ -203,6 +203,13 @@ export default function TopicPage() {
   const handleOpenBubble = useCallback(async () => {
     if (!FEATURE_FLAGS.ENABLE_DAILY_INSIGHT) return
 
+    // 현재 로드된 모든 뉴스 사용 (InsightNow, SummarizeNow와 동일)
+    const allNewsForBubble = data?.pages.flatMap((page) => page.data) || []
+
+    console.log(`[BubbleNow] 현재 로드된 뉴스 (${category}): ${allNewsForBubble.length}개`)
+
+    if (allNewsForBubble.length < 5) return
+
     // 상태 초기화
     setIsBubbleModalOpen(true)
     setIsBubbleLoading(true)
@@ -210,22 +217,6 @@ export default function TopicPage() {
     setBubbleError(null)
 
     try {
-      // 전체 뉴스 가져오기 (최대 200개로 증가)
-      const newsResponse = await fetch(`/api/news/topics/${category}?limit=200&offset=0`)
-      if (!newsResponse.ok) {
-        throw new Error('뉴스를 가져올 수 없습니다.')
-      }
-      const newsData = await newsResponse.json()
-      const allNewsForBubble = newsData.data || []
-
-      console.log(`[BubbleNow] 수집된 뉴스 (${category}): ${allNewsForBubble.length}개`)
-
-      if (allNewsForBubble.length < 5) {
-        setBubbleError('분석할 뉴스가 부족합니다. (최소 5개 필요)')
-        setIsBubbleLoading(false)
-        return
-      }
-
       // 뉴스 전체 데이터 전송 (realtime-collector 모드 지원)
       const response = await fetch('/api/news/bubble', {
         method: 'POST',
@@ -245,7 +236,7 @@ export default function TopicPage() {
     } finally {
       setIsBubbleLoading(false)
     }
-  }, [category])
+  }, [data, category])
 
   // 버블맵 모달 닫기
   const handleCloseBubble = useCallback(() => {

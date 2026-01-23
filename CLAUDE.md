@@ -18,7 +18,7 @@
 ### 배포 정보
 - **배포 URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
-- **현재 버전**: 2.31.6
+- **현재 버전**: 2.31.7
 - **마지막 업데이트**: 2026-01-23
 
 ---
@@ -967,6 +967,27 @@ setTimeout(async () => {
 
 ## 최근 업데이트
 
+### v2.31.7 (2026-01-23)
+**BubbleNow 뉴스 수집 로직 수정 (InsightNow와 동일하게)**
+
+#### 버그 수정
+- 🐛 **현재 로드된 뉴스 사용**: InsightNow/SummarizeNow와 동일한 방식으로 변경
+  - 기존: 새로 API 호출 (`/api/news/latest?limit=200`)
+  - 개선: 현재 무한 스크롤로 로드된 모든 뉴스 사용 (`data?.pages.flatMap()`)
+  - InsightNow가 70개 사용하면 BubbleNow도 70개 사용
+  - 사용자가 스크롤한 만큼 더 많은 뉴스 분석
+
+- 📊 **분석 일관성 향상**: 모든 Now 기능이 동일한 뉴스 세트 사용
+  - InsightNow, SummarizeNow, BubbleNow 모두 동일한 로직
+  - 사용자가 로드한 뉴스만큼 정확히 분석
+
+#### 수정된 파일
+- 📄 `app/page.tsx`: API 호출 제거, 현재 로드된 뉴스 사용
+- 📄 `app/topics/[category]/page.tsx`: API 호출 제거, 현재 로드된 뉴스 사용
+- 📄 `app/keywords/page.tsx`: 검색 로직 제거, 현재 로드된 뉴스 사용
+
+---
+
 ### v2.31.6 (2026-01-23)
 **BubbleNow 뉴스 수집량 2배 증가 및 글자 크기 개선**
 
@@ -1677,4 +1698,4 @@ git commit -m "fix: 버그 수정
 ---
 
 **Last Updated**: 2026-01-23
-**Version**: 2.31.6
+**Version**: 2.31.7
