@@ -346,6 +346,57 @@ export const RSS_FEED_SOURCES: RSSFeedSource[] = [
     priority: 5,
     updateInterval: 20,
     enabled: true
+  },
+
+  // ========== 암호화폐 ==========
+  {
+    id: 'google_news_crypto',
+    name: 'Google News 암호화폐',
+    category: 'crypto',
+    url: 'https://news.google.com/rss/search?q=%EB%B9%84%ED%8A%B8%EC%BD%94%EC%9D%B8+OR+%EC%95%94%ED%98%B8%ED%99%94%ED%8F%90+OR+%EA%B0%80%EC%83%81%ED%99%94%ED%8F%90+OR+%EB%B8%94%EB%A1%9D%EC%B2%B4%EC%9D%B8&hl=ko&gl=KR&ceid=KR:ko',
+    priority: 9,
+    updateInterval: 5,
+    enabled: true
+  },
+
+  {
+    id: 'cointelegraph',
+    name: 'CoinTelegraph',
+    category: 'crypto',
+    url: 'https://cointelegraph.com/rss',
+    priority: 8,
+    updateInterval: 10,
+    enabled: true
+  },
+
+  {
+    id: 'coindesk',
+    name: 'CoinDesk',
+    category: 'crypto',
+    url: 'https://www.coindesk.com/arc/outboundfeeds/rss/',
+    priority: 8,
+    updateInterval: 10,
+    enabled: true
+  },
+
+  {
+    id: 'decrypt',
+    name: 'Decrypt',
+    category: 'crypto',
+    url: 'https://decrypt.co/feed',
+    priority: 7,
+    updateInterval: 15,
+    enabled: true
+  },
+
+  {
+    id: 'theblock',
+    name: 'The Block',
+    category: 'crypto',
+    url: 'https://www.theblock.co/rss.xml',
+    priority: 7,
+    updateInterval: 15,
+    enabled: true
   }
 ]
 
@@ -357,6 +408,7 @@ export const CATEGORY_MAPPING: Record<string, string> = {
   'society': '사회',
   'world': '국제',
   'tech': 'IT/과학',
+  'crypto': '암호화폐',
   'sports': '스포츠',
   'entertainment': '연예',
   'culture': '문화'
