@@ -4,6 +4,7 @@ import Groq from 'groq-sdk'
 /**
  * POST /api/keyword/explain
  * 키워드에 대한 용어 설명 생성
+ * Groq (Primary) → Gemini (Fallback)
  */
 export async function POST(request: NextRequest) {
   try {
@@ -18,17 +19,8 @@ export async function POST(request: NextRequest) {
 
     console.log(`[KeywordExplain] 용어 설명 요청: ${keyword}`)
 
-    // Groq API 키 확인
-    const apiKey = process.env.GROQ_API_KEY
-    if (!apiKey) {
-      throw new Error('GROQ_API_KEY가 설정되지 않았습니다.')
-    }
-
-    // Groq 클라이언트 생성
-    const groq = new Groq({ apiKey })
-
     // 용어 설명 프롬프트
-    const prompt = `다음 용어에 대해 일반인도 이해하기 쉽게 설명해주세요:
+    const createPrompt = (keyword: string) => `다음 용어에 대해 일반인도 이해하기 쉽게 설명해주세요:
 
 **용어**: ${keyword}
 
@@ -78,43 +70,44 @@ export async function POST(request: NextRequest) {
 💡 **실생활 예시**
 • 친구들과 돈을 빌려주고 받을 때, 한 명이 아닌 모든 친구가 각자 장부에 기록하는 것과 같습니다`
 
-    console.log('[KeywordExplain] Groq API 요청 시작...')
+    const systemPrompt = '당신은 전문 용어를 일반인도 쉽게 이해할 수 있도록 설명하는 전문가입니다. **절대 규칙**: 한자를 절대 사용하지 않습니다. 權益(X)→권익(O), 利益(X)→이익(O), 條件(X)→조건(O), 改善(X)→개선(O), 保護(X)→보호(O), 組織(X)→조직(O) 처럼 한글로만 작성합니다. 영어나 다른 외국어 단어도 절대 사용하지 않습니다. 외래어나 영어 약어는 반드시 한글로 풀어쓰고 설명합니다 (예: API→프로그램 연결 인터페이스). 전문 용어는 최소화하고, 구체적인 예시와 비유를 사용하여 쉽게 설명합니다. 한자어 대신 쉬운 순우리말을 사용합니다. 섹션 헤더는 주어진 형식을 정확히 따릅니다.'
 
-    // Groq API 호출
-    const response = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
-      messages: [
-        {
-          role: 'system',
-          content:
-            '당신은 전문 용어를 일반인도 쉽게 이해할 수 있도록 설명하는 전문가입니다. **절대 규칙**: 한자를 절대 사용하지 않습니다. 權益(X)→권익(O), 利益(X)→이익(O), 條件(X)→조건(O), 改善(X)→개선(O), 保護(X)→보호(O), 組織(X)→조직(O) 처럼 한글로만 작성합니다. 영어나 다른 외국어 단어도 절대 사용하지 않습니다. 외래어나 영어 약어는 반드시 한글로 풀어쓰고 설명합니다 (예: API→프로그램 연결 인터페이스). 전문 용어는 최소화하고, 구체적인 예시와 비유를 사용하여 쉽게 설명합니다. 한자어 대신 쉬운 순우리말을 사용합니다. 섹션 헤더는 주어진 형식을 정확히 따릅니다.',
-        },
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-      temperature: 0.3, // 일관성 있는 한국어 응답을 위해 낮춤 (0.5 → 0.3)
-      max_tokens: 1500,
-    })
+    // 1차 시도: Groq API
+    try {
+      const groqApiKey = process.env.GROQ_API_KEY
+      if (!groqApiKey) {
+        throw new Error('GROQ_API_KEY가 설정되지 않았습니다.')
+      }
 
-    const explanation = response.choices[0]?.message?.content
+      console.log('[KeywordExplain] Groq API 요청 시작...')
+      const groq = new Groq({ apiKey: groqApiKey })
+      const prompt = createPrompt(keyword)
 
-    if (!explanation) {
-      throw new Error('AI 응답이 비어있습니다.')
-    }
+      const response = await groq.chat.completions.create({
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: prompt },
+        ],
+        temperature: 0.3,
+        max_tokens: 1500,
+      })
 
-    // 한자 검증 (U+4E00-U+9FFF: CJK 통합 한자, U+3400-U+4DBF: CJK 확장 A)
-    const chineseCharRegex = /[\u4E00-\u9FFF\u3400-\u4DBF]/g
-    const foundChinese = explanation.match(chineseCharRegex)
+      const explanation = response.choices[0]?.message?.content
 
-    if (foundChinese && foundChinese.length > 0) {
-      console.warn(
-        `[KeywordExplain] 한자 발견: ${foundChinese.join(', ')} - 재시도`
-      )
+      if (!explanation) {
+        throw new Error('AI 응답이 비어있습니다.')
+      }
 
-      // 한자가 발견되면 더 강력한 프롬프트로 재시도
-      const retryPrompt = `${prompt}
+      // 한자 검증 (U+4E00-U+9FFF: CJK 통합 한자, U+3400-U+4DBF: CJK 확장 A)
+      const chineseCharRegex = /[\u4E00-\u9FFF\u3400-\u4DBF]/g
+      const foundChinese = explanation.match(chineseCharRegex)
+
+      if (foundChinese && foundChinese.length > 0) {
+        console.warn(`[KeywordExplain] 한자 발견: ${foundChinese.join(', ')} - 재시도`)
+
+        // 한자가 발견되면 더 강력한 프롬프트로 재시도
+        const retryPrompt = `${prompt}
 
 **절대적으로 중요 - 한자 사용 절대 금지:**
 - 權益 (X) → 권익 (O)
@@ -125,55 +118,134 @@ export async function POST(request: NextRequest) {
 - 組織 (X) → 조직 (O)
 - 한글로만 작성하세요. 한자를 섞지 마세요.`
 
-      const retryResponse = await groq.chat.completions.create({
-        model: 'llama-3.3-70b-versatile',
-        messages: [
-          {
-            role: 'system',
-            content:
-              '당신은 전문 용어를 일반인도 쉽게 이해할 수 있도록 설명하는 전문가입니다. **절대 규칙**: 한자를 절대 사용하지 않습니다. 權益(X)→권익(O), 利益(X)→이익(O), 條件(X)→조건(O) 처럼 한글로만 작성합니다. 영어나 다른 외국어 단어도 절대 사용하지 않습니다. 외래어나 영어 약어는 반드시 한글로 풀어쓰고 설명합니다 (예: API→프로그램 연결 인터페이스, SaaS→구독형 소프트웨어 서비스). 전문 용어는 최소화하고, 구체적인 예시와 비유를 사용하여 쉽게 설명합니다. 한자어 대신 쉬운 순우리말을 사용합니다. 섹션 헤더는 주어진 형식을 정확히 따릅니다.',
-          },
-          {
-            role: 'user',
-            content: retryPrompt,
-          },
-        ],
-        temperature: 0.3, // 더 낮춤 (0.5 → 0.3)
-        max_tokens: 1500,
-      })
+        const retryResponse = await groq.chat.completions.create({
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: retryPrompt },
+          ],
+          temperature: 0.3,
+          max_tokens: 1500,
+        })
 
-      const retryExplanation = retryResponse.choices[0]?.message?.content
+        const retryExplanation = retryResponse.choices[0]?.message?.content
 
-      if (!retryExplanation) {
-        throw new Error('AI 재시도 응답이 비어있습니다.')
+        if (!retryExplanation) {
+          throw new Error('AI 재시도 응답이 비어있습니다.')
+        }
+
+        console.log(`[KeywordExplain] Groq 재시도 성공 (${retryExplanation.length}자)`)
+
+        return NextResponse.json({
+          success: true,
+          data: {
+            keyword,
+            explanation: retryExplanation,
+            provider: 'groq',
+          },
+        })
       }
 
-      console.log(
-        `[KeywordExplain] 재시도 성공 (${retryExplanation.length}자)`
-      )
+      console.log(`[KeywordExplain] Groq 응답 성공 (${explanation.length}자)`)
 
       return NextResponse.json({
         success: true,
         data: {
           keyword,
-          explanation: retryExplanation,
+          explanation,
           provider: 'groq',
         },
       })
+    } catch (groqError) {
+      // Groq 에러 로깅
+      console.error('[KeywordExplain] Groq Error:', groqError)
+
+      // 429 에러 (Rate Limit) 또는 기타 에러 시 Gemini로 폴백
+      const is429Error =
+        groqError instanceof Error &&
+        (groqError.message.includes('429') || groqError.message.includes('rate_limit'))
+
+      if (is429Error) {
+        console.log('[KeywordExplain] Groq rate limit 도달, Gemini로 폴백...')
+      } else {
+        console.log('[KeywordExplain] Groq 실패, Gemini로 폴백...')
+      }
+
+      // 2차 시도: Gemini API
+      try {
+        const geminiApiKey = process.env.GEMINI_API_KEY
+        if (!geminiApiKey) {
+          throw new Error('GEMINI_API_KEY가 설정되지 않았습니다.')
+        }
+
+        console.log('[KeywordExplain] Gemini API 요청 시작...')
+        const prompt = createPrompt(keyword)
+
+        const response = await fetch(
+          'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-goog-api-key': geminiApiKey,
+            },
+            body: JSON.stringify({
+              contents: [
+                {
+                  parts: [
+                    {
+                      text: `${systemPrompt}\n\n${prompt}`,
+                    },
+                  ],
+                },
+              ],
+              generationConfig: {
+                temperature: 0.3,
+                maxOutputTokens: 1500,
+              },
+            }),
+          }
+        )
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}))
+          throw new Error(
+            `Gemini API error: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`
+          )
+        }
+
+        const data = await response.json()
+        const explanation = data.candidates?.[0]?.content?.parts?.[0]?.text
+
+        if (!explanation) {
+          throw new Error('Gemini 응답이 비어있습니다.')
+        }
+
+        console.log(`[KeywordExplain] Gemini 응답 성공 (${explanation.length}자)`)
+
+        return NextResponse.json({
+          success: true,
+          data: {
+            keyword,
+            explanation,
+            provider: 'gemini',
+          },
+        })
+      } catch (geminiError) {
+        console.error('[KeywordExplain] Gemini Error:', geminiError)
+
+        // 모든 AI 제공자 실패
+        return NextResponse.json(
+          {
+            success: false,
+            error: '현재 AI 서비스가 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도해주세요.',
+          },
+          { status: 503 }
+        )
+      }
     }
-
-    console.log(`[KeywordExplain] Groq 응답 성공 (${explanation.length}자)`)
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        keyword,
-        explanation,
-        provider: 'groq',
-      },
-    })
   } catch (error) {
-    console.error('[KeywordExplain] Error:', error)
+    console.error('[KeywordExplain] Unexpected Error:', error)
 
     return NextResponse.json(
       {
