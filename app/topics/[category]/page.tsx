@@ -203,9 +203,6 @@ export default function TopicPage() {
   const handleOpenBubble = useCallback(async () => {
     if (!FEATURE_FLAGS.ENABLE_DAILY_INSIGHT) return
 
-    const allNewsForBubble = data?.pages.flatMap((page) => page.data) || []
-    if (allNewsForBubble.length < 5) return
-
     // 상태 초기화
     setIsBubbleModalOpen(true)
     setIsBubbleLoading(true)
@@ -213,6 +210,20 @@ export default function TopicPage() {
     setBubbleError(null)
 
     try {
+      // 전체 뉴스 가져오기 (최대 100개)
+      const newsResponse = await fetch(`/api/news/topics/${category}?limit=100&offset=0`)
+      if (!newsResponse.ok) {
+        throw new Error('뉴스를 가져올 수 없습니다.')
+      }
+      const newsData = await newsResponse.json()
+      const allNewsForBubble = newsData.data || []
+
+      if (allNewsForBubble.length < 5) {
+        setBubbleError('분석할 뉴스가 부족합니다. (최소 5개 필요)')
+        setIsBubbleLoading(false)
+        return
+      }
+
       // 뉴스 전체 데이터 전송 (realtime-collector 모드 지원)
       const response = await fetch('/api/news/bubble', {
         method: 'POST',
@@ -232,7 +243,7 @@ export default function TopicPage() {
     } finally {
       setIsBubbleLoading(false)
     }
-  }, [data, category])
+  }, [category])
 
   // 버블맵 모달 닫기
   const handleCloseBubble = useCallback(() => {

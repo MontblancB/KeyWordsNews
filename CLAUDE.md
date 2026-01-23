@@ -18,7 +18,7 @@
 ### 배포 정보
 - **배포 URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
-- **현재 버전**: 2.31.4
+- **현재 버전**: 2.31.5
 - **마지막 업데이트**: 2026-01-23
 
 ---
@@ -967,6 +967,28 @@ setTimeout(async () => {
 
 ## 최근 업데이트
 
+### v2.31.5 (2026-01-23)
+**BubbleNow 데이터 수집 로직 개선 (전체 뉴스 분석)**
+
+#### 버그 수정
+- 🐛 **전체 뉴스 수집**: 무한 스크롤 로드된 뉴스만 사용하던 문제 수정
+  - 기존: 현재 페이지 로드된 뉴스만 사용 (10-30개)
+  - 개선: API를 직접 호출하여 전체 뉴스 가져오기 (최대 100개)
+  - 메인 페이지: `/api/news/latest?limit=100`
+  - 토픽 페이지: `/api/news/topics/${category}?limit=100`
+  - 키워드 페이지: 검색 결과 최대 5페이지 수집 (100개)
+
+- 📊 **분석 품질 향상**: 더 많은 뉴스로 정확한 키워드 분석
+  - 키워드 간 상관관계가 더 명확하게 표시
+  - 버블맵이 훨씬 더 풍부해짐
+
+#### 수정된 파일
+- 📄 `app/page.tsx`: handleOpenBubble 로직 개선
+- 📄 `app/topics/[category]/page.tsx`: handleOpenBubble 로직 개선
+- 📄 `app/keywords/page.tsx`: handleOpenBubble 로직 개선
+
+---
+
 ### v2.31.4 (2026-01-23)
 **BubbleNow Turbo 테마 및 최소 크기 보장 시스템**
 
@@ -1628,4 +1650,4 @@ git commit -m "fix: 버그 수정
 ---
 
 **Last Updated**: 2026-01-23
-**Version**: 2.31.4
+**Version**: 2.31.5

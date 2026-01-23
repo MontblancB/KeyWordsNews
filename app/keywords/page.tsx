@@ -210,9 +210,7 @@ export default function KeywordsPage() {
   // 버블맵 모달 열기 및 API 호출
   const handleOpenBubble = useCallback(async () => {
     if (!FEATURE_FLAGS.ENABLE_DAILY_INSIGHT) return
-
-    const allNewsForBubble = data?.pages.flatMap((page) => page.data) || []
-    if (allNewsForBubble.length < 5) return
+    if (!activeKeyword) return
 
     // 상태 초기화
     setIsBubbleModalOpen(true)
@@ -221,6 +219,29 @@ export default function KeywordsPage() {
     setBubbleError(null)
 
     try {
+      // 전체 뉴스 가져오기 (검색 결과 최대 5페이지, 100개)
+      const allNewsForBubble: any[] = []
+
+      // 최대 5페이지 (페이지당 20개 = 총 100개)
+      for (let page = 1; page <= 5; page++) {
+        const newsResponse = await fetch(`/api/news/search?q=${encodeURIComponent(activeKeyword)}&page=${page}`)
+        if (!newsResponse.ok) break
+
+        const newsData = await newsResponse.json()
+        if (!newsData.data || newsData.data.length === 0) break
+
+        allNewsForBubble.push(...newsData.data)
+
+        // 마지막 페이지면 중단
+        if (page >= newsData.totalPages) break
+      }
+
+      if (allNewsForBubble.length < 5) {
+        setBubbleError('분석할 뉴스가 부족합니다. (최소 5개 필요)')
+        setIsBubbleLoading(false)
+        return
+      }
+
       // 뉴스 전체 데이터 전송 (realtime-collector 모드 지원)
       const response = await fetch('/api/news/bubble', {
         method: 'POST',
@@ -240,7 +261,7 @@ export default function KeywordsPage() {
     } finally {
       setIsBubbleLoading(false)
     }
-  }, [data, activeKeyword])
+  }, [activeKeyword])
 
   // 버블맵 모달 닫기
   const handleCloseBubble = useCallback(() => {
