@@ -43,16 +43,29 @@ export async function POST(request: NextRequest) {
 💡 **실생활 예시**
 • [구체적인 예시나 비유로 쉽게 설명]
 
-**매우 중요한 규칙:**
-- 오직 한국어로만 작성 (영어, 중국어, 일본어 등 외국어 단어 절대 사용 금지)
-- **한자 절대 사용 금지** (예: 정義(X) → 정의(O), 說明(X) → 설명(O))
-- 섹션 헤더는 반드시 위 형식 그대로 사용 ("핵심 정의", "상세 설명", "실생활 예시")
-- 외래어나 영어 약어도 한글로 풀어서 설명 (예: AI → 인공지능, IoT → 사물인터넷)
-- 전문 용어는 최소화하고 쉬운 순우리말로 설명
-- 한자어 대신 쉬운 한글 표현 사용
-- 구체적인 예시 포함
-- 각 섹션은 2-3개 불릿 포인트로 간결하게
-- 이모지는 섹션 헤더에만 사용
+**절대 규칙 - 반드시 지켜야 합니다:**
+1. **한자를 절대 사용하지 마세요**
+   - 權益 (X) → 권익 (O)
+   - 利益 (X) → 이익 (O)
+   - 條件 (X) → 조건 (O)
+   - 改善 (X) → 개선 (O)
+   - 保護 (X) → 보호 (O)
+   - 組織 (X) → 조직 (O)
+   - 定義 (X) → 정의 (O)
+   - 說明 (X) → 설명 (O)
+
+2. **오직 한글로만 작성**
+   - 영어, 중국어, 일본어 등 외국어 단어 절대 금지
+   - 외래어나 영어 약어도 한글로 풀어서 설명 (AI → 인공지능, IoT → 사물인터넷)
+
+3. **섹션 헤더는 정확히**
+   - "핵심 정의", "상세 설명", "실생활 예시" 그대로 사용
+
+4. **쉬운 말로**
+   - 전문 용어 최소화
+   - 순우리말과 일상 표현 사용
+   - 구체적인 예시 포함
+   - 각 섹션은 2-3개 불릿 포인트로 간결하게
 
 **좋은 예시:**
 📌 **핵심 정의**
@@ -74,14 +87,14 @@ export async function POST(request: NextRequest) {
         {
           role: 'system',
           content:
-            '당신은 전문 용어를 일반인도 쉽게 이해할 수 있도록 설명하는 전문가입니다. **절대적으로 중요**: 오직 한국어로만 작성하며, 영어나 다른 외국어 단어는 절대 사용하지 않습니다. **한자도 절대 사용하지 않습니다** (정義→정의, 說明→설명, 定理→정리). 외래어나 영어 약어는 반드시 한글로 풀어쓰고 설명합니다 (예: API→프로그램 연결 인터페이스, SaaS→구독형 소프트웨어 서비스). 전문 용어는 최소화하고, 구체적인 예시와 비유를 사용하여 쉽게 설명합니다. 한자어 대신 쉬운 순우리말을 사용합니다. 섹션 헤더는 주어진 형식을 정확히 따릅니다.',
+            '당신은 전문 용어를 일반인도 쉽게 이해할 수 있도록 설명하는 전문가입니다. **절대 규칙**: 한자를 절대 사용하지 않습니다. 權益(X)→권익(O), 利益(X)→이익(O), 條件(X)→조건(O), 改善(X)→개선(O), 保護(X)→보호(O), 組織(X)→조직(O) 처럼 한글로만 작성합니다. 영어나 다른 외국어 단어도 절대 사용하지 않습니다. 외래어나 영어 약어는 반드시 한글로 풀어쓰고 설명합니다 (예: API→프로그램 연결 인터페이스). 전문 용어는 최소화하고, 구체적인 예시와 비유를 사용하여 쉽게 설명합니다. 한자어 대신 쉬운 순우리말을 사용합니다. 섹션 헤더는 주어진 형식을 정확히 따릅니다.',
         },
         {
           role: 'user',
           content: prompt,
         },
       ],
-      temperature: 0.5, // 일관성 있는 한국어 응답을 위해 낮춤
+      temperature: 0.3, // 일관성 있는 한국어 응답을 위해 낮춤 (0.5 → 0.3)
       max_tokens: 1500,
     })
 
@@ -89,6 +102,64 @@ export async function POST(request: NextRequest) {
 
     if (!explanation) {
       throw new Error('AI 응답이 비어있습니다.')
+    }
+
+    // 한자 검증 (U+4E00-U+9FFF: CJK 통합 한자, U+3400-U+4DBF: CJK 확장 A)
+    const chineseCharRegex = /[\u4E00-\u9FFF\u3400-\u4DBF]/g
+    const foundChinese = explanation.match(chineseCharRegex)
+
+    if (foundChinese && foundChinese.length > 0) {
+      console.warn(
+        `[KeywordExplain] 한자 발견: ${foundChinese.join(', ')} - 재시도`
+      )
+
+      // 한자가 발견되면 더 강력한 프롬프트로 재시도
+      const retryPrompt = `${prompt}
+
+**절대적으로 중요 - 한자 사용 절대 금지:**
+- 權益 (X) → 권익 (O)
+- 利益 (X) → 이익 (O)
+- 條件 (X) → 조건 (O)
+- 改善 (X) → 개선 (O)
+- 保護 (X) → 보호 (O)
+- 組織 (X) → 조직 (O)
+- 한글로만 작성하세요. 한자를 섞지 마세요.`
+
+      const retryResponse = await groq.chat.completions.create({
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          {
+            role: 'system',
+            content:
+              '당신은 전문 용어를 일반인도 쉽게 이해할 수 있도록 설명하는 전문가입니다. **절대 규칙**: 한자를 절대 사용하지 않습니다. 權益(X)→권익(O), 利益(X)→이익(O), 條件(X)→조건(O) 처럼 한글로만 작성합니다. 영어나 다른 외국어 단어도 절대 사용하지 않습니다. 외래어나 영어 약어는 반드시 한글로 풀어쓰고 설명합니다 (예: API→프로그램 연결 인터페이스, SaaS→구독형 소프트웨어 서비스). 전문 용어는 최소화하고, 구체적인 예시와 비유를 사용하여 쉽게 설명합니다. 한자어 대신 쉬운 순우리말을 사용합니다. 섹션 헤더는 주어진 형식을 정확히 따릅니다.',
+          },
+          {
+            role: 'user',
+            content: retryPrompt,
+          },
+        ],
+        temperature: 0.3, // 더 낮춤 (0.5 → 0.3)
+        max_tokens: 1500,
+      })
+
+      const retryExplanation = retryResponse.choices[0]?.message?.content
+
+      if (!retryExplanation) {
+        throw new Error('AI 재시도 응답이 비어있습니다.')
+      }
+
+      console.log(
+        `[KeywordExplain] 재시도 성공 (${retryExplanation.length}자)`
+      )
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          keyword,
+          explanation: retryExplanation,
+          provider: 'groq',
+        },
+      })
     }
 
     console.log(`[KeywordExplain] Groq 응답 성공 (${explanation.length}자)`)
