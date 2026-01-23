@@ -17,6 +17,7 @@ import SummarizeButton from '@/components/SummarizeButton'
 import SummarizeModal from '@/components/SummarizeModal'
 import BubbleButton from '@/components/KeywordBubbleMap/BubbleButton'
 import BubbleModal from '@/components/KeywordBubbleMap/BubbleModal'
+import KeywordNewsModal from '@/components/KeywordBubbleMap/KeywordNewsModal'
 
 // 인사이트 데이터 타입
 interface InsightData {
@@ -90,6 +91,10 @@ export default function HomePage() {
   const [isBubbleLoading, setIsBubbleLoading] = useState(false)
   const [bubbleData, setBubbleData] = useState<BubbleMapData | null>(null)
   const [bubbleError, setBubbleError] = useState<string | null>(null)
+
+  // KeywordNewsModal 상태
+  const [isKeywordNewsModalOpen, setIsKeywordNewsModalOpen] = useState(false)
+  const [selectedKeyword, setSelectedKeyword] = useState<{ text: string; newsIds: string[] } | null>(null)
 
   // 인사이트 모달 열기 및 API 호출
   const handleOpenInsight = useCallback(async () => {
@@ -239,6 +244,20 @@ export default function HomePage() {
     if (isBubbleLoading) return // 로딩 중에는 닫지 않음
     setIsBubbleModalOpen(false)
   }, [isBubbleLoading])
+
+  // 키워드 클릭 핸들러
+  const handleKeywordClick = useCallback((keyword: { id: string; text: string; count: number; value: number; newsIds: string[] }) => {
+    setSelectedKeyword({
+      text: keyword.text,
+      newsIds: keyword.newsIds,
+    })
+    setIsKeywordNewsModalOpen(true)
+  }, [])
+
+  // KeywordNewsModal 닫기
+  const handleCloseKeywordNews = useCallback(() => {
+    setIsKeywordNewsModalOpen(false)
+  }, [])
 
   // Pull-to-Refresh: 쿼리 리셋으로 완전히 새로 가져오기
   const pullToRefresh = usePullToRefresh({
@@ -404,6 +423,17 @@ export default function HomePage() {
           metadata={bubbleData?.metadata}
           isLoading={isBubbleLoading}
           error={bubbleError}
+          onKeywordClick={handleKeywordClick}
+        />
+      )}
+
+      {/* KeywordNewsModal - 키워드 클릭 시 관련 뉴스 목록 표시 */}
+      {FEATURE_FLAGS.ENABLE_DAILY_INSIGHT && selectedKeyword && (
+        <KeywordNewsModal
+          isOpen={isKeywordNewsModalOpen}
+          onClose={handleCloseKeywordNews}
+          keyword={selectedKeyword.text}
+          newsIds={selectedKeyword.newsIds}
         />
       )}
     </div>
