@@ -212,6 +212,15 @@ export default function HomePage() {
       // 뉴스 ID 배열 생성
       const newsIds = allNewsForBubble.map((news) => news.id)
 
+      console.log(
+        `[BubbleNow Client] 전송할 뉴스 ID (총 ${newsIds.length}개):`,
+        newsIds.slice(0, 5)
+      )
+      console.log(
+        `[BubbleNow Client] 첫 번째 뉴스 전체:`,
+        allNewsForBubble[0]
+      )
+
       const response = await fetch('/api/news/bubble', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

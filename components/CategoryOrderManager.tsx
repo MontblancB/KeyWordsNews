@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -66,6 +67,7 @@ function SortableItem({ id, label }: SortableItemProps) {
 export default function CategoryOrderManager() {
   const { categoryOrder, setCategoryOrder, resetCategoryOrder, isDefaultOrder } =
     useCategoryOrder()
+  const [isExpanded, setIsExpanded] = useState(false)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -91,39 +93,56 @@ export default function CategoryOrderManager() {
 
   return (
     <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
-      <div className="flex items-center gap-3 mb-3">
-        <Bars3Icon className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-        <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
-          카테고리 순서 관리
-        </h3>
+      {/* 헤더 (클릭 가능) */}
+      <div
+        className="flex items-center justify-between cursor-pointer"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div className="flex items-center gap-3">
+          <Bars3Icon className="w-5 h-5 text-blue-500 dark:text-blue-400" />
+          <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            토픽 카테고리 순서 관리
+          </h3>
+        </div>
+        <span className="text-sm text-gray-500 dark:text-gray-400">
+          {isExpanded ? '▲' : '▼'}
+        </span>
       </div>
 
-      <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
-        드래그하여 토픽 탭의 카테고리 순서를 변경하세요
-      </p>
+      {/* 본문 (폴딩 가능) */}
+      {isExpanded && (
+        <div className="mt-3 space-y-3">
+          <p className="text-xs text-gray-600 dark:text-gray-400">
+            드래그하여 토픽 탭의 카테고리 순서를 변경하세요
+          </p>
 
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-      >
-        <SortableContext items={categoryOrder} strategy={verticalListSortingStrategy}>
-          <div className="space-y-2 mb-3">
-            {categoryOrder.map(id => (
-              <SortableItem key={id} id={id} label={CATEGORY_LABELS[id] || id} />
-            ))}
-          </div>
-        </SortableContext>
-      </DndContext>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext items={categoryOrder} strategy={verticalListSortingStrategy}>
+              <div className="space-y-2">
+                {categoryOrder.map(id => (
+                  <SortableItem key={id} id={id} label={CATEGORY_LABELS[id] || id} />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
 
-      {!isDefaultOrder && (
-        <button
-          onClick={resetCategoryOrder}
-          className="w-full flex items-center justify-center gap-2 py-2 px-4 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-        >
-          <ArrowPathIcon className="w-4 h-4" />
-          기본값으로 재설정
-        </button>
+          {!isDefaultOrder && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                resetCategoryOrder()
+              }}
+              className="w-full flex items-center justify-center gap-2 py-2 px-4 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+            >
+              <ArrowPathIcon className="w-4 h-4" />
+              기본값으로 재설정
+            </button>
+          )}
+        </div>
       )}
     </div>
   )

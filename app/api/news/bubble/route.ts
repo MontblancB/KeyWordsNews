@@ -45,6 +45,9 @@ export async function POST(request: NextRequest) {
     console.log(
       `[BubbleNow] 요청: ${limitedNewsIds.length}개 뉴스 (원본: ${newsIds.length}개)`
     )
+    console.log(
+      `[BubbleNow] 첫 5개 ID: ${JSON.stringify(limitedNewsIds.slice(0, 5))}`
+    )
 
     // 3. 캐시 키 생성
     const cacheKey = category
@@ -92,6 +95,23 @@ export async function POST(request: NextRequest) {
     })
 
     console.log(`[BubbleNow] DB 조회: ${newsList.length}개 뉴스`)
+
+    if (newsList.length === 0) {
+      console.error(
+        `[BubbleNow] ⚠️  DB에서 뉴스를 찾을 수 없습니다. 조회 ID: ${JSON.stringify(limitedNewsIds.slice(0, 3))}`
+      )
+      return NextResponse.json(
+        {
+          error: 'DB에서 뉴스를 찾을 수 없습니다. 뉴스 ID가 올바른지 확인해주세요.',
+          details: `조회 시도: ${limitedNewsIds.length}개 ID, 결과: 0개`,
+        },
+        { status: 404 }
+      )
+    }
+
+    console.log(
+      `[BubbleNow] 조회된 뉴스 ID: ${JSON.stringify(newsList.slice(0, 3).map((n) => n.id))}`
+    )
 
     // 6. 키워드 추출
     const newsKeywordsMap = new Map<string, string[]>()
