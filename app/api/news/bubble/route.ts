@@ -122,18 +122,26 @@ export async function POST(request: NextRequest) {
         )
 
         // 결과 병합
+        let successCount = 0
         for (const [newsId, keywords] of extractedKeywords.entries()) {
-          newsKeywordsMap.set(newsId, keywords)
+          if (keywords && keywords.length > 0) {
+            newsKeywordsMap.set(newsId, keywords)
+            successCount++
+          }
         }
 
         console.log(
-          `[BubbleNow] AI 추출 완료: ${extractedKeywords.size}개 뉴스`
+          `[BubbleNow] AI 추출 완료: ${extractedKeywords.size}개 중 ${successCount}개 성공`
         )
       } catch (error) {
         console.error('[BubbleNow] AI 추출 실패:', error)
         // 에러가 나도 기존 캐시된 키워드만으로 진행
       }
     }
+
+    console.log(
+      `[BubbleNow] 최종 키워드 보유 뉴스: ${newsKeywordsMap.size}개 / 전체 ${limitedNews.length}개`
+    )
 
     // 8. 키워드가 하나도 없으면 에러
     if (newsKeywordsMap.size === 0) {
@@ -207,16 +215,27 @@ async function extractKeywordsBatch(
 
   // 병렬 처리
   const results = await Promise.all(
-    batches.map((batch) => extractKeywordsForBatch(batch))
+    batches.map((batch, index) =>
+      extractKeywordsForBatch(batch).catch((error) => {
+        console.error(`[BubbleNow] 배치 ${index + 1}/${batches.length} 실패:`, error)
+        return new Map<string, string[]>() // 실패 시 빈 맵 반환
+      })
+    )
   )
 
   // 결과 병합
   const allKeywords = new Map<string, string[]>()
-  for (const result of results) {
+  let totalExtracted = 0
+  results.forEach((result, index) => {
+    const count = result.size
+    totalExtracted += count
+    console.log(`[BubbleNow] 배치 ${index + 1}/${batches.length}: ${count}개 추출 성공`)
     for (const [newsId, keywords] of result.entries()) {
       allKeywords.set(newsId, keywords)
     }
-  }
+  })
+
+  console.log(`[BubbleNow] 총 ${totalExtracted}개 뉴스에서 키워드 추출 성공`)
 
   return allKeywords
 }
