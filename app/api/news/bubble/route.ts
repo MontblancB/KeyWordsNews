@@ -40,35 +40,36 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. 중복 제거 및 뉴스 수 제한
-    // 중복 통계 분석
-    const idCounts = new Map<string, number>()
+    // 중복 통계 분석 (URL 기준)
+    const urlCounts = new Map<string, number>()
     for (const news of newsList) {
-      idCounts.set(news.id, (idCounts.get(news.id) || 0) + 1)
+      urlCounts.set(news.url, (urlCounts.get(news.url) || 0) + 1)
     }
 
-    const duplicatedIds = Array.from(idCounts.entries())
+    const duplicatedUrls = Array.from(urlCounts.entries())
       .filter(([_, count]) => count > 1)
       .sort((a, b) => b[1] - a[1])
 
+    // URL 기준으로 중복 제거 (ID는 앞 32자만 잘린 Base64라서 부정확함)
     const uniqueNews = Array.from(
-      new Map(newsList.map((n: any) => [n.id, n])).values()
+      new Map(newsList.map((n: any) => [n.url, n])).values()
     ).slice(0, 200)
 
     console.log(
-      `[BubbleNow] 요청: ${newsList.length}개 뉴스 → 중복 제거 후 ${uniqueNews.length}개`
+      `[BubbleNow] 요청: ${newsList.length}개 뉴스 → 중복 제거 후 ${uniqueNews.length}개 (URL 기준)`
     )
 
-    if (duplicatedIds.length > 0) {
+    if (duplicatedUrls.length > 0) {
       console.log(
-        `[BubbleNow] 중복 뉴스: ${duplicatedIds.length}개 URL (최대 ${duplicatedIds[0][1]}회 중복)`
+        `[BubbleNow] 중복 뉴스: ${duplicatedUrls.length}개 URL (최대 ${duplicatedUrls[0][1]}회 중복)`
       )
       console.log(
-        `[BubbleNow] 중복 예시: ${duplicatedIds.slice(0, 3).map(([id, count]) => `${id.slice(0, 20)}...(${count}회)`).join(', ')}`
+        `[BubbleNow] 중복 예시: ${duplicatedUrls.slice(0, 3).map(([url, count]) => `${url.slice(0, 40)}...(${count}회)`).join(', ')}`
       )
     }
 
     console.log(
-      `[BubbleNow] 첫 5개 ID: ${JSON.stringify(uniqueNews.slice(0, 5).map((n: any) => n.id))}`
+      `[BubbleNow] 첫 5개 URL: ${JSON.stringify(uniqueNews.slice(0, 5).map((n: any) => n.url.slice(0, 40) + '...'))}`
     )
 
     // 3. 캐시 키 생성 (뉴스 개수 포함)
