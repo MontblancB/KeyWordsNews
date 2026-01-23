@@ -18,7 +18,7 @@
 ### 배포 정보
 - **배포 URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
-- **현재 버전**: 2.30.3
+- **현재 버전**: 2.31.0
 - **마지막 업데이트**: 2026-01-23
 
 ---
@@ -967,6 +967,30 @@ setTimeout(async () => {
 
 ## 최근 업데이트
 
+### v2.31.0 (2026-01-23)
+**InsightNow 및 SummarizeNow 키워드 인터랙션 기능 추가**
+
+#### 기능 개선
+- 🔍 **키워드 용어 설명**: InsightNow와 SummarizeNow의 키워드를 클릭하여 용어 설명 확인 가능
+  - KeywordActionModal 통합
+  - Groq AI를 활용한 용어 설명 생성
+  - 키워드 버튼으로 변경하여 클릭 가능하도록 개선
+
+- ➕ **키워드 추가**: 관심 있는 키워드를 내 키워드 탭에 바로 추가 가능
+  - 모달에서 "키워드 추가" 버튼으로 간편하게 추가
+  - localStorage에 저장되어 지속적으로 관리
+
+- 🎨 **UI/UX 개선**: 키워드 배지 스타일 개선
+  - hover 효과 추가
+  - 클릭 가능한 버튼으로 시각적 피드백 제공
+  - "클릭하여 용어 설명 및 키워드 추가" 안내 문구 추가
+
+#### 수정된 파일
+- 📄 `components/InsightModal.tsx`: KeywordActionModal 통합, 키워드 버튼 변경
+- 📄 `components/SummarizeModal.tsx`: KeywordActionModal 통합, 키워드 버튼 변경
+
+---
+
 ### v2.30.0 (2026-01-23)
 **토픽 카테고리 순서 커스터마이징 기능**
 
@@ -1507,4 +1531,4 @@ git commit -m "fix: 버그 수정
 ---
 
 **Last Updated**: 2026-01-23
-**Version**: 2.30.3
+**Version**: 2.31.0

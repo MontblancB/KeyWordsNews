@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useState } from 'react'
 import {
   DocumentTextIcon,
   ExclamationCircleIcon,
@@ -8,6 +8,7 @@ import {
   TagIcon,
   CheckIcon,
 } from '@heroicons/react/24/outline'
+import KeywordActionModal from './KeywordActionModal'
 
 interface SummaryData {
   summary: string
@@ -38,6 +39,8 @@ export default function SummarizeModal({
   error,
   newsCount,
 }: SummarizeModalProps) {
+  const [selectedKeyword, setSelectedKeyword] = useState<string | null>(null)
+
   // ESC 키로 닫기
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -84,12 +87,21 @@ export default function SummarizeModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center">
-      {/* 배경 오버레이 */}
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={() => !isLoading && onClose()}
-      />
+    <>
+      {/* 키워드 액션 모달 */}
+      {selectedKeyword && (
+        <KeywordActionModal
+          keyword={selectedKeyword}
+          onClose={() => setSelectedKeyword(null)}
+        />
+      )}
+
+      <div className="fixed inset-0 z-[100] flex items-center justify-center">
+        {/* 배경 오버레이 */}
+        <div
+          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          onClick={() => !isLoading && onClose()}
+        />
 
       {/* 모달 박스 */}
       <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] mx-4 flex flex-col overflow-hidden">
@@ -151,23 +163,28 @@ export default function SummarizeModal({
                 />
               </div>
 
-              {/* 핵심 키워드 배지 */}
+              {/* 핵심 키워드 배지 (클릭 가능) */}
               {summaryData.keywords && summaryData.keywords.length > 0 && (
                 <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
                   <div className="flex items-center gap-1.5 mb-2">
                     <TagIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                     <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-                      핵심 키워드
+                      핵심 키워드 (클릭하여 용어 설명 및 키워드 추가)
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {summaryData.keywords.map((keyword, index) => (
-                      <span
+                      <button
                         key={index}
-                        className="px-3 py-1 bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 rounded-full text-sm font-medium"
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          setSelectedKeyword(keyword)
+                        }}
+                        className="px-3 py-1 bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 rounded-full text-sm font-medium hover:bg-teal-200 dark:hover:bg-teal-800 transition-colors cursor-pointer"
                       >
                         #{keyword}
-                      </span>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -189,6 +206,7 @@ export default function SummarizeModal({
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   )
 }
