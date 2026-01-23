@@ -224,22 +224,85 @@ async function generateWithGemini(prompt: string, systemPrompt: string): Promise
   const data = await response.json()
   const content = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
 
+  // 디버깅: 실제 응답 로깅
+  console.log('[NewsInsight/Gemini] Response preview:', content.substring(0, 200))
+
+  // 강력한 JSON 파싱 로직
   let result: { insight: string; keywords?: string[] } | null = null
 
+  // 1. 직접 파싱 시도
   try {
     result = JSON.parse(content)
   } catch {
-    const insightMatch = content.match(/"insight"\s*:\s*"((?:[^"\\]|\\["\\nrt])*)"/)
+    // 파싱 실패, 다음 단계로
+  }
+
+  // 2. 개행 문자 이스케이프 후 파싱
+  if (!result) {
+    try {
+      const cleanContent = content
+        .replace(/\n/g, '\\n')
+        .replace(/\r/g, '\\r')
+        .replace(/\t/g, '\\t')
+      result = JSON.parse(cleanContent)
+    } catch {
+      // 여전히 실패, 다음 단계로
+    }
+  }
+
+  // 3. 정규식으로 insight 추출 (더 강력한 패턴)
+  if (!result) {
+    console.log('[NewsInsight/Gemini] Trying regex extraction...')
+
+    // insight 추출 ([\s\S]는 .과 달리 개행 문자도 포함)
+    const insightMatch = content.match(/"insight"\s*:\s*"((?:[^"\\]|\\[\s\S])*)"/)
+
     if (insightMatch) {
-      const extractedInsight = insightMatch[1]
+      let extractedInsight = insightMatch[1]
         .replace(/\\n/g, '\n')
         .replace(/\\"/g, '"')
+        .replace(/\\t/g, '\t')
+        .replace(/\\r/g, '\r')
         .replace(/\\\\/g, '\\')
-      result = { insight: extractedInsight }
+
+      // keywords 추출
+      const keywordsMatch = content.match(/"keywords"\s*:\s*\[([\s\S]*?)\]/)
+      let keywords: string[] = []
+      if (keywordsMatch) {
+        const keywordsStr = keywordsMatch[1]
+        const matches = keywordsStr.match(/"([^"]+)"/g)
+        if (matches) {
+          keywords = matches.map((k: string) => k.replace(/"/g, ''))
+        }
+      }
+
+      result = { insight: extractedInsight, keywords }
+      console.log('[NewsInsight/Gemini] Extracted via regex')
+    }
+  }
+
+  // 4. 더 공격적인 추출 시도 (JSON 구조 무시)
+  if (!result) {
+    console.log('[NewsInsight/Gemini] Trying aggressive extraction...')
+
+    // { 와 } 사이의 모든 내용을 찾아서 파싱 시도
+    const jsonMatch = content.match(/\{[\s\S]*\}/)
+    if (jsonMatch) {
+      try {
+        // 중첩된 이스케이프 제거
+        let jsonStr = jsonMatch[0]
+          .replace(/\\\\n/g, '\\n')  // \\n → \n
+          .replace(/\\\\"/g, '\\"')  // \\" → \"
+
+        result = JSON.parse(jsonStr)
+      } catch {
+        // 여전히 실패
+      }
     }
   }
 
   if (!result || !result.insight) {
+    console.error('[NewsInsight/Gemini] Failed to parse. Content:', content)
     throw new Error('Failed to parse insight from Gemini response')
   }
 
