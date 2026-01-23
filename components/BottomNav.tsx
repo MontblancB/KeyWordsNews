@@ -15,6 +15,7 @@ import {
   PresentationChartLineIcon as PresentationChartLineIconSolid,
   Cog6ToothIcon as Cog6ToothIconSolid,
 } from '@heroicons/react/24/solid'
+import { useCategoryOrder } from '@/hooks/useCategoryOrder'
 
 // 햅틱 피드백 (Android Chrome만 지원, iOS 미지원)
 // UX 가이드라인: 버튼 탭 20-30ms 권장
@@ -31,11 +32,15 @@ const triggerHaptic = (duration: number = 30) => {
 export default function BottomNav() {
   const pathname = usePathname()
   const router = useRouter()
+  const { categoryOrder } = useCategoryOrder()
 
   const handleNavClick = (path: string) => {
     triggerHaptic(30) // 30ms - 버튼 탭 권장 시간
     router.push(path)
   }
+
+  // 첫 번째 카테고리로 동적 경로 생성
+  const firstCategory = categoryOrder[0] || 'politics'
 
   const navItems = [
     {
@@ -49,7 +54,7 @@ export default function BottomNav() {
       icon: NewspaperIcon,
       iconSolid: NewspaperIconSolid,
       label: '토픽',
-      path: '/topics/politics',
+      path: `/topics/${firstCategory}`,
       color: 'text-blue-500',
     },
     {
