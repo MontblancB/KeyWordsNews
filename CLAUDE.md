@@ -18,7 +18,7 @@
 ### 배포 정보
 - **배포 URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
-- **현재 버전**: 2.31.1
+- **현재 버전**: 2.31.2
 - **마지막 업데이트**: 2026-01-23
 
 ---
@@ -967,6 +967,28 @@ setTimeout(async () => {
 
 ## 최근 업데이트
 
+### v2.31.2 (2026-01-23)
+**InsightNow 및 SummarizeNow 키워드 모달 버그 수정 및 에러 처리 개선**
+
+#### 버그 수정
+- 🐛 **키워드 모달 z-index 수정**: KeywordActionModal이 InsightModal/SummarizeModal 위에 표시되도록 z-index 조정
+  - z-50 → z-[110]으로 변경
+  - 키워드 클릭 시 모달이 정상적으로 표시됨
+
+#### 에러 처리 개선
+- 💬 **사용자 친화적인 에러 메시지**: AI API 에러 시 구체적인 안내 제공
+  - Rate limit: "AI 사용량 제한에 도달했습니다. 약 30-40분 후 사용 가능"
+  - Service overload: "AI 서비스가 일시적으로 혼잡합니다."
+  - All providers failed: "현재 AI 서비스를 사용할 수 없습니다."
+  - 각 상황에 맞는 구체적인 해결 방법 안내
+
+#### 수정된 파일
+- 📄 `components/KeywordActionModal.tsx`: z-index 수정
+- 📄 `components/InsightModal.tsx`: 에러 메시지 개선
+- 📄 `components/SummarizeModal.tsx`: 에러 메시지 개선
+
+---
+
 ### v2.31.1 (2026-01-23)
 **BubbleNow 시각화 가독성 대폭 개선**
 
@@ -1558,4 +1580,4 @@ git commit -m "fix: 버그 수정
 ---
 
 **Last Updated**: 2026-01-23
-**Version**: 2.31.0
+**Version**: 2.31.2

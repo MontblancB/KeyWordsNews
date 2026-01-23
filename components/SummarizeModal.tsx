@@ -125,9 +125,34 @@ export default function SummarizeModal({
                   오류가 발생했습니다
                 </p>
               </div>
-              <p className="text-red-600 dark:text-red-400 text-sm ml-7">
-                {error}
-              </p>
+              <div className="text-red-600 dark:text-red-400 text-sm ml-7 space-y-2">
+                {error.includes('Rate limit') ? (
+                  <>
+                    <p className="font-medium">AI 사용량 제한에 도달했습니다.</p>
+                    <p className="text-xs">
+                      잠시 후 다시 시도해주세요. (약 30-40분 후 사용 가능)
+                    </p>
+                  </>
+                ) : error.includes('overloaded') || error.includes('503') ? (
+                  <>
+                    <p className="font-medium">AI 서비스가 일시적으로 혼잡합니다.</p>
+                    <p className="text-xs">
+                      잠시 후 다시 시도해주세요.
+                    </p>
+                  </>
+                ) : error.includes('모든 AI 프로바이더 실패') ? (
+                  <>
+                    <p className="font-medium">현재 AI 서비스를 사용할 수 없습니다.</p>
+                    <p className="text-xs">
+                      서비스 혼잡 또는 일일 사용량 제한으로 인해 일시적으로 사용할 수 없습니다.
+                      <br />
+                      잠시 후 다시 시도해주세요.
+                    </p>
+                  </>
+                ) : (
+                  <p>{error}</p>
+                )}
+              </div>
               <button
                 onClick={onClose}
                 className="mt-3 px-4 py-2 bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-200 rounded-lg text-sm hover:bg-red-200 dark:hover:bg-red-700 transition-colors flex items-center gap-2"
