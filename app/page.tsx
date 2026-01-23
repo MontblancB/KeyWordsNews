@@ -206,13 +206,15 @@ export default function HomePage() {
     setBubbleError(null)
 
     try {
-      // 전체 뉴스 가져오기 (최대 100개)
-      const newsResponse = await fetch('/api/news/latest?limit=100&offset=0')
+      // 전체 뉴스 가져오기 (최대 200개로 증가)
+      const newsResponse = await fetch('/api/news/latest?limit=200&offset=0')
       if (!newsResponse.ok) {
         throw new Error('뉴스를 가져올 수 없습니다.')
       }
       const newsData = await newsResponse.json()
       const allNewsForBubble = newsData.data || []
+
+      console.log(`[BubbleNow] 수집된 뉴스: ${allNewsForBubble.length}개`)
 
       if (allNewsForBubble.length < 5) {
         setBubbleError('분석할 뉴스가 부족합니다. (최소 5개 필요)')

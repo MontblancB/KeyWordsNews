@@ -39,8 +39,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 2. 뉴스 수 제한 (최대 100개)
-    const limitedNews = newsList.slice(0, 100)
+    // 2. 뉴스 수 제한 (최대 200개로 증가)
+    const limitedNews = newsList.slice(0, 200)
 
     console.log(
       `[BubbleNow] 요청: ${limitedNews.length}개 뉴스 (원본: ${newsList.length}개)`

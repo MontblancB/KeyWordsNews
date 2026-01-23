@@ -219,11 +219,11 @@ export default function KeywordsPage() {
     setBubbleError(null)
 
     try {
-      // 전체 뉴스 가져오기 (검색 결과 최대 5페이지, 100개)
+      // 전체 뉴스 가져오기 (검색 결과 최대 10페이지, 200개)
       const allNewsForBubble: any[] = []
 
-      // 최대 5페이지 (페이지당 20개 = 총 100개)
-      for (let page = 1; page <= 5; page++) {
+      // 최대 10페이지 (페이지당 20개 = 총 200개)
+      for (let page = 1; page <= 10; page++) {
         const newsResponse = await fetch(`/api/news/search?q=${encodeURIComponent(activeKeyword)}&page=${page}`)
         if (!newsResponse.ok) break
 
@@ -235,6 +235,8 @@ export default function KeywordsPage() {
         // 마지막 페이지면 중단
         if (page >= newsData.totalPages) break
       }
+
+      console.log(`[BubbleNow] 수집된 뉴스 (키워드: ${activeKeyword}): ${allNewsForBubble.length}개`)
 
       if (allNewsForBubble.length < 5) {
         setBubbleError('분석할 뉴스가 부족합니다. (최소 5개 필요)')

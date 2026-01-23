@@ -186,11 +186,15 @@ export default function BubbleMapVisualization({
         }
       })
 
-    // 텍스트 라벨
+    // 텍스트 라벨 (원의 크기에 비례)
     node
       .append('text')
       .text((d) => d.text)
-      .attr('font-size', (d) => Math.max(12, Math.sqrt(d.value) * 3)) // 폰트 크기 50% 증가
+      .attr('font-size', (d) => {
+        const baseRadius = Math.sqrt(d.value) * 12
+        const radius = Math.max(baseRadius, minRadius)
+        return Math.max(14, radius * 0.35) // 원의 35% 크기로 폰트 설정
+      })
       .attr('text-anchor', 'middle')
       .attr('dy', '0.3em')
       .attr('fill', '#fff')
@@ -198,11 +202,15 @@ export default function BubbleMapVisualization({
       .style('pointer-events', 'none')
       .style('user-select', 'none')
 
-    // 빈도 표시 (작은 텍스트)
+    // 빈도 표시 (작은 텍스트, 원의 크기에 비례)
     node
       .append('text')
       .text((d) => `(${d.count})`)
-      .attr('font-size', (d) => Math.max(10, Math.sqrt(d.value) * 2)) // 폰트 크기 증가
+      .attr('font-size', (d) => {
+        const baseRadius = Math.sqrt(d.value) * 12
+        const radius = Math.max(baseRadius, minRadius)
+        return Math.max(11, radius * 0.25) // 원의 25% 크기로 폰트 설정
+      })
       .attr('text-anchor', 'middle')
       .attr('dy', '1.5em')
       .attr('fill', '#fff')
@@ -262,7 +270,7 @@ export default function BubbleMapVisualization({
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded-full bg-cyan-500" />
-            <span>크기 = 가중치 (최소 크기 보장)</span>
+            <span>크기/글자 = 가중치 비례</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-8 h-0.5 bg-gray-400" />
