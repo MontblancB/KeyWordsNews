@@ -254,7 +254,7 @@ async function extractKeywordsForBatch(
   const newsTexts = batch
     .map(
       (news, index) =>
-        `뉴스 ${index + 1} (ID: ${news.id}):\n제목: ${news.title}\n요약: ${news.summary}`
+        `뉴스 ${index}:\n제목: ${news.title}\n요약: ${news.summary}`
     )
     .join('\n\n')
 
@@ -268,14 +268,16 @@ ${newsTexts}
 - 한글로만 작성 (외국어 금지)
 - 고유명사, 전문용어, 핵심 개념 위주
 
-**출력 형식 (반드시 JSON):**
+**출력 형식 (반드시 JSON 배열):**
 {
-  "keywords": {
-    "뉴스ID1": ["키워드1", "키워드2", "키워드3"],
-    "뉴스ID2": ["키워드4", "키워드5", "키워드6"],
+  "results": [
+    { "index": 0, "keywords": ["키워드1", "키워드2", "키워드3"] },
+    { "index": 1, "keywords": ["키워드4", "키워드5", "키워드6"] },
     ...
-  }
+  ]
 }
+
+IMPORTANT: index는 0부터 시작하며, 반드시 모든 뉴스에 대해 결과를 반환해야 합니다.
 `
 
   try {
@@ -295,13 +297,21 @@ ${newsTexts}
     })
 
     const content = response.choices[0]?.message?.content || ''
-    const result: { keywords: Record<string, string[]> } = JSON.parse(content)
+    const result: { results: Array<{ index: number; keywords: string[] }> } =
+      JSON.parse(content)
 
-    // Map으로 변환
+    // 인덱스 기반으로 실제 뉴스 ID와 매칭
     const keywordsMap = new Map<string, string[]>()
-    for (const [newsId, keywords] of Object.entries(result.keywords || {})) {
-      keywordsMap.set(newsId, keywords)
+    for (const item of result.results || []) {
+      const newsId = batch[item.index]?.id
+      if (newsId && item.keywords && item.keywords.length > 0) {
+        keywordsMap.set(newsId, item.keywords)
+      }
     }
+
+    console.log(
+      `[BubbleNow] Groq 배치 결과: ${result.results?.length || 0}개 응답, ${keywordsMap.size}개 매칭 성공`
+    )
 
     return keywordsMap
   } catch (error) {
@@ -326,7 +336,7 @@ async function extractKeywordsWithGemini(
   const newsTexts = batch
     .map(
       (news, index) =>
-        `뉴스 ${index + 1} (ID: ${news.id}):\n제목: ${news.title}\n요약: ${news.summary}`
+        `뉴스 ${index}:\n제목: ${news.title}\n요약: ${news.summary}`
     )
     .join('\n\n')
 
@@ -340,14 +350,16 @@ ${newsTexts}
 - 한글로만 작성 (외국어 금지)
 - 고유명사, 전문용어, 핵심 개념 위주
 
-**출력 형식 (반드시 JSON):**
+**출력 형식 (반드시 JSON 배열):**
 {
-  "keywords": {
-    "뉴스ID1": ["키워드1", "키워드2", "키워드3"],
-    "뉴스ID2": ["키워드4", "키워드5", "키워드6"],
+  "results": [
+    { "index": 0, "keywords": ["키워드1", "키워드2", "키워드3"] },
+    { "index": 1, "keywords": ["키워드4", "키워드5", "키워드6"] },
     ...
-  }
+  ]
 }
+
+IMPORTANT: index는 0부터 시작하며, 반드시 모든 뉴스에 대해 결과를 반환해야 합니다.
 `
 
   const baseUrl = 'https://generativelanguage.googleapis.com/v1beta'
@@ -372,15 +384,22 @@ ${newsTexts}
         responseJsonSchema: {
           type: 'object',
           properties: {
-            keywords: {
-              type: 'object',
-              additionalProperties: {
-                type: 'array',
-                items: { type: 'string' },
+            results: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  index: { type: 'integer' },
+                  keywords: {
+                    type: 'array',
+                    items: { type: 'string' },
+                  },
+                },
+                required: ['index', 'keywords'],
               },
             },
           },
-          required: ['keywords'],
+          required: ['results'],
         },
       },
     }),
@@ -400,13 +419,21 @@ ${newsTexts}
     throw new Error('Gemini returned empty response')
   }
 
-  const result: { keywords: Record<string, string[]> } = JSON.parse(content)
+  const result: { results: Array<{ index: number; keywords: string[] }> } =
+    JSON.parse(content)
 
-  // Map으로 변환
+  // 인덱스 기반으로 실제 뉴스 ID와 매칭
   const keywordsMap = new Map<string, string[]>()
-  for (const [newsId, keywords] of Object.entries(result.keywords || {})) {
-    keywordsMap.set(newsId, keywords)
+  for (const item of result.results || []) {
+    const newsId = batch[item.index]?.id
+    if (newsId && item.keywords && item.keywords.length > 0) {
+      keywordsMap.set(newsId, item.keywords)
+    }
   }
+
+  console.log(
+    `[BubbleNow] Gemini 배치 결과: ${result.results?.length || 0}개 응답, ${keywordsMap.size}개 매칭 성공`
+  )
 
   return keywordsMap
 }
