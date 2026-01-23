@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { SparklesIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline'
 import { SparklesIcon as SparklesIconSolid } from '@heroicons/react/24/solid'
+import KeywordActionModal from './KeywordActionModal'
 
 interface AISummaryProps {
   newsId: string
@@ -43,6 +44,7 @@ export default function AISummary({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isExpanded, setIsExpanded] = useState(!!initialSummary)
+  const [selectedKeyword, setSelectedKeyword] = useState<string | null>(null)
 
   const handleSummarize = async () => {
     setLoading(true)
@@ -93,6 +95,14 @@ export default function AISummary({
   if (summaryData) {
     return (
       <>
+        {/* 키워드 액션 모달 */}
+        {selectedKeyword && (
+          <KeywordActionModal
+            keyword={selectedKeyword}
+            onClose={() => setSelectedKeyword(null)}
+          />
+        )}
+
         {/* 버튼 (order: 1) */}
         <div style={{ order: 1 }}>
           <button
@@ -116,16 +126,21 @@ export default function AISummary({
         {isExpanded && (
           <div style={{ order: 3 }} className="w-full">
             <div className="mt-2 p-3 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
-              {/* 키워드 배지 */}
+              {/* 키워드 배지 (클릭 가능) */}
               {summaryData.keywords.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mb-2">
                   {summaryData.keywords.map((keyword, index) => (
-                    <span
+                    <button
                       key={index}
-                      className="px-2 py-0.5 text-xs font-medium bg-purple-100 dark:bg-purple-800 text-purple-700 dark:text-purple-300 rounded-full"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setSelectedKeyword(keyword)
+                      }}
+                      className="px-2 py-0.5 text-xs font-medium bg-purple-100 dark:bg-purple-800 text-purple-700 dark:text-purple-300 rounded-full hover:bg-purple-200 dark:hover:bg-purple-700 transition-colors cursor-pointer"
                     >
                       #{keyword}
-                    </span>
+                    </button>
                   ))}
                 </div>
               )}
