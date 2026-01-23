@@ -206,7 +206,7 @@ export default function TopicPage() {
 
   // 버블맵 모달 열기 및 API 호출
   const handleOpenBubble = useCallback(async () => {
-    if (!FEATURE_FLAGS.ENABLE_DAILY_INSIGHT) return
+    if (!FEATURE_FLAGS.ENABLE_BUBBLE_NOW) return
 
     // 현재 로드된 모든 뉴스 사용 (InsightNow, SummarizeNow와 동일)
     const allNewsForBubble = data?.pages.flatMap((page) => page.data) || []
@@ -343,11 +343,13 @@ export default function TopicPage() {
                 isLoading={isSummarizeLoading}
                 disabled={allNews.length < 5}
               />
-              <BubbleButton
-                onClick={handleOpenBubble}
-                isLoading={isBubbleLoading}
-                disabled={allNews.length < 5}
-              />
+              {FEATURE_FLAGS.ENABLE_BUBBLE_NOW && (
+                <BubbleButton
+                  onClick={handleOpenBubble}
+                  isLoading={isBubbleLoading}
+                  disabled={allNews.length < 5}
+                />
+              )}
             </div>
           </div>
         )}
@@ -428,7 +430,7 @@ export default function TopicPage() {
       )}
 
       {/* BubbleNow 모달 (Feature Flag로 제어) */}
-      {FEATURE_FLAGS.ENABLE_DAILY_INSIGHT && (
+      {FEATURE_FLAGS.ENABLE_BUBBLE_NOW && (
         <BubbleModal
           isOpen={isBubbleModalOpen}
           onClose={handleCloseBubble}
@@ -442,7 +444,7 @@ export default function TopicPage() {
       )}
 
       {/* KeywordNewsModal - 키워드 클릭 시 관련 뉴스 목록 표시 */}
-      {FEATURE_FLAGS.ENABLE_DAILY_INSIGHT && selectedKeyword && (
+      {FEATURE_FLAGS.ENABLE_BUBBLE_NOW && selectedKeyword && (
         <KeywordNewsModal
           isOpen={isKeywordNewsModalOpen}
           onClose={handleCloseKeywordNews}
