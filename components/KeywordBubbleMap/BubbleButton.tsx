@@ -1,6 +1,6 @@
 'use client'
 
-import { CircleStackIcon } from '@heroicons/react/24/outline'
+import { Squares2X2Icon } from '@heroicons/react/24/outline'
 
 interface BubbleButtonProps {
   onClick: () => void
@@ -43,7 +43,7 @@ export default function BubbleButton({
         </>
       ) : (
         <>
-          <CircleStackIcon className="w-4 h-4" />
+          <Squares2X2Icon className="w-4 h-4" />
           <span>BubbleNow</span>
         </>
       )}

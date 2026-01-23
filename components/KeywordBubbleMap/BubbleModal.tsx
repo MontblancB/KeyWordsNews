@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { XMarkIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline'
+import { XMarkIcon, ArrowDownTrayIcon, Squares2X2Icon } from '@heroicons/react/24/outline'
 import BubbleMapVisualization from './BubbleMapVisualization'
 
 interface KeywordNode {
@@ -104,7 +104,8 @@ export default function BubbleModal({
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              🗺️ 키워드 버블맵
+              <Squares2X2Icon className="w-7 h-7 text-orange-500" />
+              키워드 버블맵
             </h2>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               {metadata && (

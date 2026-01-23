@@ -18,7 +18,7 @@
 ### 배포 정보
 - **배포 URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
-- **현재 버전**: 2.32.0
+- **현재 버전**: 2.32.1
 - **마지막 업데이트**: 2026-01-23
 
 ---
@@ -967,6 +967,21 @@ setTimeout(async () => {
 
 ## 최근 업데이트
 
+### v2.32.1 (2026-01-23)
+**BubbleNow 아이콘을 Heroicons로 변경**
+
+#### UI 개선
+- 🎨 **아이콘 변경**: CircleStackIcon → Squares2X2Icon
+  - 버튼 아이콘: 그리드 패턴으로 버블맵의 특성을 더 잘 표현
+  - 모달 헤더: 이모지 🗺️ → Squares2X2Icon (주황색)
+  - 일관된 디자인 시스템 (Heroicons 사용)
+
+#### 수정된 파일
+- 📄 `components/KeywordBubbleMap/BubbleButton.tsx`: CircleStackIcon → Squares2X2Icon
+- 📄 `components/KeywordBubbleMap/BubbleModal.tsx`: 이모지 → Heroicons
+
+---
+
 ### v2.32.0 (2026-01-23)
 **BubbleNow 군집별 색상 시스템 및 캐시 키 개선**
 
@@ -1726,4 +1741,4 @@ git commit -m "fix: 버그 수정
 ---
 
 **Last Updated**: 2026-01-23
-**Version**: 2.32.0
+**Version**: 2.32.1
