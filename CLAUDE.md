@@ -18,8 +18,8 @@
 ### 배포 정보
 - **배포 URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
-- **현재 버전**: 2.32.2
-- **마지막 업데이트**: 2026-01-23
+- **현재 버전**: 2.33.0
+- **마지막 업데이트**: 2026-01-24
 
 ---
 
@@ -967,6 +967,53 @@ setTimeout(async () => {
 
 ## 최근 업데이트
 
+### v2.33.0 (2026-01-24)
+**BubbleNow 키워드 클릭 기능 추가 및 Feature Flag 비활성화**
+
+#### 새로운 기능
+- 🔍 **키워드 클릭으로 관련 뉴스 표시**: 버블맵의 키워드를 클릭하면 해당 키워드가 포함된 모든 뉴스 확인 가능
+  - 레이어드 모달 시스템: KeywordNewsModal(z-60) > BubbleModal(z-50)
+  - AI 요약 우선 표시 (없으면 원본 요약)
+  - 뉴스 출처 및 발행 시간 표시
+  - AI 키워드 배지 표시
+  - 원문 기사 링크 (새 탭에서 열림)
+  - ESC 키 및 배경 클릭으로 닫기
+
+- 🎛️ **Feature Flag 시스템**: BubbleNow 기능을 쉽게 ON/OFF 가능
+  - `lib/feature-flags.ts`에 `ENABLE_BUBBLE_NOW` 플래그 추가
+  - 현재 상태: `false` (비활성화)
+  - 버튼, 모달, 이벤트 핸들러 모두 플래그로 제어
+  - 재활성화: 플래그를 `true`로 변경하면 즉시 복구
+
+#### 추가된 파일
+- 📄 `components/KeywordBubbleMap/KeywordNewsModal.tsx`: 키워드 관련 뉴스 표시 모달
+- 📄 `app/api/news/by-ids/route.ts`: ID 배열로 뉴스 조회 API
+
+#### 수정된 파일
+- 📄 `lib/feature-flags.ts`: ENABLE_BUBBLE_NOW 플래그 추가 (기본값: false)
+- 📄 `app/page.tsx`: KeywordNewsModal 통합, ENABLE_BUBBLE_NOW 조건부 렌더링
+- 📄 `app/topics/[category]/page.tsx`: KeywordNewsModal 통합, ENABLE_BUBBLE_NOW 조건부 렌더링
+- 📄 `app/keywords/page.tsx`: KeywordNewsModal 통합, ENABLE_BUBBLE_NOW 조건부 렌더링
+
+#### 기술 스택
+- React 모달 컴포넌트 (z-index 레이어링)
+- Prisma `findMany` with `where: { id: { in: ids } }`
+- Next.js API Routes (POST 메서드)
+- TypeScript 타입 안전성
+- React Hooks (useCallback, useState, useEffect)
+
+#### 재활성화 방법
+BubbleNow 기능을 다시 켜려면:
+```typescript
+// lib/feature-flags.ts
+export const FEATURE_FLAGS = {
+  ENABLE_DAILY_INSIGHT: true,
+  ENABLE_BUBBLE_NOW: true, // false → true로 변경
+} as const
+```
+
+---
+
 ### v2.32.2 (2026-01-23)
 **토픽 탭 첫 번째 카테고리 자동 이동 개선**
 
@@ -1759,5 +1806,5 @@ git commit -m "fix: 버그 수정
 
 ---
 
-**Last Updated**: 2026-01-23
-**Version**: 2.32.2
+**Last Updated**: 2026-01-24
+**Version**: 2.33.0
