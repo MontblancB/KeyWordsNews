@@ -18,7 +18,7 @@
 ### 배포 정보
 - **배포 URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
-- **현재 버전**: 2.31.7
+- **현재 버전**: 2.32.0
 - **마지막 업데이트**: 2026-01-23
 
 ---
@@ -967,6 +967,34 @@ setTimeout(async () => {
 
 ## 최근 업데이트
 
+### v2.32.0 (2026-01-23)
+**BubbleNow 군집별 색상 시스템 및 캐시 키 개선**
+
+#### 새로운 기능
+- 🎨 **군집별 색상 시스템**: 연결된 키워드들을 같은 색상으로 표시
+  - 연결 강도(strength > 0.3) 기반 군집 감지
+  - BFS(너비 우선 탐색) 알고리즘으로 군집화
+  - Tableau10 색상 팔레트 사용 (10가지 고유 색상)
+  - 같은 주제의 키워드들을 시각적으로 구분 가능
+
+- 🔍 **시각적 인사이트 향상**:
+  - 키워드 간 관계를 색상으로 한눈에 파악
+  - 주요 토픽 군집을 쉽게 식별
+  - 더욱 직관적인 버블맵
+
+#### 버그 수정
+- 🐛 **캐시 키에 뉴스 개수 포함**: 적은 뉴스 캐시 문제 해결
+  - 기존: `category:politics` → 10개든 70개든 같은 캐시
+  - 개선: `category:politics:70` → 뉴스 개수별로 별도 캐시
+  - 무한 스크롤로 더 많은 뉴스 로드 시 정확히 반영
+  - 캐시 적중률 유지하면서 정확도 향상
+
+#### 수정된 파일
+- 📄 `app/api/news/bubble/route.ts`: 캐시 키에 뉴스 개수 추가
+- 📄 `components/KeywordBubbleMap/BubbleMapVisualization.tsx`: 군집 감지 알고리즘, Tableau10 색상, 범례 업데이트
+
+---
+
 ### v2.31.7 (2026-01-23)
 **BubbleNow 뉴스 수집 로직 수정 (InsightNow와 동일하게)**
 
@@ -1698,4 +1726,4 @@ git commit -m "fix: 버그 수정
 ---
 
 **Last Updated**: 2026-01-23
-**Version**: 2.31.7
+**Version**: 2.32.0

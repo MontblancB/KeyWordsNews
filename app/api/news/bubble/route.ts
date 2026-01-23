@@ -49,13 +49,14 @@ export async function POST(request: NextRequest) {
       `[BubbleNow] 첫 5개 ID: ${JSON.stringify(limitedNews.slice(0, 5).map((n: any) => n.id))}`
     )
 
-    // 3. 캐시 키 생성
+    // 3. 캐시 키 생성 (뉴스 개수 포함)
     const newsIds = limitedNews.map((n: any) => n.id)
+    const newsCount = limitedNews.length
     const cacheKey = category
-      ? `category:${category}`
+      ? `category:${category}:${newsCount}`
       : keyword
-        ? `keyword:${keyword}`
-        : `custom:${newsIds.slice(0, 5).join(',')}`
+        ? `keyword:${keyword}:${newsCount}`
+        : `custom:${newsIds.slice(0, 5).join(',')}:${newsCount}`
 
     // 4. 캐시 조회 (10분 이내)
     const cached = await prisma.keywordMap.findFirst({

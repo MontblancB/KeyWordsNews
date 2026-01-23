@@ -99,10 +99,43 @@ export default function BubbleMapVisualization({
     const maxTextLength = d3.max(nodes, (d) => d.text.length) || 1
     const minRadius = maxTextLength * 6 // 최소 반경 설정
 
-    // 색상 스케일 (빈도에 따라 색상 변경 - Turbo 테마)
-    const colorScale = d3
-      .scaleSequential(d3.interpolateTurbo)
-      .domain([0, d3.max(nodes, (d) => d.count) || 1])
+    // 군집별 색상 할당 (카테고리 색상)
+    const colorScale = d3.scaleOrdinal(d3.schemeTableau10)
+
+    // 각 노드에 군집 ID 할당 (연결 강도 기반 간단 군집화)
+    const clusters = new Map<string, number>()
+    let clusterId = 0
+
+    nodes.forEach((node, index) => {
+      if (!clusters.has(node.id)) {
+        // 연결된 노드들을 같은 군집으로
+        const queue = [node]
+        const visited = new Set<string>()
+
+        while (queue.length > 0) {
+          const current = queue.shift()!
+          if (visited.has(current.id)) continue
+          visited.add(current.id)
+          clusters.set(current.id, clusterId)
+
+          // 강한 연결만 같은 군집으로 (strength > 0.3)
+          linkData
+            .filter(link =>
+              ((link.source as any).id === current.id || (link.target as any).id === current.id) &&
+              link.strength > 0.3
+            )
+            .forEach(link => {
+              const connectedNode = (link.source as any).id === current.id
+                ? link.target
+                : link.source
+              if (!visited.has((connectedNode as any).id)) {
+                queue.push(connectedNode as any)
+              }
+            })
+        }
+        clusterId++
+      }
+    })
 
     // Force Simulation 설정
     const simulation = d3
@@ -168,7 +201,7 @@ export default function BubbleMapVisualization({
         const baseRadius = Math.sqrt(d.value) * 12
         return Math.max(baseRadius, minRadius)
       })
-      .attr('fill', (d) => colorScale(d.count))
+      .attr('fill', (d) => colorScale(clusters.get(d.id)?.toString() || '0'))
       .attr('stroke', '#fff')
       .attr('stroke-width', 2)
       .style('cursor', 'pointer')
@@ -263,10 +296,13 @@ export default function BubbleMapVisualization({
         <div className="font-semibold mb-2">범례</div>
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <div className="w-16 h-4 rounded" style={{
-              background: 'linear-gradient(to right, #23171b, #1e96be, #52fa8c, #fde724)'
-            }} />
-            <span>색 = 키워드 빈도</span>
+            <div className="flex gap-0.5">
+              <div className="w-3 h-3 rounded-full" style={{ background: '#4e79a7' }} />
+              <div className="w-3 h-3 rounded-full" style={{ background: '#f28e2c' }} />
+              <div className="w-3 h-3 rounded-full" style={{ background: '#e15759' }} />
+              <div className="w-3 h-3 rounded-full" style={{ background: '#76b7b2' }} />
+            </div>
+            <span>색 = 키워드 군집</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded-full bg-cyan-500" />
