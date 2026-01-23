@@ -2,31 +2,27 @@
 
 import { useRouter, usePathname } from 'next/navigation'
 import { useColorTheme } from '@/hooks/useColorTheme'
-
-const CATEGORIES = [
-  { id: 'politics', label: '정치' },
-  { id: 'economy', label: '경제' },
-  { id: 'society', label: '사회' },
-  { id: 'world', label: '국제' },
-  { id: 'tech', label: 'IT' },
-  { id: 'crypto', label: '암호화폐' },
-  { id: 'global', label: '글로벌' },
-  { id: 'sports', label: '스포츠' },
-  { id: 'entertainment', label: '연예' },
-  { id: 'culture', label: '문화' },
-]
+import { useCategoryOrder } from '@/hooks/useCategoryOrder'
+import { CATEGORY_LABELS } from '@/lib/settings/categoryOrder'
 
 export default function CategoryTabs() {
   const router = useRouter()
   const pathname = usePathname()
   const { buttonClasses } = useColorTheme()
+  const { categoryOrder } = useCategoryOrder()
 
   const currentCategory = pathname.split('/').pop() || 'politics'
+
+  // 사용자 지정 순서대로 카테고리 정렬
+  const sortedCategories = categoryOrder.map(id => ({
+    id,
+    label: CATEGORY_LABELS[id] || id,
+  }))
 
   return (
     <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
       <div className="flex gap-2 p-2">
-        {CATEGORIES.map((category) => (
+        {sortedCategories.map((category) => (
           <button
             key={category.id}
             onClick={() => router.push(`/topics/${category.id}`)}
