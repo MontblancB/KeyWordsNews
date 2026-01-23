@@ -300,7 +300,11 @@ ${newsTexts}
   ]
 }
 
-IMPORTANT: index는 0부터 시작하며, 반드시 모든 뉴스에 대해 결과를 반환해야 합니다.
+CRITICAL RULES:
+1. index는 0부터 시작합니다
+2. 반드시 모든 뉴스(0부터 N-1까지)에 대해 결과를 반환해야 합니다
+3. 각 index는 정확히 1번만 나타나야 합니다 (중복 금지!)
+4. index 순서는 상관없지만, 모든 index가 포함되어야 합니다
 `
 
   try {
@@ -323,12 +327,32 @@ IMPORTANT: index는 0부터 시작하며, 반드시 모든 뉴스에 대해 결�
     const result: { results: Array<{ index: number; keywords: string[] }> } =
       JSON.parse(content)
 
+    // 중복 index 감지 및 제거 (첫 번째만 사용)
+    const seenIndices = new Set<number>()
+    const uniqueResults: Array<{ index: number; keywords: string[] }> = []
+    let duplicateCount = 0
+
+    for (const item of result.results || []) {
+      if (seenIndices.has(item.index)) {
+        duplicateCount++
+        continue
+      }
+      seenIndices.add(item.index)
+      uniqueResults.push(item)
+    }
+
+    if (duplicateCount > 0) {
+      console.log(
+        `[BubbleNow] Groq 중복 index 제거: ${duplicateCount}개 (${result.results?.length || 0}개 → ${uniqueResults.length}개)`
+      )
+    }
+
     // 인덱스 기반으로 실제 뉴스 ID와 매칭
     const keywordsMap = new Map<string, string[]>()
     let skippedCount = 0
     const skipReasons: string[] = []
 
-    for (const item of result.results || []) {
+    for (const item of uniqueResults) {
       const newsId = batch[item.index]?.id
 
       if (!newsId) {
@@ -347,7 +371,7 @@ IMPORTANT: index는 0부터 시작하며, 반드시 모든 뉴스에 대해 결�
     }
 
     console.log(
-      `[BubbleNow] Groq 배치 결과: ${result.results?.length || 0}개 응답, ${keywordsMap.size}개 매칭 성공, ${skippedCount}개 스킵`
+      `[BubbleNow] Groq 배치 결과: ${uniqueResults.length}개 고유 응답, ${keywordsMap.size}개 매칭 성공, ${skippedCount}개 스킵`
     )
     if (skipReasons.length > 0) {
       console.log(`[BubbleNow] 스킵 이유: ${skipReasons.slice(0, 3).join(', ')}${skipReasons.length > 3 ? '...' : ''}`)
@@ -399,7 +423,11 @@ ${newsTexts}
   ]
 }
 
-IMPORTANT: index는 0부터 시작하며, 반드시 모든 뉴스에 대해 결과를 반환해야 합니다.
+CRITICAL RULES:
+1. index는 0부터 시작합니다
+2. 반드시 모든 뉴스(0부터 N-1까지)에 대해 결과를 반환해야 합니다
+3. 각 index는 정확히 1번만 나타나야 합니다 (중복 금지!)
+4. index 순서는 상관없지만, 모든 index가 포함되어야 합니다
 `
 
   const baseUrl = 'https://generativelanguage.googleapis.com/v1beta'
@@ -462,12 +490,32 @@ IMPORTANT: index는 0부터 시작하며, 반드시 모든 뉴스에 대해 결�
   const result: { results: Array<{ index: number; keywords: string[] }> } =
     JSON.parse(content)
 
+  // 중복 index 감지 및 제거 (첫 번째만 사용)
+  const seenIndices = new Set<number>()
+  const uniqueResults: Array<{ index: number; keywords: string[] }> = []
+  let duplicateCount = 0
+
+  for (const item of result.results || []) {
+    if (seenIndices.has(item.index)) {
+      duplicateCount++
+      continue
+    }
+    seenIndices.add(item.index)
+    uniqueResults.push(item)
+  }
+
+  if (duplicateCount > 0) {
+    console.log(
+      `[BubbleNow] Gemini 중복 index 제거: ${duplicateCount}개 (${result.results?.length || 0}개 → ${uniqueResults.length}개)`
+    )
+  }
+
   // 인덱스 기반으로 실제 뉴스 ID와 매칭
   const keywordsMap = new Map<string, string[]>()
   let skippedCount = 0
   const skipReasons: string[] = []
 
-  for (const item of result.results || []) {
+  for (const item of uniqueResults) {
     const newsId = batch[item.index]?.id
 
     if (!newsId) {
@@ -486,7 +534,7 @@ IMPORTANT: index는 0부터 시작하며, 반드시 모든 뉴스에 대해 결�
   }
 
   console.log(
-    `[BubbleNow] Gemini 배치 결과: ${result.results?.length || 0}개 응답, ${keywordsMap.size}개 매칭 성공, ${skippedCount}개 스킵`
+    `[BubbleNow] Gemini 배치 결과: ${uniqueResults.length}개 고유 응답, ${keywordsMap.size}개 매칭 성공, ${skippedCount}개 스킵`
   )
   if (skipReasons.length > 0) {
     console.log(`[BubbleNow] 스킵 이유: ${skipReasons.slice(0, 3).join(', ')}${skipReasons.length > 3 ? '...' : ''}`)
