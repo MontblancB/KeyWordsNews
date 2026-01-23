@@ -95,9 +95,13 @@ export default function BubbleMapVisualization({
       strength: link.strength,
     }))
 
-    // 색상 스케일 (빈도에 따라 색상 변경 - Plasma 테마)
+    // 가장 긴 키워드의 길이 찾기
+    const maxTextLength = d3.max(nodes, (d) => d.text.length) || 1
+    const minRadius = maxTextLength * 6 // 최소 반경 설정
+
+    // 색상 스케일 (빈도에 따라 색상 변경 - Turbo 테마)
     const colorScale = d3
-      .scaleSequential(d3.interpolatePlasma)
+      .scaleSequential(d3.interpolateTurbo)
       .domain([0, d3.max(nodes, (d) => d.count) || 1])
 
     // Force Simulation 설정
@@ -116,10 +120,9 @@ export default function BubbleMapVisualization({
       .force(
         'collision',
         d3.forceCollide().radius((d: any) => {
-          // 키워드 길이와 가중치를 모두 고려한 반경 계산
+          // 가중치 기반 크기와 최소 반경 중 큰 값 사용
           const baseRadius = Math.sqrt(d.value) * 12
-          const textRadius = d.text.length * 6
-          return Math.max(baseRadius, textRadius) + 8
+          return Math.max(baseRadius, minRadius) + 8
         })
       )
 
@@ -158,13 +161,12 @@ export default function BubbleMapVisualization({
           }) as any
       )
 
-    // 버블 원 그리기 (키워드 길이와 가중치를 모두 고려)
+    // 버블 원 그리기 (가중치 기반, 최소 크기는 가장 긴 키워드 기준)
     node
       .append('circle')
       .attr('r', (d) => {
         const baseRadius = Math.sqrt(d.value) * 12
-        const textRadius = d.text.length * 6
-        return Math.max(baseRadius, textRadius)
+        return Math.max(baseRadius, minRadius)
       })
       .attr('fill', (d) => colorScale(d.count))
       .attr('stroke', '#fff')
@@ -254,13 +256,13 @@ export default function BubbleMapVisualization({
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <div className="w-16 h-4 rounded" style={{
-              background: 'linear-gradient(to right, #0d0887, #7e03a8, #cb4679, #f89540, #f0f921)'
+              background: 'linear-gradient(to right, #23171b, #1e96be, #52fa8c, #fde724)'
             }} />
             <span>색 = 키워드 빈도</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-purple-500" />
-            <span>크기 = 가중치+글자수</span>
+            <div className="w-4 h-4 rounded-full bg-cyan-500" />
+            <span>크기 = 가중치 (최소 크기 보장)</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-8 h-0.5 bg-gray-400" />
