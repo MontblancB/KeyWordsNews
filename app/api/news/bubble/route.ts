@@ -40,6 +40,16 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. 중복 제거 및 뉴스 수 제한
+    // 중복 통계 분석
+    const idCounts = new Map<string, number>()
+    for (const news of newsList) {
+      idCounts.set(news.id, (idCounts.get(news.id) || 0) + 1)
+    }
+
+    const duplicatedIds = Array.from(idCounts.entries())
+      .filter(([_, count]) => count > 1)
+      .sort((a, b) => b[1] - a[1])
+
     const uniqueNews = Array.from(
       new Map(newsList.map((n: any) => [n.id, n])).values()
     ).slice(0, 200)
@@ -47,6 +57,16 @@ export async function POST(request: NextRequest) {
     console.log(
       `[BubbleNow] 요청: ${newsList.length}개 뉴스 → 중복 제거 후 ${uniqueNews.length}개`
     )
+
+    if (duplicatedIds.length > 0) {
+      console.log(
+        `[BubbleNow] 중복 뉴스: ${duplicatedIds.length}개 URL (최대 ${duplicatedIds[0][1]}회 중복)`
+      )
+      console.log(
+        `[BubbleNow] 중복 예시: ${duplicatedIds.slice(0, 3).map(([id, count]) => `${id.slice(0, 20)}...(${count}회)`).join(', ')}`
+      )
+    }
+
     console.log(
       `[BubbleNow] 첫 5개 ID: ${JSON.stringify(uniqueNews.slice(0, 5).map((n: any) => n.id))}`
     )
