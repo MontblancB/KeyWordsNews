@@ -1,5 +1,9 @@
 /**
  * 재무 데이터 포맷팅 유틸리티
+ *
+ * ⚠️ 주의:
+ * - FnGuide(한국 주식)는 "억원" 단위로 데이터를 제공
+ * - Yahoo Finance(미국 주식)는 이미 formatLargeNumber로 포맷된 값을 제공
  */
 
 /**
@@ -17,79 +21,40 @@ function parseFinancialNumber(value: string): number | null {
 }
 
 /**
- * 숫자를 한국 화폐 단위로 포맷팅
- * @param value 숫자 문자열 (예: "1234567890000")
- * @param isKorean 한국 주식 여부 (true: 원화, false: 달러)
- * @returns 포맷된 문자열 (예: "1조 2,346억원" 또는 "$1.23B")
+ * 재무제표 금액 포맷팅 (단위 명시)
+ *
+ * ⚠️ 중요: FnGuide는 "억원" 단위로 데이터를 제공하므로
+ * 이 함수는 쉼표만 추가하고 "억원" 단위를 명시합니다.
+ *
+ * @param value 숫자 문자열 (예: "12345" = 12,345억원)
+ * @param isKorean 한국 주식 여부
+ * @returns 포맷된 문자열 (예: "12,345억원" 또는 "12,345조")
  */
 export function formatFinancialAmount(value: string, isKorean: boolean = true): string {
-  const num = parseFinancialNumber(value)
+  // 특수 값 처리
+  if (!value || value === '-' || value === 'N/A') return value
 
-  if (num === null) return value // 파싱 실패 시 원본 반환
+  // 이미 단위가 포함된 경우 (Yahoo Finance에서 formatLargeNumber로 처리된 값)
+  if (value.includes('억') || value.includes('조') || value.includes('만')) {
+    // 이미 포맷된 값은 그대로 반환
+    return value
+  }
+
+  const num = parseFinancialNumber(value)
+  if (num === null) return value
+
+  const absNum = Math.abs(num)
+  const isNegative = num < 0
+  const sign = isNegative ? '-' : ''
 
   if (isKorean) {
-    // 한국 주식: 억원, 조원 단위
-    const absNum = Math.abs(num)
-    const isNegative = num < 0
-    const sign = isNegative ? '-' : ''
-
-    // 조원 (1,000,000,000,000 이상)
-    if (absNum >= 1_000_000_000_000) {
-      const trillion = absNum / 1_000_000_000_000
-      const billion = (absNum % 1_000_000_000_000) / 100_000_000
-
-      if (billion >= 1) {
-        return `${sign}${trillion.toFixed(0)}조 ${billion.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}억원`
-      }
-      return `${sign}${trillion.toLocaleString('ko-KR', { maximumFractionDigits: 2 })}조원`
-    }
-
-    // 억원 (100,000,000 이상)
-    if (absNum >= 100_000_000) {
-      const billion = absNum / 100_000_000
-      return `${sign}${billion.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}억원`
-    }
-
-    // 만원 (10,000 이상)
-    if (absNum >= 10_000) {
-      const tenThousand = absNum / 10_000
-      return `${sign}${tenThousand.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}만원`
-    }
-
-    // 천원 미만
-    return `${sign}${absNum.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}원`
+    // 한국 주식: FnGuide는 "억원" 단위로 제공
+    // 예: "12345" → "12,345억원"
+    return `${sign}${absNum.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}억원`
   } else {
-    // 미국 주식: Million, Billion, Trillion
-    const absNum = Math.abs(num)
-    const isNegative = num < 0
-    const sign = isNegative ? '-' : ''
-
-    // Trillion (1,000,000,000,000 이상)
-    if (absNum >= 1_000_000_000_000) {
-      const trillion = absNum / 1_000_000_000_000
-      return `${sign}$${trillion.toLocaleString('en-US', { maximumFractionDigits: 2 })}T`
-    }
-
-    // Billion (1,000,000,000 이상)
-    if (absNum >= 1_000_000_000) {
-      const billion = absNum / 1_000_000_000
-      return `${sign}$${billion.toLocaleString('en-US', { maximumFractionDigits: 2 })}B`
-    }
-
-    // Million (1,000,000 이상)
-    if (absNum >= 1_000_000) {
-      const million = absNum / 1_000_000
-      return `${sign}$${million.toLocaleString('en-US', { maximumFractionDigits: 2 })}M`
-    }
-
-    // Thousand (1,000 이상)
-    if (absNum >= 1_000) {
-      const thousand = absNum / 1_000
-      return `${sign}$${thousand.toLocaleString('en-US', { maximumFractionDigits: 2 })}K`
-    }
-
-    // 천 미만
-    return `${sign}$${absNum.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
+    // 미국 주식: Yahoo Finance에서 이미 포맷된 값을 제공하므로
+    // 이 분기는 거의 사용되지 않음
+    return value
   }
 }
 

@@ -438,11 +438,16 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
               <TableCellsIcon className="w-4 h-4 text-purple-600 dark:text-purple-400" />
               <div className="flex flex-col">
                 <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200">재무제표</h3>
-                {financials[0]?.year && financials[0]?.reportType && (
-                  <span className="text-[10px] text-gray-500 dark:text-gray-400">
-                    {financials[0].year}년 {financials[0].reportType} 기준
+                <div className="flex gap-2 text-[10px] text-gray-500 dark:text-gray-400">
+                  {financials[0]?.year && financials[0]?.reportType && (
+                    <span>
+                      {financials[0].year}년 {financials[0].reportType} 기준
+                    </span>
+                  )}
+                  <span className="text-purple-600 dark:text-purple-400 font-medium">
+                    (단위: {isKoreanStock ? '억원' : '원시 값'})
                   </span>
-                )}
+                </div>
               </div>
             </div>
             {!FEATURE_FLAGS.SHOW_ALL_FINANCIALS && (
