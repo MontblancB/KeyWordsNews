@@ -269,6 +269,24 @@ export default function HomePage() {
     },
   })
 
+  // TrendNow 데이터 프리페칭 (페이지 로드 시 백그라운드에서 미리 가져오기)
+  useEffect(() => {
+    if (FEATURE_FLAGS.ENABLE_TREND_NOW) {
+      // 뉴스 데이터가 로드되면 즉시 프리페칭 시작
+      if (!isLoading && data) {
+        queryClient.prefetchQuery({
+          queryKey: ['trends', 'google'],
+          queryFn: async () => {
+            const res = await fetch('/api/trends/google')
+            if (!res.ok) throw new Error('Failed to fetch trends')
+            return res.json()
+          },
+          staleTime: 60 * 60 * 1000, // 1시간
+        })
+      }
+    }
+  }, [queryClient, isLoading, data])
+
   // 첫 10개 로드 후 자동으로 나머지 페이지 로드 (백그라운드)
   useEffect(() => {
     if (!isLoading && data && data.pages.length === 1 && hasNextPage && !isFetchingNextPage) {

@@ -95,8 +95,17 @@ export default function TrendModal({ isOpen, onClose }: TrendModalProps) {
                 {/* 트렌드 리스트 */}
                 <div className="px-6 pb-6">
                   {isLoading ? (
-                    <div className="flex justify-center py-12">
-                      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-orange-500"></div>
+                    <div className="space-y-1 max-h-[60vh] overflow-y-auto">
+                      {/* 스켈레톤 UI - 20개 아이템 */}
+                      {Array.from({ length: 20 }).map((_, index) => (
+                        <div
+                          key={index}
+                          className="w-full flex items-center gap-3 p-3 rounded-lg"
+                        >
+                          <div className="w-8 h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse flex-shrink-0" />
+                          <div className="flex-1 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" style={{ width: `${60 + Math.random() * 30}%` }} />
+                        </div>
+                      ))}
                     </div>
                   ) : error ? (
                     <div className="py-12 text-center">
