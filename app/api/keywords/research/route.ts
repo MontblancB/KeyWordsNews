@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Groq from 'groq-sdk'
-import prisma from '@/lib/prisma'
+import { prisma } from '@/lib/prisma'
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
