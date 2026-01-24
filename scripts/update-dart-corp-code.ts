@@ -21,7 +21,17 @@ async function downloadCorpCodeXml(): Promise<void> {
   console.log('🚀 DART corpCode.xml 다운로드 시작...')
 
   if (!DART_API_KEY) {
-    throw new Error('❌ DART_API_KEY 환경 변수가 설정되지 않았습니다.')
+    console.warn('⚠️  DART_API_KEY 환경 변수가 설정되지 않았습니다.')
+    console.log('ℹ️  기존 corp-code.json 파일을 사용합니다.')
+
+    // 기존 파일이 있는지 확인
+    if (fs.existsSync(OUTPUT_FILE)) {
+      const existingData = JSON.parse(fs.readFileSync(OUTPUT_FILE, 'utf8'))
+      console.log(`✅ 기존 매핑 파일 사용: ${existingData.count}개 종목 (업데이트: ${existingData.updatedAt})`)
+      return
+    } else {
+      throw new Error('❌ DART_API_KEY도 없고 기존 corp-code.json 파일도 없습니다.')
+    }
   }
 
   const url = `${CORP_CODE_URL}?crtfc_key=${DART_API_KEY}`
