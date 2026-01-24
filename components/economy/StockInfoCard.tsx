@@ -15,6 +15,7 @@ import {
 import LightweightChart from './LightweightChart'
 import type { StockInfo } from '@/types/stock'
 import { FEATURE_FLAGS } from '@/lib/feature-flags'
+import { formatFinancialAmount } from '@/lib/formatters/financial'
 
 type DateRangeType = '1D' | '1W' | '1M' | '3M' | '12M' | '60M'
 type IntervalType = '1m' | '5m' | '15m' | '30m' | '1h' | '1d' | '1w'
@@ -476,7 +477,7 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
                   <td className="py-2 pr-2 text-gray-500 dark:text-gray-400">매출액</td>
                   {financials.slice(0, 4).map((f, i) => (
                     <td key={i} className="text-right py-2 px-1 font-medium">
-                      {f.revenue}
+                      {formatFinancialAmount(f.revenue, isKoreanStock)}
                     </td>
                   ))}
                 </tr>
@@ -486,7 +487,7 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
                       <td className="py-2 pr-2 text-gray-500 dark:text-gray-400">매출원가</td>
                       {financials.slice(0, 4).map((f, i) => (
                         <td key={i} className="text-right py-2 px-1 font-medium text-gray-600 dark:text-gray-400">
-                          {f.costOfRevenue}
+                          {formatFinancialAmount(f.costOfRevenue, isKoreanStock)}
                         </td>
                       ))}
                     </tr>
@@ -494,7 +495,7 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
                       <td className="py-2 pr-2 text-gray-500 dark:text-gray-400">매출총이익</td>
                       {financials.slice(0, 4).map((f, i) => (
                         <td key={i} className="text-right py-2 px-1 font-medium text-green-600 dark:text-green-400">
-                          {f.grossProfit}
+                          {formatFinancialAmount(f.grossProfit, isKoreanStock)}
                         </td>
                       ))}
                     </tr>
@@ -512,7 +513,7 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
                   <td className="py-2 pr-2 text-gray-500 dark:text-gray-400">영업이익</td>
                   {financials.slice(0, 4).map((f, i) => (
                     <td key={i} className="text-right py-2 px-1 font-medium">
-                      {f.operatingProfit}
+                      {formatFinancialAmount(f.operatingProfit, isKoreanStock)}
                     </td>
                   ))}
                 </tr>
@@ -521,7 +522,7 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
                     <td className="py-2 pr-2 text-gray-500 dark:text-gray-400">EBITDA</td>
                     {financials.slice(0, 4).map((f, i) => (
                       <td key={i} className="text-right py-2 px-1 font-medium text-purple-600 dark:text-purple-400">
-                        {f.ebitda}
+                        {formatFinancialAmount(f.ebitda, isKoreanStock)}
                       </td>
                     ))}
                   </tr>
@@ -530,7 +531,7 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
                   <td className="py-2 pr-2 text-gray-500 dark:text-gray-400">당기순이익</td>
                   {financials.slice(0, 4).map((f, i) => (
                     <td key={i} className="text-right py-2 px-1 font-medium">
-                      {f.netIncome}
+                      {formatFinancialAmount(f.netIncome, isKoreanStock)}
                     </td>
                   ))}
                 </tr>
@@ -558,7 +559,7 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
                       <td className="py-2 pr-2 text-gray-500 dark:text-gray-400">자산총계</td>
                       {financials.slice(0, 4).map((f, i) => (
                         <td key={i} className="text-right py-2 px-1 font-medium">
-                          {f.totalAssets}
+                          {formatFinancialAmount(f.totalAssets, isKoreanStock)}
                         </td>
                       ))}
                     </tr>
@@ -566,7 +567,7 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
                       <td className="py-2 pr-2 text-gray-500 dark:text-gray-400">부채총계</td>
                       {financials.slice(0, 4).map((f, i) => (
                         <td key={i} className="text-right py-2 px-1 font-medium">
-                          {f.totalLiabilities}
+                          {formatFinancialAmount(f.totalLiabilities, isKoreanStock)}
                         </td>
                       ))}
                     </tr>
@@ -574,7 +575,7 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
                       <td className="py-2 pr-2 text-gray-500 dark:text-gray-400">자본총계</td>
                       {financials.slice(0, 4).map((f, i) => (
                         <td key={i} className="text-right py-2 px-1 font-medium">
-                          {f.totalEquity}
+                          {formatFinancialAmount(f.totalEquity, isKoreanStock)}
                         </td>
                       ))}
                     </tr>
@@ -590,7 +591,7 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
                       <td className="py-2 pr-2 text-gray-500 dark:text-gray-400">영업현금흐름</td>
                       {financials.slice(0, 4).map((f, i) => (
                         <td key={i} className="text-right py-2 px-1 font-medium text-blue-600 dark:text-blue-400">
-                          {f.operatingCashFlow}
+                          {formatFinancialAmount(f.operatingCashFlow, isKoreanStock)}
                         </td>
                       ))}
                     </tr>
@@ -598,7 +599,7 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
                       <td className="py-2 pr-2 text-gray-500 dark:text-gray-400">잉여현금흐름</td>
                       {financials.slice(0, 4).map((f, i) => (
                         <td key={i} className="text-right py-2 px-1 font-medium text-blue-600 dark:text-blue-400">
-                          {f.freeCashFlow}
+                          {formatFinancialAmount(f.freeCashFlow, isKoreanStock)}
                         </td>
                       ))}
                     </tr>
