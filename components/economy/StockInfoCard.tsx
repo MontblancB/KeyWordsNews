@@ -14,6 +14,7 @@ import {
 } from '@heroicons/react/24/outline'
 import LightweightChart from './LightweightChart'
 import type { StockInfo } from '@/types/stock'
+import { FEATURE_FLAGS } from '@/lib/feature-flags'
 
 type DateRangeType = '1D' | '1W' | '1M' | '3M' | '12M' | '60M'
 type IntervalType = '1m' | '5m' | '15m' | '30m' | '1h' | '1d' | '1w'
@@ -36,7 +37,7 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
   const [dateRange, setDateRange] = useState<DateRangeType>('3M')
   const [interval, setInterval] = useState<IntervalType>('1d')
   const [showAllCompanyInfo, setShowAllCompanyInfo] = useState(false)
-  const [showAllFinancials, setShowAllFinancials] = useState(false)
+  const [showAllFinancials, setShowAllFinancials] = useState<boolean>(FEATURE_FLAGS.SHOW_ALL_FINANCIALS)
 
   // 국내/미국 주식 구분
   const isKoreanStock = market === 'KOSPI' || market === 'KOSDAQ' || market === 'KONEX'
@@ -443,17 +444,19 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
                 )}
               </div>
             </div>
-            <button
-              onClick={() => setShowAllFinancials(!showAllFinancials)}
-              className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-            >
-              {showAllFinancials ? '접기' : '더보기'}
-              {showAllFinancials ? (
-                <ChevronUpIcon className="w-3 h-3" />
-              ) : (
-                <ChevronDownIcon className="w-3 h-3" />
-              )}
-            </button>
+            {!FEATURE_FLAGS.SHOW_ALL_FINANCIALS && (
+              <button
+                onClick={() => setShowAllFinancials(!showAllFinancials)}
+                className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+              >
+                {showAllFinancials ? '접기' : '더보기'}
+                {showAllFinancials ? (
+                  <ChevronUpIcon className="w-3 h-3" />
+                ) : (
+                  <ChevronDownIcon className="w-3 h-3" />
+                )}
+              </button>
+            )}
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">

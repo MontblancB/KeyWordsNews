@@ -46,6 +46,20 @@ export const FEATURE_FLAGS = {
    * @default false (현재 비활성화)
    */
   ENABLE_BUBBLE_NOW: false,
+
+  /**
+   * 재무제표 전체 표시 기능
+   * - 주식 카테고리의 재무제표를 기본적으로 전체 표시할지 여부
+   * - true: 모든 재무 정보가 기본적으로 펼쳐진 상태로 표시 (더보기/접기 버튼 숨김)
+   * - false: 기본 정보만 표시하고 더보기 버튼으로 확장 (폴딩 형식)
+   *
+   * 관련 파일:
+   * - components/economy/StockInfoCard.tsx
+   *
+   * @version 2.34.0
+   * @default true (전체 표시)
+   */
+  SHOW_ALL_FINANCIALS: true,
 } as const
 
 export type FeatureFlags = typeof FEATURE_FLAGS

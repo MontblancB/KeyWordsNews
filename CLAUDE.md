@@ -18,7 +18,7 @@
 ### 배포 정보
 - **URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
-- **현재 버전**: 2.33.0
+- **현재 버전**: 2.34.0
 - **마지막 업데이트**: 2026-01-24
 
 ---
@@ -320,6 +320,11 @@ rm -rf node_modules && npm install
 ---
 
 ## 최근 업데이트
+
+### v2.34.0 (2026-01-24) - 재무제표 전체 표시
+- 📊 **재무제표 UX 개선**: 주식 카테고리의 재무제표를 기본적으로 전체 표시
+- 🎛️ **Feature Flag 추가**: `SHOW_ALL_FINANCIALS` 플래그로 전체 표시/폴딩 형식 전환 가능
+- 🔧 **유연한 설정**: `lib/feature-flags.ts`에서 쉽게 폴딩 형식으로 복귀 가능
 
 ### v2.33.0 (2026-01-24) - BubbleNow Feature Flag
 - 🎛️ **Feature Flag 시스템**: `ENABLE_BUBBLE_NOW` 플래그 추가 (현재 비활성화)
