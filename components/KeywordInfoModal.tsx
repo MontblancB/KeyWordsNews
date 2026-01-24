@@ -2,7 +2,7 @@
 
 import { Fragment, useState, useEffect } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
-import { XMarkIcon, InformationCircleIcon } from '@heroicons/react/24/outline'
+import { XMarkIcon, LightBulbIcon } from '@heroicons/react/24/outline'
 
 interface KeywordInfoModalProps {
   isOpen: boolean
@@ -76,7 +76,7 @@ export default function KeywordInfoModal({ isOpen, onClose, keyword }: KeywordIn
                 {/* 헤더 */}
                 <div className="flex items-center justify-between p-6 pb-4 border-b border-gray-200 dark:border-gray-700">
                   <div className="flex items-center gap-2">
-                    <InformationCircleIcon className="w-6 h-6 text-blue-500" />
+                    <LightBulbIcon className="w-6 h-6 text-yellow-500" />
                     <Dialog.Title className="text-lg font-bold text-gray-900 dark:text-gray-100">
                       키워드 정보
                     </Dialog.Title>

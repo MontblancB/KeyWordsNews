@@ -16,22 +16,29 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const prompt = `다음 키워드에 대한 상세 정보를 제공해주세요: "${keyword}"
+    const prompt = `"${keyword}"에 대해 쉽고 간단하게 설명해주세요.
 
-다음 내용을 포함해주세요:
-1. **정의/개요**: 이 키워드가 무엇인지 간단히 설명 (2-3문장)
-2. **최근 이슈**: 왜 현재 주목받고 있는지, 최근 관련 이슈나 사건 (3-4문장)
-3. **배경 정보**: 역사적 배경이나 맥락 (2-3문장)
-4. **주요 포인트**: 알아두면 좋은 핵심 사항 (3-5개 불릿 포인트)
+다음 형식으로 작성:
 
-한국어로 작성하고, 명확하고 이해하기 쉽게 설명해주세요.
-뉴스나 대중문화 용어라면 그에 맞게, 인물이라면 인물에 맞게 내용을 조정하세요.`
+📌 한 줄 요약
+[1문장으로 핵심만 설명]
+
+🔥 왜 주목받고 있나요?
+[2-3문장으로 최근 이슈나 화제가 된 이유]
+
+💡 알아두면 좋은 점
+• [핵심 포인트 1]
+• [핵심 포인트 2]
+• [핵심 포인트 3]
+
+중학생도 이해할 수 있도록 쉬운 말로 작성해주세요.
+전문 용어는 피하고, 일상적인 언어를 사용하세요.`
 
     const completion = await groq.chat.completions.create({
       messages: [
         {
           role: 'system',
-          content: '당신은 최신 트렌드와 시사 이슈에 정통한 전문 리서처입니다. 사용자가 궁금해하는 키워드에 대해 명확하고 유익한 정보를 제공합니다.',
+          content: '당신은 복잡한 내용을 쉽고 재미있게 설명하는 전문가입니다. 누구나 이해할 수 있도록 간단명료하게 설명합니다.',
         },
         {
           role: 'user',
@@ -40,7 +47,7 @@ export async function POST(req: NextRequest) {
       ],
       model: 'llama-3.3-70b-versatile',
       temperature: 0.7,
-      max_tokens: 2000,
+      max_tokens: 1000,
     })
 
     const info = completion.choices[0]?.message?.content || '정보를 가져올 수 없습니다.'

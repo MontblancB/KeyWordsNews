@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { useInfiniteNewsSearch } from '@/hooks/useNews'
 import NewsCard from '@/components/NewsCard'
 import KeywordInfoModal from '@/components/KeywordInfoModal'
-import { MagnifyingGlassIcon, ArrowLeftIcon, InformationCircleIcon } from '@heroicons/react/24/outline'
+import { MagnifyingGlassIcon, ArrowLeftIcon, LightBulbIcon } from '@heroicons/react/24/outline'
 
 export default function SearchContent() {
   const router = useRouter()
@@ -144,9 +144,9 @@ export default function SearchContent() {
               <div className="p-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
                 <button
                   onClick={() => setIsKeywordInfoOpen(true)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors font-medium"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 rounded-lg hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors font-medium"
                 >
-                  <InformationCircleIcon className="w-5 h-5" />
+                  <LightBulbIcon className="w-5 h-5" />
                   키워드 정보
                 </button>
               </div>
