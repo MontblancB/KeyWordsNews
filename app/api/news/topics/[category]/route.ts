@@ -5,6 +5,30 @@ import { hybridCategorySearch } from '@/lib/rss/realtime-search'
 import { isDatabaseEnabled } from '@/lib/config/database'
 import { realtimeCollector } from '@/lib/rss/realtime-collector'
 
+// 동적 라우트 사전 생성
+export function generateStaticParams() {
+  return [
+    { category: 'general' },
+    { category: 'politics' },
+    { category: 'economy' },
+    { category: 'society' },
+    { category: 'world' },
+    { category: 'tech' },
+    { category: 'crypto' },
+    { category: 'global' },
+    { category: 'sports' },
+    { category: 'entertainment' },
+    { category: 'culture' },
+  ]
+}
+
+// Dynamic segments not included in generateStaticParams are generated on demand.
+export const dynamicParams = true
+
+// Route segment config
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 type RouteContext = {
   params: Promise<{ category: string }>
 }
