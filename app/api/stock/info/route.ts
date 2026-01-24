@@ -4,6 +4,8 @@ import { scrapeCompanyInfo, scrapeInvestmentIndicators, scrapeFinancialData as s
 import { getDartCompanyInfo, getDartFinancials } from '@/lib/api/dart'
 import { scrapeFinancials as scrapeFnGuideFinancials } from '@/lib/scraper/fnguide'
 import { fetchUSFinancialStatements } from '@/lib/api/finnhub'
+import { scrapeAdvancedIndicators } from '@/lib/scraper/naver-investment-indicators'
+import { scrapeCompanyOverview } from '@/lib/scraper/naver-company-overview'
 import type { StockInfo, InvestmentIndicators } from '@/types/stock'
 
 export const dynamic = 'force-dynamic'
@@ -238,7 +240,7 @@ export async function GET(request: NextRequest) {
         message: '한국 주식 데이터 수집 시작 (Yahoo + DART)',
       })
 
-      const [yahooPrice, naverCompanyInfo, naverIndicators, naverFinancials, dartCompanyInfo, dartFinancials, fnguideFinancials] = await Promise.all([
+      const [yahooPrice, naverCompanyInfo, naverIndicators, naverFinancials, dartCompanyInfo, dartFinancials, fnguideFinancials, advancedIndicators, companyOverview] = await Promise.all([
         scrapeKoreanStockPrice(stockCode, market || 'KOSPI'),
         scrapeCompanyInfo(stockCode),
         scrapeInvestmentIndicators(stockCode),
@@ -246,6 +248,8 @@ export async function GET(request: NextRequest) {
         getDartCompanyInfo(stockCode),
         getDartFinancials(stockCode),
         scrapeFnGuideFinancials(stockCode),
+        scrapeAdvancedIndicators(stockCode),
+        scrapeCompanyOverview(stockCode),
       ])
 
       // 시가총액 파싱 (네이버 금융에서 가져옴)
@@ -267,10 +271,10 @@ export async function GET(request: NextRequest) {
         ? parseFloat(yahooPrice.current.replace(/,/g, ''))
         : 0
 
-      // 투자지표 계산 (재무 데이터 기반 - 네이버 > FnGuide > DART)
-      const financialsForCalculation = naverFinancials.length > 0
-        ? naverFinancials
-        : (fnguideFinancials.length > 0 ? fnguideFinancials : dartFinancials)
+      // 투자지표 계산 (재무 데이터 기반 - FnGuide > DART > 네이버)
+      const financialsForCalculation = fnguideFinancials.length > 0
+        ? fnguideFinancials
+        : (dartFinancials.length > 0 ? dartFinancials : naverFinancials)
       const calculatedIndicators = calculateIndicators(
         marketCap,
         currentPrice,
@@ -293,17 +297,17 @@ export async function GET(request: NextRequest) {
           prevClose: '0',
         },
         company: {
-          // 네이버 금융 우선, DART 보완
+          // 네이버 금융 우선, DART 보완, 기업개요 보완
           industry: naverCompanyInfo?.industry || dartCompanyInfo?.industry || '-',
           ceo: dartCompanyInfo?.ceo || naverCompanyInfo?.ceo || '-',
           establishedDate: dartCompanyInfo?.establishedDate || naverCompanyInfo?.establishedDate || '-',
           fiscalMonth: dartCompanyInfo?.fiscalMonth || naverCompanyInfo?.fiscalMonth || '-',
-          employees: naverCompanyInfo?.employees || '-',
+          employees: companyOverview.employees || naverCompanyInfo?.employees || '-',
           marketCap: naverCompanyInfo?.marketCap || (marketCap > 0 ? marketCap.toLocaleString() + '원' : '-'),
           headquarters: dartCompanyInfo?.headquarters || naverCompanyInfo?.headquarters || '-',
           website: dartCompanyInfo?.website || naverCompanyInfo?.website || '-',
-          businessDescription: naverCompanyInfo?.businessDescription || '-',
-          mainProducts: naverCompanyInfo?.mainProducts || '-',
+          businessDescription: companyOverview.businessDescription || naverCompanyInfo?.businessDescription || '-',
+          mainProducts: companyOverview.mainProducts || naverCompanyInfo?.mainProducts || '-',
           faceValue: naverCompanyInfo?.faceValue || '-',
           listedDate: naverCompanyInfo?.listedDate || '-',
           listedShares: naverCompanyInfo?.listedShares || '-',
@@ -311,25 +315,25 @@ export async function GET(request: NextRequest) {
           capital: naverCompanyInfo?.capital || '-',
         },
         indicators: {
-          // 네이버 금융 우선, DART 계산 보완
+          // 고급 지표 > 네이버 금융 > DART 계산 순
           per: naverIndicators?.per || calculatedIndicators.per || '-',
           pbr: naverIndicators?.pbr || calculatedIndicators.pbr || '-',
           eps: naverIndicators?.eps || calculatedIndicators.eps || '-',
           bps: naverIndicators?.bps || calculatedIndicators.bps || '-',
-          roe: naverIndicators?.roe || calculatedIndicators.roe || '-',
-          roa: naverIndicators?.roa || calculatedIndicators.roa || '-',
+          roe: advancedIndicators.roe || naverIndicators?.roe || calculatedIndicators.roe || '-',
+          roa: advancedIndicators.roa || naverIndicators?.roa || calculatedIndicators.roa || '-',
           dividendYield: naverIndicators?.dividendYield || '-',
           week52High: naverIndicators?.week52High || '-',
           week52Low: naverIndicators?.week52Low || '-',
-          psr: naverIndicators?.psr || '-',
+          psr: advancedIndicators.psr || naverIndicators?.psr || '-',
           dps: naverIndicators?.dps || '-',
-          currentRatio: naverIndicators?.currentRatio || '-',
-          quickRatio: naverIndicators?.quickRatio || '-',
-          beta: naverIndicators?.beta || '-',
+          currentRatio: advancedIndicators.currentRatio || naverIndicators?.currentRatio || '-',
+          quickRatio: advancedIndicators.quickRatio || naverIndicators?.quickRatio || '-',
+          beta: advancedIndicators.beta || naverIndicators?.beta || '-',
         },
-        financials: naverFinancials.length > 0
-          ? naverFinancials
-          : (fnguideFinancials.length > 0 ? fnguideFinancials : dartFinancials),
+        financials: fnguideFinancials.length > 0
+          ? fnguideFinancials
+          : (dartFinancials.length > 0 ? dartFinancials : naverFinancials),
         lastUpdated: new Date().toLocaleString('ko-KR', {
           timeZone: 'Asia/Seoul',
           year: 'numeric',

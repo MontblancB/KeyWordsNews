@@ -4,53 +4,10 @@
  */
 
 import type { CompanyInfo, FinancialData } from '@/types/stock'
+import { getCorpCode as getCorpCodeFromMapping } from './dart-corp-code'
 
 const DART_API_KEY = process.env.DART_API_KEY || ''
 const BASE_URL = 'https://opendart.fss.or.kr/api'
-
-/**
- * 주요 종목 코드 -> DART 기업 고유번호 매핑
- * TODO: 전체 매핑 파일 다운로드 기능 추가
- */
-const STOCK_CODE_TO_CORP_CODE: Record<string, string> = {
-  // KOSPI 주요 종목
-  '005930': '00126380', // 삼성전자
-  '000660': '00164742', // SK하이닉스
-  '035420': '00164779', // NAVER
-  '035720': '00164830', // 카카오
-  '005380': '00125170', // 현대차
-  '051910': '00164560', // LG화학
-  '006400': '00126904', // 삼성SDI
-  '003670': '00120733', // 포스코퓨처엠
-  '105560': '00187301', // KB금융
-  '055550': '00173132', // 신한지주
-  '000270': '00102037', // 기아
-  '012330': '00138987', // 현대모비스
-  '066570': '00164869', // LG전자
-  '003550': '00120528', // LG
-  '034730': '00163092', // SK
-  '028260': '00155148', // 삼성물산
-  '207940': '00413046', // 삼성바이오로직스
-  '068270': '00167519', // 셀트리온
-  '005490': '00125821', // POSCO홀딩스
-  '017670': '00144080', // SK텔레콤
-  '030200': '00155530', // KT
-  '018260': '00144394', // 삼성에스디에스
-  '032830': '00161421', // 삼성생명
-  '086790': '00177432', // 하나금융지주
-  '009150': '00132563', // 삼성전기
-  '352820': '00877936', // 하이브
-  '259960': '00626577', // 크래프톤
-  '003490': '00120480', // 대한항공
-  '180640': '00341826', // 한진칼
-  '010130': '00134011', // 고려아연
-  // KOSDAQ 주요 종목
-  '247540': '00574489', // 에코프로비엠
-  '086520': '00177161', // 에코프로
-  '293490': '00699027', // 카카오게임즈
-  '263750': '00637493', // 펄어비스
-  '041510': '00150478', // 에스엠
-}
 
 interface LogEntry {
   timestamp: string
@@ -83,33 +40,9 @@ function log(entry: Omit<LogEntry, 'timestamp'>): void {
 
 /**
  * 종목코드 -> DART 기업 고유번호 변환
+ * (dart-corp-code.ts에서 가져옴)
  */
-export function getCorpCode(stockCode: string): string | null {
-  log({
-    level: 'INFO',
-    source: 'getCorpCode',
-    message: `종목코드 변환 시도: ${stockCode}`,
-  })
-
-  const corpCode = STOCK_CODE_TO_CORP_CODE[stockCode]
-
-  if (corpCode) {
-    log({
-      level: 'SUCCESS',
-      source: 'getCorpCode',
-      message: `변환 성공: ${stockCode} -> ${corpCode}`,
-    })
-    return corpCode
-  }
-
-  log({
-    level: 'WARN',
-    source: 'getCorpCode',
-    message: `매핑되지 않은 종목코드: ${stockCode}`,
-  })
-
-  return null
-}
+export const getCorpCode = getCorpCodeFromMapping
 
 /**
  * DART API 호출 공통 함수
