@@ -126,13 +126,6 @@ export default function KeywordInfoModal({ isOpen, onClose, keyword }: KeywordIn
                     </div>
                   ) : null}
                 </div>
-
-                {/* 푸터 */}
-                <div className="px-6 pb-6 pt-2">
-                  <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
-                    🤖 AI 기반 키워드 분석
-                  </p>
-                </div>
               </Dialog.Panel>
             </Transition.Child>
           </div>
