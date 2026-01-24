@@ -171,8 +171,8 @@ export async function GET(request: NextRequest) {
 
         const words = title
           .split(' ')
-          .map((w) => w.trim())
-          .filter((w) => {
+          .map((w: string) => w.trim())
+          .filter((w: string) => {
             // 필터링 조건:
             // 1. 2글자 이상
             // 2. 불용어가 아님

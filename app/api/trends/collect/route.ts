@@ -132,8 +132,8 @@ export async function POST(request: NextRequest) {
 
         const words = title
           .split(' ')
-          .map((w) => w.trim())
-          .filter((w) => {
+          .map((w: string) => w.trim())
+          .filter((w: string) => {
             return (
               w.length >= 2 &&
               !STOPWORDS.has(w) &&
