@@ -1,11 +1,9 @@
 import { NextRequest } from 'next/server'
-import { exec } from 'child_process'
-import { promisify } from 'util'
 import { prisma } from '@/lib/prisma'
-
-const execAsync = promisify(exec)
+import googleTrends from 'google-trends-api'
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 30 // 30초 타임아웃
 
 /**
  * POST /api/trends/collect
@@ -19,24 +17,34 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Python 스크립트 실행
-    const { stdout, stderr } = await execAsync('python3 scripts/collect-trends.py')
+    // Google Trends API 호출 (Node.js)
+    const resultsString = await googleTrends.realTimeTrends({
+      geo: 'KR', // 한국
+      category: 'all',
+    })
 
-    if (stderr) {
-      console.error('Python stderr:', stderr)
-    }
+    const results = JSON.parse(resultsString)
 
-    const result = JSON.parse(stdout)
+    // 실시간 트렌드 추출
+    const trendingSearches = results.storySummaries?.trendingStories || []
+    const keywords = trendingSearches
+      .slice(0, 20)
+      .map((story: any, index: number) => ({
+        keyword: story.title || story.entityNames?.[0] || '',
+        rank: index + 1,
+        country: 'south_korea',
+      }))
+      .filter((item: any) => item.keyword) // 빈 키워드 제거
 
-    if (!result.success) {
-      throw new Error(result.error)
+    if (keywords.length === 0) {
+      throw new Error('No trends found')
     }
 
     // DB 저장
-    const collectedAt = new Date(result.collectedAt)
+    const collectedAt = new Date()
 
     await prisma.$transaction(
-      result.data.map((trend: any) =>
+      keywords.map((trend: any) =>
         prisma.trend.create({
           data: {
             keyword: trend.keyword,
@@ -56,8 +64,8 @@ export async function POST(request: NextRequest) {
 
     return Response.json({
       success: true,
-      count: result.data.length,
-      collectedAt,
+      count: keywords.length,
+      collectedAt: collectedAt.toISOString(),
     })
   } catch (error: any) {
     console.error('Trend Collection Error:', error)

@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm run update-dart && prisma migrate deploy && prisma generate && next build",
+    "build": "prisma migrate deploy && prisma generate && next build",
     "build:local": "npm run update-dart:local && prisma migrate deploy && prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
@@ -27,6 +27,7 @@
     "cheerio": "^1.1.2",
     "d3": "^7.9.0",
     "date-fns": "^4.1.0",
+    "google-trends-api": "^4.9.2",
     "groq-sdk": "^0.37.0",
     "he": "^1.2.0",
     "lightweight-charts": "^5.1.0",
