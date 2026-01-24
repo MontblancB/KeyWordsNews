@@ -9,9 +9,9 @@ class handler(BaseHTTPRequestHandler):
             # 한국 실시간 트렌드 가져오기 (캐시 비활성화)
             trends_raw = download_google_trends_rss(geo='KR', cache=False)
 
-            # 트렌드 데이터 변환
+            # 트렌드 데이터 변환 (제한 없이 모두 가져오기)
             trends = []
-            for index, trend_item in enumerate(trends_raw[:20], 1):  # 상위 20개
+            for index, trend_item in enumerate(trends_raw, 1):
                 trends.append({
                     'keyword': trend_item['trend'],
                     'rank': index,

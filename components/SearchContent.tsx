@@ -62,26 +62,28 @@ export default function SearchContent() {
 
   return (
     <>
-      <header className="bg-blue-600 text-white p-4 sticky top-0 z-50">
-        <h1 className="text-xl font-bold mb-3">뉴스 검색</h1>
-        <form onSubmit={handleSearch}>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
-              placeholder="검색어를 입력하세요..."
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <button
-              type="submit"
-              className="px-4 py-2 bg-white text-blue-600 rounded-lg hover:bg-gray-100 transition-colors font-medium"
-            >
-              검색
-            </button>
-          </div>
-        </form>
-      </header>
+      {!queryParam && (
+        <header className="bg-blue-600 text-white p-4 sticky top-0 z-50">
+          <h1 className="text-xl font-bold mb-3">뉴스 검색</h1>
+          <form onSubmit={handleSearch}>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                placeholder="검색어를 입력하세요..."
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                type="submit"
+                className="px-4 py-2 bg-white text-blue-600 rounded-lg hover:bg-gray-100 transition-colors font-medium"
+              >
+                검색
+              </button>
+            </div>
+          </form>
+        </header>
+      )}
 
       <main className="pb-20 bg-white dark:bg-gray-900 relative">
         {!searchQuery && (
