@@ -3,12 +3,14 @@
 import { useQuery } from '@tanstack/react-query'
 
 interface Trend {
-  id: string
+  id?: string
   keyword: string
   rank: number
   country: string
-  collectedAt: string
-  createdAt: string
+  collectedAt?: string
+  createdAt?: string
+  traffic?: string  // trendspyg 트래픽 정보 (예: "100+", "2000+")
+  news_headline?: string  // trendspyg 뉴스 헤드라인
 }
 
 interface TrendsResponse {

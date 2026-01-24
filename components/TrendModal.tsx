@@ -125,13 +125,23 @@ export default function TrendModal({ isOpen, onClose }: TrendModalProps) {
                         <button
                           key={`${trend.keyword}-${index}`}
                           onClick={() => handleKeywordClick(trend.keyword)}
-                          className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors text-left"
+                          className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors text-left group"
                         >
                           <span className="text-lg font-bold text-orange-500 w-8 flex-shrink-0">
                             {trend.rank}
                           </span>
-                          <span className="text-sm text-gray-900 dark:text-gray-100 flex-1">
-                            {trend.keyword}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm text-gray-900 dark:text-gray-100 font-medium">
+                              {trend.keyword}
+                            </div>
+                            {trend.traffic && (
+                              <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                검색량: {trend.traffic}
+                              </div>
+                            )}
+                          </div>
+                          <span className="text-xs text-gray-400 dark:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                            클릭하여 관련 뉴스 보기 →
                           </span>
                         </button>
                       ))}
@@ -142,7 +152,9 @@ export default function TrendModal({ isOpen, onClose }: TrendModalProps) {
                 {/* 출처 */}
                 <div className="px-6 pb-6">
                   <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
-                    최근 24시간 뉴스 키워드 분석
+                    {data?.source?.includes('trendspyg')
+                      ? '🔥 Google Trends 실시간 검색어'
+                      : '📊 최근 24시간 뉴스 키워드 분석'}
                   </p>
                 </div>
               </Dialog.Panel>
