@@ -123,19 +123,31 @@ export async function GET(request: NextRequest) {
     if (sortedKeywords.length === 0) {
       console.log('[Trends] No AI keywords found, trying title extraction')
 
+      // 가장 단순한 쿼리로 뉴스 개수 확인
+      const totalCount = await prisma.news.count()
+      console.log(`[Trends] Total news count in DB: ${totalCount}`)
+
       // 뉴스에 키워드가 없는 경우, 제목에서 추출
-      // 조건 없이 최신 500개 뉴스 가져오기 (날짜 필터 제거)
       const newsWithTitles = await prisma.news.findMany({
-        select: { title: true, publishedAt: true },
-        orderBy: { publishedAt: 'desc' },
+        select: {
+          title: true,
+          publishedAt: true
+        },
+        orderBy: {
+          publishedAt: 'desc'
+        },
         take: 500,
       })
 
       console.log(`[Trends] Found ${newsWithTitles.length} news for title extraction`)
 
       if (newsWithTitles.length > 0) {
+        console.log(`[Trends] Sample news title: "${newsWithTitles[0].title}"`)
         console.log(`[Trends] Latest news publishedAt: ${newsWithTitles[0].publishedAt}`)
         console.log(`[Trends] Oldest news publishedAt: ${newsWithTitles[newsWithTitles.length - 1].publishedAt}`)
+      } else {
+        console.error('[Trends] No news found in database!')
+        throw new Error('No news data available in database')
       }
 
       // 스마트 키워드 추출 (불용어 제외, 시간 가중치 적용)
