@@ -1,32 +1,36 @@
 from http.server import BaseHTTPRequestHandler
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from trendspyg import download_google_trends_rss
 
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         try:
-            # 한국 실시간 트렌드 가져오기 (캐시 비활성화)
+            # 한국 실시간 트렌드 가져오기 (RSS 방식, 0.2초로 빠름)
             trends_raw = download_google_trends_rss(geo='KR', cache=False)
 
-            print(f"[Trends] trendspyg returned {len(trends_raw)} trends")
+            print(f"[Trends] trendspyg RSS returned {len(trends_raw)} trends")
 
-            # 트렌드 데이터 변환 (제한 없이 모두 가져오기)
+            # 트렌드 데이터 변환 (상위 20개, Google RSS가 제공하는 만큼)
             trends = []
-            for index, trend_item in enumerate(trends_raw, 1):
+            max_trends = min(len(trends_raw), 20)
+
+            for index, trend_item in enumerate(trends_raw[:max_trends], 1):
                 trends.append({
                     'keyword': trend_item['trend'],
                     'rank': index,
                     'country': 'south_korea',
                     'traffic': trend_item.get('traffic', 'N/A'),
-                    # 뉴스 정보 (첫 번째 기사만)
                     'news_headline': (
                         trend_item['news_articles'][0]['headline']
                         if trend_item.get('news_articles') and len(trend_item['news_articles']) > 0
                         else None
                     )
                 })
+
+            # 한국 시간 (UTC+9)
+            korea_time = datetime.utcnow() + timedelta(hours=9)
 
             # JSON 응답
             response_data = {
@@ -35,7 +39,7 @@ class handler(BaseHTTPRequestHandler):
                 'source': 'google_trends_trendspyg_rss',
                 'cached': False,
                 'total': len(trends),
-                'collectedAt': datetime.now().isoformat()
+                'collectedAt': korea_time.isoformat()
             }
 
             self.send_response(200)
