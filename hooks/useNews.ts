@@ -58,8 +58,8 @@ export function useTopicNews(category: string) {
     queryKey: ['news', 'topic', category, sources], // sources를 키에 포함
     queryFn: async () => {
       const url = sources
-        ? `/api/news/topics/${category}?sources=${encodeURIComponent(sources)}`
-        : `/api/news/topics/${category}`
+        ? `/api/news/topics?category=${category}&sources=${encodeURIComponent(sources)}`
+        : `/api/news/topics?category=${category}`
       const res = await fetch(url)
       if (!res.ok) throw new Error(`Failed to fetch ${category} news`)
       const data: NewsResponse = await res.json()
@@ -162,8 +162,8 @@ export function useInfiniteTopicNews(category: string) {
       const offset = pageParam === 0 ? 0 : 10 + (pageParam - 1) * 15
 
       const url = sources
-        ? `/api/news/topics/${category}?limit=${limit}&offset=${offset}&sources=${encodeURIComponent(sources)}`
-        : `/api/news/topics/${category}?limit=${limit}&offset=${offset}`
+        ? `/api/news/topics?category=${category}&limit=${limit}&offset=${offset}&sources=${encodeURIComponent(sources)}`
+        : `/api/news/topics?category=${category}&limit=${limit}&offset=${offset}`
       const res = await fetch(url)
       if (!res.ok) throw new Error(`Failed to fetch ${category} news`)
       const data = await res.json()
