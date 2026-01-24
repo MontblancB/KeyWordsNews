@@ -32,6 +32,8 @@ export async function POST(request: NextRequest) {
       take: 200,
     })
 
+    console.log(`[Trends Collect] Found ${recentNews.length} news with AI keywords`)
+
     // 키워드 빈도 계산 (시간 가중치)
     const keywordFrequency = new Map<string, number>()
     const now = Date.now()
@@ -50,7 +52,7 @@ export async function POST(request: NextRequest) {
     })
 
     // 상위 20개 추출
-    const keywords = Array.from(keywordFrequency.entries())
+    let keywords = Array.from(keywordFrequency.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, 20)
       .map(([keyword, _], index) => ({
@@ -59,8 +61,57 @@ export async function POST(request: NextRequest) {
         country: 'south_korea',
       }))
 
+    // AI 키워드가 없으면 제목에서 추출
     if (keywords.length === 0) {
-      throw new Error('No trends found')
+      console.log('[Trends Collect] No AI keywords, trying title extraction')
+
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+      const newsWithTitles = await prisma.news.findMany({
+        where: { publishedAt: { gte: sevenDaysAgo } },
+        select: { title: true, publishedAt: true },
+        orderBy: { publishedAt: 'desc' },
+        take: 500,
+      })
+
+      console.log(`[Trends Collect] Found ${newsWithTitles.length} news for title extraction`)
+
+      const titleKeywords = new Map<string, number>()
+      const now = Date.now()
+
+      newsWithTitles.forEach((news) => {
+        const hoursSincePublished =
+          (now - new Date(news.publishedAt).getTime()) / (1000 * 60 * 60)
+        const timeWeight = Math.max(0.1, 1 - hoursSincePublished / (7 * 24))
+
+        const words = news.title
+          .split(/[\s,\.]+/)
+          .filter((w) => w.length >= 2 && !/^[0-9]+$/.test(w))
+
+        words.forEach((word) => {
+          const current = titleKeywords.get(word) || 0
+          titleKeywords.set(word, current + timeWeight)
+        })
+      })
+
+      keywords = Array.from(titleKeywords.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 20)
+        .map(([keyword, _], index) => ({
+          keyword,
+          rank: index + 1,
+          country: 'south_korea',
+        }))
+
+      console.log(`[Trends Collect] Extracted ${keywords.length} keywords from titles`)
+    }
+
+    if (keywords.length === 0) {
+      console.warn('[Trends Collect] No keywords found, skipping collection')
+      return Response.json({
+        success: false,
+        error: 'No trends available',
+        count: 0,
+      })
     }
 
     // DB 저장
