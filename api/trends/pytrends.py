@@ -9,11 +9,44 @@ class handler(BaseHTTPRequestHandler):
             # Pytrends 초기화
             pytrends = TrendReq(hl='ko-KR', tz=540)  # 한국 시간대
 
-            # 한국 실시간 인기 검색어 가져오기
-            trending_searches_df = pytrends.trending_searches(pn='south_korea')
+            keywords = []
+            method_used = None
 
-            # DataFrame을 리스트로 변환
-            keywords = trending_searches_df[0].tolist()[:20]  # 상위 20개
+            # 방법 1: realtime_trending_searches (실시간 트렌드)
+            try:
+                realtime_df = pytrends.realtime_trending_searches(pn='KR')
+                if 'title' in realtime_df.columns:
+                    keywords = realtime_df['title'].tolist()[:20]
+                else:
+                    keywords = realtime_df.iloc[:, 0].tolist()[:20]
+                method_used = 'realtime_trending_searches'
+            except Exception as e1:
+                # 방법 2: today_searches (오늘의 검색어)
+                try:
+                    today_df = pytrends.today_searches(pn='KR')
+                    keywords = today_df.iloc[:, 0].tolist()[:20]
+                    method_used = 'today_searches'
+                except Exception as e2:
+                    # 방법 3: trending_searches (일반 트렌드)
+                    try:
+                        # 다양한 파라미터 시도
+                        for pn_param in ['south_korea', 'korea', 'KR']:
+                            try:
+                                trending_df = pytrends.trending_searches(pn=pn_param)
+                                keywords = trending_df.iloc[:, 0].tolist()[:20]
+                                method_used = f'trending_searches({pn_param})'
+                                break
+                            except:
+                                continue
+
+                        if not keywords:
+                            raise Exception(f'All methods failed. realtime: {str(e1)}, today: {str(e2)}')
+                    except Exception as e3:
+                        raise Exception(f'All methods failed. realtime: {str(e1)}, today: {str(e2)}, trending: {str(e3)}')
+
+            # 키워드가 없으면 에러
+            if not keywords or len(keywords) == 0:
+                raise Exception('No keywords found from Google Trends')
 
             # 트렌드 데이터 생성
             trends = [
@@ -29,7 +62,7 @@ class handler(BaseHTTPRequestHandler):
             response_data = {
                 'success': True,
                 'data': trends,
-                'source': 'google_trends_pytrends',
+                'source': f'google_trends_pytrends_{method_used}',
                 'cached': False
             }
 
