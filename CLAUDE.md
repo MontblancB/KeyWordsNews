@@ -18,7 +18,7 @@
 ### 배포 정보
 - **URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
-- **현재 버전**: 2.35.0
+- **현재 버전**: 2.36.0
 - **마지막 업데이트**: 2026-01-24
 
 ---
@@ -320,6 +320,15 @@ rm -rf node_modules && npm install
 ---
 
 ## 최근 업데이트
+
+### v2.36.0 (2026-01-24) - TrendNow 실시간 트렌드
+- 🔥 **TrendNow 기능**: Google Trends 한국 실시간 검색어 상위 20개 표시
+- 🐍 **Pytrends 통합**: Python Pytrends 라이브러리로 트렌드 수집
+- 📊 **종합 탭 전용**: 가장 왼쪽에 TrendNow 버튼 배치 (모달 방식)
+- ⏰ **자동 수집**: GitHub Actions로 1시간마다 자동 수집
+- 🔍 **검색 연동**: 트렌드 키워드 클릭 시 검색 페이지로 이동
+- 💾 **캐싱**: DB에 1시간 캐시, 7일 자동 삭제
+- 🎛️ **Feature Flag**: `ENABLE_TREND_NOW` 플래그로 ON/OFF
 
 ### v2.35.0 (2026-01-24) - 주식 데이터 수집 대폭 개선
 - 🚀 **DART 전체 종목 매핑**: 하드코딩 55개 → 3,911개 전체 상장사 동적 매핑

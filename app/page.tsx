@@ -11,6 +11,7 @@ import { useColorTheme } from '@/hooks/useColorTheme'
 import { usePullToRefresh } from '@/hooks/usePullToRefresh'
 import PullToRefreshIndicator from '@/components/PullToRefreshIndicator'
 import { FEATURE_FLAGS } from '@/lib/feature-flags'
+import TrendButton from '@/components/TrendButton'
 import InsightButton from '@/components/InsightButton'
 import InsightModal from '@/components/InsightModal'
 import SummarizeButton from '@/components/SummarizeButton'
@@ -314,26 +315,34 @@ export default function HomePage() {
 
         <BreakingBanner />
 
-        {/* InsightNow & SummarizeNow & BubbleNow 버튼 (Feature Flag로 제어) */}
-        {FEATURE_FLAGS.ENABLE_DAILY_INSIGHT && allNews.length >= 5 && (
+        {/* TrendNow & InsightNow & SummarizeNow & BubbleNow 버튼 (Feature Flag로 제어) */}
+        {(FEATURE_FLAGS.ENABLE_TREND_NOW || (FEATURE_FLAGS.ENABLE_DAILY_INSIGHT && allNews.length >= 5)) && (
           <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
             <div className="flex gap-2 p-3 overflow-x-auto">
-              <InsightButton
-                onClick={handleOpenInsight}
-                isLoading={isInsightLoading}
-                disabled={allNews.length < 5}
-              />
-              <SummarizeButton
-                onClick={handleOpenSummarize}
-                isLoading={isSummarizeLoading}
-                disabled={allNews.length < 5}
-              />
-              {FEATURE_FLAGS.ENABLE_BUBBLE_NOW && (
-                <BubbleButton
-                  onClick={handleOpenBubble}
-                  isLoading={isBubbleLoading}
-                  disabled={allNews.length < 5}
-                />
+              {/* TrendNow 버튼 - 가장 왼쪽 */}
+              {FEATURE_FLAGS.ENABLE_TREND_NOW && <TrendButton />}
+
+              {/* InsightNow & SummarizeNow 버튼 */}
+              {FEATURE_FLAGS.ENABLE_DAILY_INSIGHT && allNews.length >= 5 && (
+                <>
+                  <InsightButton
+                    onClick={handleOpenInsight}
+                    isLoading={isInsightLoading}
+                    disabled={allNews.length < 5}
+                  />
+                  <SummarizeButton
+                    onClick={handleOpenSummarize}
+                    isLoading={isSummarizeLoading}
+                    disabled={allNews.length < 5}
+                  />
+                  {FEATURE_FLAGS.ENABLE_BUBBLE_NOW && (
+                    <BubbleButton
+                      onClick={handleOpenBubble}
+                      isLoading={isBubbleLoading}
+                      disabled={allNews.length < 5}
+                    />
+                  )}
+                </>
               )}
             </div>
           </div>

@@ -60,6 +60,25 @@ export const FEATURE_FLAGS = {
    * @default true (전체 표시)
    */
   SHOW_ALL_FINANCIALS: true,
+
+  /**
+   * TrendNow 기능
+   * - Google Trends 실시간 검색어 표시 (Pytrends)
+   * - false로 설정 시 버튼과 모달이 표시되지 않음
+   *
+   * 관련 파일:
+   * - components/TrendButton.tsx
+   * - components/TrendModal.tsx
+   * - app/api/trends/google/route.ts
+   * - app/api/trends/collect/route.ts
+   * - scripts/collect-trends.py
+   * - hooks/useTrends.ts
+   * - app/page.tsx (종합 탭)
+   *
+   * @version 2.35.0
+   * @default true
+   */
+  ENABLE_TREND_NOW: true,
 } as const
 
 export type FeatureFlags = typeof FEATURE_FLAGS

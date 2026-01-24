@@ -83,7 +83,8 @@
       "WebFetch(domain:www.blockmedia.co.kr)",
       "Bash(wc:*)",
       "Bash(npm run update-dart:*)",
-      "Bash(DART_API_KEY=\"\" npm run update-dart)"
+      "Bash(DART_API_KEY=\"\" npm run update-dart)",
+      "Bash(chmod:*)"
     ]
   },
   "hooks": {

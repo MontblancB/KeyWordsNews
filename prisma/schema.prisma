@@ -64,3 +64,17 @@ model KeywordMap {
   @@index([cacheKey])
   @@index([expiresAt])
 }
+
+model Trend {
+  id          String   @id @default(cuid())
+  keyword     String
+  rank        Int
+  country     String   @default("south_korea")
+
+  // 메타데이터
+  collectedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  @@index([collectedAt, country, rank])
+  @@unique([keyword, collectedAt])
+}

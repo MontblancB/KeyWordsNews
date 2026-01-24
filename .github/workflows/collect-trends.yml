@@ -1,0 +1,32 @@
+name: Collect Google Trends
+
+on:
+  schedule:
+    # 매시간 정각에 실행 (UTC 기준)
+    # KST는 UTC+9이므로, 0시부터 23시까지 매시간 실행
+    - cron: '0 * * * *'
+  workflow_dispatch: # 수동 실행 가능
+
+jobs:
+  collect-trends:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger Trends Collection
+        run: |
+          response=$(curl -X POST "${{ secrets.VERCEL_APP_URL }}/api/trends/collect" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -w "\n%{http_code}" \
+            -s)
+
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+
+          echo "HTTP Status: $http_code"
+          echo "Response: $body"
+
+          if [ "$http_code" != "200" ]; then
+            echo "Failed to collect trends"
+            exit 1
+          fi
