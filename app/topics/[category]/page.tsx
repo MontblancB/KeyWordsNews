@@ -279,6 +279,8 @@ export default function TopicPage() {
     society: '사회',
     world: '국제',
     tech: 'IT/과학',
+    crypto: '암호화폐',
+    global: '글로벌',
     sports: '스포츠',
     entertainment: '연예',
     culture: '문화',
