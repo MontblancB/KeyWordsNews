@@ -312,6 +312,8 @@ export const CATEGORIES = [
   { id: 'society', label: '사회' },
   { id: 'world', label: '국제' },
   { id: 'tech', label: 'IT' },
+  { id: 'crypto', label: '암호화폐' },
+  { id: 'global', label: '글로벌' },
   { id: 'sports', label: '스포츠' },
   { id: 'entertainment', label: '연예' },
   { id: 'culture', label: '문화' },
