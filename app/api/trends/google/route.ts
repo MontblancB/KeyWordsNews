@@ -180,7 +180,7 @@ export async function GET(request: NextRequest) {
           .replace(/[→←↑↓…·""''""「」『』【】〈〉《》]/g, ' ')
           .replace(/[\[\]{}():;,\.!?'"]/g, ' ')
           // 숫자+특수문자 조합 제거 (03년생 같은 패턴은 유지)
-          .replace(/\d{2,4}년생/g, (match) => match)  // 년생은 유지
+          .replace(/\d{2,4}년생/g, (match: string) => match)  // 년생은 유지
           // 여러 공백을 하나로
           .replace(/\s+/g, ' ')
           .trim()

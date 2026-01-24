@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
           .replace(/[→←↑↓…·""''""「」『』【】〈〉《》]/g, ' ')
           .replace(/[\[\]{}():;,\.!?'"]/g, ' ')
           // 년생 패턴 유지
-          .replace(/\d{2,4}년생/g, (match) => match)
+          .replace(/\d{2,4}년생/g, (match: string) => match)
           .replace(/\s+/g, ' ')
           .trim()
 
