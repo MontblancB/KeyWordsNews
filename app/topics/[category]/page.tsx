@@ -67,9 +67,18 @@ export default function TopicPage() {
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
+    error,
   } = useInfiniteTopicNews(category)
 
   const loadMoreRef = useRef<HTMLDivElement>(null)
+
+  // 디버깅용 로그
+  useEffect(() => {
+    console.log(`[Topic ${category}] isLoading:`, isLoading)
+    console.log(`[Topic ${category}] data:`, data)
+    console.log(`[Topic ${category}] error:`, error)
+    console.log(`[Topic ${category}] sources:`, sources)
+  }, [category, isLoading, data, error, sources])
 
   // ==========================================
   // InsightNow 기능 (Feature Flag로 제어)
@@ -373,9 +382,17 @@ export default function TopicPage() {
           </div>
         )}
 
-        {!isLoading && allNews.length === 0 && (
+        {error && (
+          <div className="p-8 text-center text-red-600 dark:text-red-400">
+            <p className="font-bold mb-2">오류 발생</p>
+            <p className="text-sm">{error instanceof Error ? error.message : '알 수 없는 오류'}</p>
+          </div>
+        )}
+
+        {!isLoading && !error && allNews.length === 0 && (
           <div className="p-8 text-center text-gray-500 dark:text-gray-400">
             <p>아직 수집된 뉴스가 없습니다.</p>
+            <p className="text-sm mt-2">소스: {sources || '전체'}</p>
           </div>
         )}
 
