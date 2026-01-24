@@ -1,20 +1,21 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { newsService } from '@/lib/db/news'
 import { cache } from '@/lib/cache'
 import { hybridCategorySearch } from '@/lib/rss/realtime-search'
 import { isDatabaseEnabled } from '@/lib/config/database'
 import { realtimeCollector } from '@/lib/rss/realtime-collector'
 
+type RouteContext = {
+  params: Promise<{ category: string }>
+}
+
 export async function GET(
-  request: Request,
-  { params }: { params: { category: string } | Promise<{ category: string }> }
+  request: NextRequest,
+  context: RouteContext
 ) {
   try {
-    // Next.js 16: params can be Promise or object
-    const category = typeof params === 'object' && 'then' in params
-      ? (await params).category
-      : (params as { category: string }).category
-    const { searchParams } = new URL(request.url)
+    const { category } = await context.params
+    const searchParams = request.nextUrl.searchParams
     const sourcesParam = searchParams.get('sources')
     const limit = parseInt(searchParams.get('limit') || '20')
     const offset = parseInt(searchParams.get('offset') || '0')
