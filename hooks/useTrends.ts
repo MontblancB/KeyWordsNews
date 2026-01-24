@@ -18,6 +18,8 @@ interface TrendsResponse {
   data: Trend[]
   cached: boolean
   collectedAt: string
+  source?: string  // 'google_trends_trendspyg_rss' 또는 로컬 분석
+  total?: number
 }
 
 export function useTrends() {
