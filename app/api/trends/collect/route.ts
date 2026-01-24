@@ -115,10 +115,9 @@ export async function POST(request: NextRequest) {
           .map((w) => w.trim())
           .filter((w) => {
             return (
-              w.length >= 3 &&
+              w.length >= 2 &&
               !STOPWORDS.has(w) &&
-              !/^[0-9]+$/.test(w) &&
-              /[가-힣]/.test(w) // 한글 포함 필수
+              !/^[0-9]+$/.test(w)
             )
           })
 

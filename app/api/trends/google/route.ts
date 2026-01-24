@@ -142,15 +142,13 @@ export async function GET(request: NextRequest) {
           .map((w) => w.trim())
           .filter((w) => {
             // 필터링 조건:
-            // 1. 3글자 이상 (조사 대부분 제외)
+            // 1. 2글자 이상
             // 2. 불용어가 아님
             // 3. 숫자만으로 이루어지지 않음
-            // 4. 영문자만으로 이루어지지 않음 (한글 포함 필수)
             return (
-              w.length >= 3 &&
+              w.length >= 2 &&
               !STOPWORDS.has(w) &&
-              !/^[0-9]+$/.test(w) &&
-              /[가-힣]/.test(w) // 한글 포함 필수
+              !/^[0-9]+$/.test(w)
             )
           })
 
@@ -170,7 +168,10 @@ export async function GET(request: NextRequest) {
           score: Math.round(score * 100) / 100,
         }))
 
-      console.log(`[Trends] Extracted ${titleTrends.length} keywords from titles`)
+      console.log(
+        `[Trends] Extracted ${titleTrends.length} keywords from titles:`,
+        titleTrends.map((t) => t.keyword).join(', ')
+      )
 
       if (titleTrends.length === 0) {
         console.error('[Trends] No keywords extracted from titles')
