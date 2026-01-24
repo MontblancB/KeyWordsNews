@@ -49,7 +49,7 @@ export async function scrapeFinancials(code: string): Promise<FinancialData[]> {
     }
 
     // 재무제표 테이블 찾기 (IFRS(연결) Annual 헤더가 있는 테이블 중 연도별 데이터가 있는 것)
-    let financialTable: cheerio.Cheerio<cheerio.Element> | null = null
+    let financialTable: any = null
     tables.each((i, table) => {
       const $table = $(table)
       const headers = $table.find('thead th, thead td').map((_, th) => $(th).text().trim()).get()
