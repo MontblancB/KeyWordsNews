@@ -32,13 +32,14 @@ export async function POST(req: NextRequest) {
 • [핵심 포인트 3]
 
 중학생도 이해할 수 있도록 쉬운 말로 작성해주세요.
-전문 용어는 피하고, 일상적인 언어를 사용하세요.`
+전문 용어나 한자어는 피하고, 일상적인 한글 단어만 사용하세요.
+예: "최근" 대신 "요즘", "현재" 대신 "지금", "발생" 대신 "일어났다" 등`
 
     const completion = await groq.chat.completions.create({
       messages: [
         {
           role: 'system',
-          content: '당신은 복잡한 내용을 쉽고 재미있게 설명하는 전문가입니다. 누구나 이해할 수 있도록 간단명료하게 설명합니다.',
+          content: '당신은 복잡한 내용을 쉽고 재미있게 설명하는 전문가입니다. 누구나 이해할 수 있도록 간단명료하게 설명합니다. 한자어 대신 순우리말과 쉬운 한글 표현을 사용합니다.',
         },
         {
           role: 'user',
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest) {
         },
       ],
       model: 'llama-3.3-70b-versatile',
-      temperature: 0.7,
+      temperature: 0.3,
       max_tokens: 1000,
     })
 
