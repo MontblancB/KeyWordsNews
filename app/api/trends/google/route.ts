@@ -5,6 +5,20 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 export const maxDuration = 30 // 30초 타임아웃
 
+// 한국어 불용어 리스트 (조사, 접속사, 일반 명사)
+const STOPWORDS = new Set([
+  // 조사
+  '이', '가', '은', '는', '을', '를', '의', '에', '에서', '으로', '로', '과', '와', '도', '만', '까지', '부터', '조차', '마저',
+  // 접속사/부사
+  '그리고', '하지만', '그러나', '또한', '또', '및', '등', '이런', '저런', '그런',
+  // 일반적인 단어
+  '것', '수', '때', '등', '중', '내', '위', '통해', '대해', '관련', '있다', '없다', '하다',
+  '있는', '없는', '하는', '된', '되는', '한', '할', '위한', '대한', '관한',
+  '뉴스', '기사', '보도', '발표', '공개', '전달', '알려', '밝혀',
+  // 날짜/시간
+  '오늘', '어제', '내일', '올해', '작년', '내년', '이번', '지난', '다음', '월', '일', '년',
+])
+
 /**
  * GET /api/trends/google
  * 자체 뉴스 키워드 트렌드 분석
@@ -67,10 +81,16 @@ export async function GET(request: NextRequest) {
       const timeWeight = Math.max(0, 1 - hoursSincePublished / 24)
 
       news.aiKeywords.forEach((keyword) => {
-        if (keyword && keyword.length >= 2) {
-          // 2글자 이상만
-          const current = keywordFrequency.get(keyword) || 0
-          keywordFrequency.set(keyword, current + timeWeight)
+        const cleaned = keyword.trim()
+        // 불용어 제외, 2글자 이상, 숫자만인 경우 제외
+        if (
+          cleaned &&
+          cleaned.length >= 2 &&
+          !STOPWORDS.has(cleaned) &&
+          !/^[0-9]+$/.test(cleaned)
+        ) {
+          const current = keywordFrequency.get(cleaned) || 0
+          keywordFrequency.set(cleaned, current + timeWeight)
         }
       })
     })
@@ -100,7 +120,7 @@ export async function GET(request: NextRequest) {
 
       console.log(`[Trends] Found ${newsWithTitles.length} news for title extraction`)
 
-      // 간단한 키워드 추출 (2글자 이상 단어, 시간 가중치 적용)
+      // 스마트 키워드 추출 (불용어 제외, 시간 가중치 적용)
       const titleKeywords = new Map<string, number>()
       const now = Date.now()
 
@@ -109,9 +129,30 @@ export async function GET(request: NextRequest) {
           (now - new Date(news.publishedAt).getTime()) / (1000 * 60 * 60)
         const timeWeight = Math.max(0.1, 1 - hoursSincePublished / (7 * 24)) // 최소 0.1 가중치
 
-        const words = news.title
-          .split(/[\s,\.]+/)
-          .filter((w) => w.length >= 2 && !/^[0-9]+$/.test(w))
+        // 제목에서 키워드 추출
+        const title = news.title
+          // 특수문자를 공백으로 치환 (따옴표, 괄호 등 유지)
+          .replace(/[\[\]{}():;,\.!?'"…·]/g, ' ')
+          // 여러 공백을 하나로
+          .replace(/\s+/g, ' ')
+          .trim()
+
+        const words = title
+          .split(' ')
+          .map((w) => w.trim())
+          .filter((w) => {
+            // 필터링 조건:
+            // 1. 3글자 이상 (조사 대부분 제외)
+            // 2. 불용어가 아님
+            // 3. 숫자만으로 이루어지지 않음
+            // 4. 영문자만으로 이루어지지 않음 (한글 포함 필수)
+            return (
+              w.length >= 3 &&
+              !STOPWORDS.has(w) &&
+              !/^[0-9]+$/.test(w) &&
+              /[가-힣]/.test(w) // 한글 포함 필수
+            )
+          })
 
         words.forEach((word) => {
           const current = titleKeywords.get(word) || 0
@@ -132,42 +173,8 @@ export async function GET(request: NextRequest) {
       console.log(`[Trends] Extracted ${titleTrends.length} keywords from titles`)
 
       if (titleTrends.length === 0) {
-        // 최후의 수단: 더미 데이터
-        console.warn('[Trends] No keywords extracted, returning dummy data')
-        const dummyTrends = [
-          { keyword: '뉴스', rank: 1, country: 'south_korea', score: 1 },
-          { keyword: '한국', rank: 2, country: 'south_korea', score: 0.9 },
-          { keyword: '정부', rank: 3, country: 'south_korea', score: 0.8 },
-          { keyword: '경제', rank: 4, country: 'south_korea', score: 0.7 },
-          { keyword: '사회', rank: 5, country: 'south_korea', score: 0.6 },
-        ]
-
-        const collectedAt = new Date()
-        await prisma.$transaction(
-          dummyTrends.map((trend) =>
-            prisma.trend.create({
-              data: {
-                keyword: trend.keyword,
-                rank: trend.rank,
-                country: trend.country,
-                collectedAt,
-              },
-            })
-          )
-        )
-
-        return Response.json({
-          success: true,
-          data: dummyTrends.map((t) => ({
-            ...t,
-            collectedAt: collectedAt.toISOString(),
-            createdAt: collectedAt.toISOString(),
-            id: `temp-${t.rank}`,
-          })),
-          cached: false,
-          collectedAt: collectedAt.toISOString(),
-          warning: 'Using fallback data',
-        })
+        console.error('[Trends] No keywords extracted from titles')
+        throw new Error('No trends available - insufficient news data')
       }
 
       // DB 저장

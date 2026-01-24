@@ -4,6 +4,20 @@ import { prisma } from '@/lib/prisma'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30 // 30초 타임아웃
 
+// 한국어 불용어 리스트
+const STOPWORDS = new Set([
+  // 조사
+  '이', '가', '은', '는', '을', '를', '의', '에', '에서', '으로', '로', '과', '와', '도', '만', '까지', '부터', '조차', '마저',
+  // 접속사/부사
+  '그리고', '하지만', '그러나', '또한', '또', '및', '등', '이런', '저런', '그런',
+  // 일반적인 단어
+  '것', '수', '때', '등', '중', '내', '위', '통해', '대해', '관련', '있다', '없다', '하다',
+  '있는', '없는', '하는', '된', '되는', '한', '할', '위한', '대한', '관한',
+  '뉴스', '기사', '보도', '발표', '공개', '전달', '알려', '밝혀',
+  // 날짜/시간
+  '오늘', '어제', '내일', '올해', '작년', '내년', '이번', '지난', '다음', '월', '일', '년',
+])
+
 /**
  * POST /api/trends/collect
  * GitHub Actions Cron용 트렌드 수집 엔드포인트
@@ -44,9 +58,16 @@ export async function POST(request: NextRequest) {
       const timeWeight = Math.max(0, 1 - hoursSincePublished / 24)
 
       news.aiKeywords.forEach((keyword) => {
-        if (keyword && keyword.length >= 2) {
-          const current = keywordFrequency.get(keyword) || 0
-          keywordFrequency.set(keyword, current + timeWeight)
+        const cleaned = keyword.trim()
+        // 불용어 제외, 2글자 이상, 숫자만인 경우 제외
+        if (
+          cleaned &&
+          cleaned.length >= 2 &&
+          !STOPWORDS.has(cleaned) &&
+          !/^[0-9]+$/.test(cleaned)
+        ) {
+          const current = keywordFrequency.get(cleaned) || 0
+          keywordFrequency.set(cleaned, current + timeWeight)
         }
       })
     })
@@ -83,9 +104,23 @@ export async function POST(request: NextRequest) {
           (now - new Date(news.publishedAt).getTime()) / (1000 * 60 * 60)
         const timeWeight = Math.max(0.1, 1 - hoursSincePublished / (7 * 24))
 
-        const words = news.title
-          .split(/[\s,\.]+/)
-          .filter((w) => w.length >= 2 && !/^[0-9]+$/.test(w))
+        // 제목에서 키워드 추출
+        const title = news.title
+          .replace(/[\[\]{}():;,\.!?'"…·]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+
+        const words = title
+          .split(' ')
+          .map((w) => w.trim())
+          .filter((w) => {
+            return (
+              w.length >= 3 &&
+              !STOPWORDS.has(w) &&
+              !/^[0-9]+$/.test(w) &&
+              /[가-힣]/.test(w) // 한글 포함 필수
+            )
+          })
 
         words.forEach((word) => {
           const current = titleKeywords.get(word) || 0
