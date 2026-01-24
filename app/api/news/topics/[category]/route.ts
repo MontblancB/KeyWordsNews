@@ -7,14 +7,13 @@ import { realtimeCollector } from '@/lib/rss/realtime-collector'
 
 export async function GET(
   request: Request,
-  context: { params: Promise<{ category: string }> | { category: string } }
+  { params }: { params: { category: string } | Promise<{ category: string }> }
 ) {
   try {
-    // Next.js 15+: params is Promise, Next.js 14-: params is object
-    const resolvedParams = 'then' in context.params
-      ? await context.params
-      : context.params
-    const { category } = resolvedParams
+    // Next.js 16: params can be Promise or object
+    const category = typeof params === 'object' && 'then' in params
+      ? (await params).category
+      : (params as { category: string }).category
     const { searchParams } = new URL(request.url)
     const sourcesParam = searchParams.get('sources')
     const limit = parseInt(searchParams.get('limit') || '20')
