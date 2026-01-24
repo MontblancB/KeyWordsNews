@@ -1,5 +1,6 @@
 from http.server import BaseHTTPRequestHandler
 import json
+from datetime import datetime
 from trendspyg import download_google_trends_rss
 
 
@@ -8,6 +9,8 @@ class handler(BaseHTTPRequestHandler):
         try:
             # 한국 실시간 트렌드 가져오기 (캐시 비활성화)
             trends_raw = download_google_trends_rss(geo='KR', cache=False)
+
+            print(f"[Trends] trendspyg returned {len(trends_raw)} trends")
 
             # 트렌드 데이터 변환 (제한 없이 모두 가져오기)
             trends = []
@@ -31,7 +34,8 @@ class handler(BaseHTTPRequestHandler):
                 'data': trends,
                 'source': 'google_trends_trendspyg_rss',
                 'cached': False,
-                'total': len(trends)
+                'total': len(trends),
+                'collectedAt': datetime.now().isoformat()
             }
 
             self.send_response(200)

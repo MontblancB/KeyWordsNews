@@ -78,20 +78,6 @@ export default function TrendModal({ isOpen, onClose }: TrendModalProps) {
                   </div>
                 </div>
 
-                {/* 수집 시간 */}
-                {data?.collectedAt && (
-                  <p className="px-6 text-xs text-gray-500 dark:text-gray-400 mb-3">
-                    {new Date(data.collectedAt).toLocaleString('ko-KR', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}{' '}
-                    기준{data.cached && ' (캐시)'}
-                  </p>
-                )}
-
                 {/* 트렌드 리스트 */}
                 <div className="px-6 pb-6">
                   {isLoading ? (
@@ -144,13 +130,25 @@ export default function TrendModal({ isOpen, onClose }: TrendModalProps) {
                   )}
                 </div>
 
-                {/* 출처 */}
-                <div className="px-6 pb-6">
+                {/* 출처 및 기준 시간 */}
+                <div className="px-6 pb-6 space-y-2">
                   <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
                     {data?.source?.includes('trendspyg')
                       ? '🔥 Google Trends 실시간 검색어'
                       : '📊 최근 24시간 뉴스 키워드 분석'}
                   </p>
+                  {data?.collectedAt && (
+                    <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
+                      실시간 기준:{' '}
+                      {new Date(data.collectedAt).toLocaleString('ko-KR', {
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                      })}
+                    </p>
+                  )}
                 </div>
               </Dialog.Panel>
             </Transition.Child>
