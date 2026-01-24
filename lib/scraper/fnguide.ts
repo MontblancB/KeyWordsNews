@@ -49,7 +49,7 @@ export async function scrapeFinancials(code: string): Promise<FinancialData[]> {
     }
 
     // 재무제표 테이블 찾기 (IFRS(연결) Annual 헤더가 있는 테이블 중 연도별 데이터가 있는 것)
-    let financialTable = $()
+    let financialTable: cheerio.Cheerio<cheerio.Element> | null = null
     tables.each((i, table) => {
       const $table = $(table)
       const headers = $table.find('thead th, thead td').map((_, th) => $(th).text().trim()).get()
@@ -62,7 +62,7 @@ export async function scrapeFinancials(code: string): Promise<FinancialData[]> {
       }
     })
 
-    if (financialTable.length === 0) {
+    if (!financialTable || financialTable.length === 0) {
       // 재무제표 테이블을 찾을 수 없으면 빈 배열 반환
       return []
     }
@@ -97,13 +97,19 @@ export async function scrapeFinancials(code: string): Promise<FinancialData[]> {
     // values[0] = Annual 값, values[1] = 2020/12 값, values[2] = 2021/12 값, ...
     // 연도별 데이터는 values[1]부터 시작 (헤더[2]부터)
     for (let i = 2; i < Math.min(headers.length, 10); i++) {
-      const period = headers[i] || ''
+      let period = headers[i] || ''
 
-      // 기간 필터링 (잠정실적, 추정치 제외)
-      if (!period || period.includes('Provisional') || period.includes('잠정') ||
-          period.includes('Estimate') || period.includes('추정') || period.includes('컨센서스')) {
+      // 추정치(Estimate) 제외, 잠정실적(Provisional)은 포함
+      if (!period || period.includes('Estimate') || period.includes('추정') || period.includes('컨센서스')) {
         continue
       }
+
+      // 헤더에서 연도 정보 추출 (예: "2025/12(P)" 또는 "(P) : Provisional\n잠정실적\n\n2025/12(P)")
+      const yearMatch = period.match(/(\d{4}\/\d{2})/)
+      if (!yearMatch) {
+        continue // 연도 정보가 없으면 스킵
+      }
+      period = yearMatch[1] // "2025/12" 형태로 정규화
 
       // 연간 테이블이므로 모두 annual
       const isQuarterly = false

@@ -18,7 +18,7 @@
 ### 배포 정보
 - **URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
-- **현재 버전**: 2.37.0
+- **현재 버전**: 2.37.1
 - **마지막 업데이트**: 2026-01-24
 
 ---
@@ -320,6 +320,12 @@ rm -rf node_modules && npm install
 ---
 
 ## 최근 업데이트
+
+### v2.37.1 (2026-01-24) - 2025년 잠정실적 수집
+- 📊 **잠정실적 포함**: Provisional (P) 데이터 수집 (이미 발표된 실적)
+- 🚫 **추정치 제외**: Estimate (E) 데이터만 필터링 (미래 예측)
+- 📈 **수집 확대**: 5개 연도 → 6개 연도 (2020-2025)
+- 🔧 **TypeScript 수정**: Cheerio 타입 에러 해결
 
 ### v2.37.0 (2026-01-24) - 빌드 최적화 & 재무제표 수정
 - ⚡ **빌드 시간 단축**: DART corp-code 다운로드를 빌드 프로세스에서 제거
