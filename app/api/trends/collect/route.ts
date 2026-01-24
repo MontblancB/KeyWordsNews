@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
             )
           })
 
-        words.forEach((word) => {
+        words.forEach((word: string) => {
           const current = titleKeywords.get(word) || 0
           titleKeywords.set(word, current + timeWeight)
         })
