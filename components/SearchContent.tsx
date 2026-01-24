@@ -4,7 +4,8 @@ import { useState, useEffect, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useInfiniteNewsSearch } from '@/hooks/useNews'
 import NewsCard from '@/components/NewsCard'
-import { MagnifyingGlassIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
+import KeywordInfoModal from '@/components/KeywordInfoModal'
+import { MagnifyingGlassIcon, ArrowLeftIcon, InformationCircleIcon } from '@heroicons/react/24/outline'
 
 export default function SearchContent() {
   const router = useRouter()
@@ -13,6 +14,7 @@ export default function SearchContent() {
 
   const [keyword, setKeyword] = useState(queryParam)
   const [searchQuery, setSearchQuery] = useState(queryParam)
+  const [isKeywordInfoOpen, setIsKeywordInfoOpen] = useState(false)
   const loadMoreRef = useRef<HTMLDivElement>(null)
 
   const {
@@ -137,6 +139,19 @@ export default function SearchContent() {
               </p>
             </div>
 
+            {/* 키워드 정보 버튼 */}
+            {queryParam && allNews.length > 0 && (
+              <div className="p-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={() => setIsKeywordInfoOpen(true)}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors font-medium"
+                >
+                  <InformationCircleIcon className="w-5 h-5" />
+                  키워드 정보
+                </button>
+              </div>
+            )}
+
             {allNews.length === 0 ? (
               <div className="p-8 text-center text-gray-500 dark:text-gray-400">
                 <p>검색 결과가 없습니다.</p>
@@ -168,6 +183,13 @@ export default function SearchContent() {
           </>
         )}
       </main>
+
+      {/* 키워드 정보 모달 */}
+      <KeywordInfoModal
+        isOpen={isKeywordInfoOpen}
+        onClose={() => setIsKeywordInfoOpen(false)}
+        keyword={searchQuery}
+      />
     </>
   )
 }
