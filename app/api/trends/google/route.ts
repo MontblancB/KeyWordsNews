@@ -1,5 +1,8 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { newsService } from '@/lib/db/news'
+import { isDatabaseEnabled } from '@/lib/config/database'
+import { realtimeCollector } from '@/lib/rss/realtime-collector'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -123,32 +126,30 @@ export async function GET(request: NextRequest) {
     if (sortedKeywords.length === 0) {
       console.log('[Trends] No AI keywords found, trying title extraction')
 
-      // 가장 단순한 쿼리로 뉴스 개수 확인
-      const totalCount = await prisma.news.count()
-      console.log(`[Trends] Total news count in DB: ${totalCount}`)
+      // newsService 또는 realtimeCollector 사용 (메인 API와 동일)
+      let allNews: any[] = []
 
-      // 뉴스에 키워드가 없는 경우, 제목에서 추출
-      const newsWithTitles = await prisma.news.findMany({
-        select: {
-          title: true,
-          publishedAt: true
-        },
-        orderBy: {
-          publishedAt: 'desc'
-        },
-        take: 500,
-      })
-
-      console.log(`[Trends] Found ${newsWithTitles.length} news for title extraction`)
-
-      if (newsWithTitles.length > 0) {
-        console.log(`[Trends] Sample news title: "${newsWithTitles[0].title}"`)
-        console.log(`[Trends] Latest news publishedAt: ${newsWithTitles[0].publishedAt}`)
-        console.log(`[Trends] Oldest news publishedAt: ${newsWithTitles[newsWithTitles.length - 1].publishedAt}`)
+      if (isDatabaseEnabled()) {
+        console.log('[Trends] Using database mode')
+        allNews = await newsService.getLatestNews(500, 0)
       } else {
-        console.error('[Trends] No news found in database!')
-        throw new Error('No news data available in database')
+        console.log('[Trends] Using realtime RSS mode')
+        allNews = await realtimeCollector.collectAllRealtime()
       }
+
+      console.log(`[Trends] Found ${allNews.length} news for title extraction`)
+
+      if (allNews.length === 0) {
+        console.error('[Trends] No news found!')
+        throw new Error('No news data available')
+      }
+
+      console.log(`[Trends] Sample news title: "${allNews[0].title}"`)
+
+      const newsWithTitles = allNews.map((news) => ({
+        title: news.title,
+        publishedAt: new Date(news.publishedAt),
+      }))
 
       // 스마트 키워드 추출 (불용어 제외, 시간 가중치 적용)
       const titleKeywords = new Map<string, number>()

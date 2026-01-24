@@ -1,5 +1,8 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { newsService } from '@/lib/db/news'
+import { isDatabaseEnabled } from '@/lib/config/database'
+import { realtimeCollector } from '@/lib/rss/realtime-collector'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30 // 30초 타임아웃
@@ -86,14 +89,32 @@ export async function POST(request: NextRequest) {
     if (keywords.length === 0) {
       console.log('[Trends Collect] No AI keywords, trying title extraction')
 
-      // 조건 없이 최신 500개 뉴스 가져오기
-      const newsWithTitles = await prisma.news.findMany({
-        select: { title: true, publishedAt: true },
-        orderBy: { publishedAt: 'desc' },
-        take: 500,
-      })
+      // newsService 또는 realtimeCollector 사용
+      let allNews: any[] = []
 
-      console.log(`[Trends Collect] Found ${newsWithTitles.length} news for title extraction`)
+      if (isDatabaseEnabled()) {
+        console.log('[Trends Collect] Using database mode')
+        allNews = await newsService.getLatestNews(500, 0)
+      } else {
+        console.log('[Trends Collect] Using realtime RSS mode')
+        allNews = await realtimeCollector.collectAllRealtime()
+      }
+
+      console.log(`[Trends Collect] Found ${allNews.length} news for title extraction`)
+
+      if (allNews.length === 0) {
+        console.warn('[Trends Collect] No news found, skipping collection')
+        return Response.json({
+          success: false,
+          error: 'No news available',
+          count: 0,
+        })
+      }
+
+      const newsWithTitles = allNews.map((news) => ({
+        title: news.title,
+        publishedAt: new Date(news.publishedAt),
+      }))
 
       const titleKeywords = new Map<string, number>()
       const now = Date.now()
@@ -136,15 +157,15 @@ export async function POST(request: NextRequest) {
         }))
 
       console.log(`[Trends Collect] Extracted ${keywords.length} keywords from titles`)
-    }
 
-    if (keywords.length === 0) {
-      console.warn('[Trends Collect] No keywords found, skipping collection')
-      return Response.json({
-        success: false,
-        error: 'No trends available',
-        count: 0,
-      })
+      if (keywords.length === 0) {
+        console.warn('[Trends Collect] No keywords extracted, skipping collection')
+        return Response.json({
+          success: false,
+          error: 'No trends available',
+          count: 0,
+        })
+      }
     }
 
     // DB 저장
