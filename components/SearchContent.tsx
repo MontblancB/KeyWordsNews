@@ -1,12 +1,13 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { useInfiniteNewsSearch } from '@/hooks/useNews'
 import NewsCard from '@/components/NewsCard'
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline'
+import { MagnifyingGlassIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
 
 export default function SearchContent() {
+  const router = useRouter()
   const searchParams = useSearchParams()
   const queryParam = searchParams.get('q') || ''
 
@@ -62,7 +63,20 @@ export default function SearchContent() {
 
   return (
     <>
-      {!queryParam && (
+      {queryParam ? (
+        <header className="bg-blue-600 text-white p-4 sticky top-0 z-50">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.back()}
+              className="p-2 hover:bg-blue-700 rounded-lg transition-colors"
+              aria-label="뒤로가기"
+            >
+              <ArrowLeftIcon className="w-6 h-6" />
+            </button>
+            <h1 className="text-xl font-bold">뉴스 검색</h1>
+          </div>
+        </header>
+      ) : (
         <header className="bg-blue-600 text-white p-4 sticky top-0 z-50">
           <h1 className="text-xl font-bold mb-3">뉴스 검색</h1>
           <form onSubmit={handleSearch}>
