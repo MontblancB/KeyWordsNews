@@ -18,7 +18,7 @@
 ### 배포 정보
 - **URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
-- **현재 버전**: 2.36.0
+- **현재 버전**: 2.37.0
 - **마지막 업데이트**: 2026-01-24
 
 ---
@@ -320,6 +320,12 @@ rm -rf node_modules && npm install
 ---
 
 ## 최근 업데이트
+
+### v2.37.0 (2026-01-24) - 빌드 최적화 & 재무제표 수정
+- ⚡ **빌드 시간 단축**: DART corp-code 다운로드를 빌드 프로세스에서 제거
+- 🤖 **GitHub Actions 자동화**: 주 1회 DART 상장사 매핑 자동 업데이트
+- 📊 **FnGuide 재무제표 수정**: 연간 데이터 테이블(11) 사용, 5개 연도 수집
+- 🔧 **데이터 품질 개선**: 2020-2023년 완전한 재무 데이터 수집
 
 ### v2.36.0 (2026-01-24) - TrendNow 실시간 트렌드
 - 🔥 **TrendNow 기능**: Google Trends 한국 실시간 검색어 상위 20개 표시

@@ -133,7 +133,7 @@ export default function TrendModal({ isOpen, onClose }: TrendModalProps) {
                 {/* 출처 */}
                 <div className="px-6 pb-6">
                   <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
-                    Google Trends 제공
+                    최근 24시간 뉴스 키워드 분석
                   </p>
                 </div>
               </Dialog.Panel>

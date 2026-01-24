@@ -43,27 +43,41 @@ export async function scrapeFinancials(code: string): Promise<FinancialData[]> {
     // FnGuide의 SVD_Main 페이지에서 재무 하이라이트 테이블
     const tables = $('table.us_table_ty1')
 
-    // 첫 번째 테이블이 재무 하이라이트
-    const financialTable = tables.first()
-
-    if (financialTable.length === 0) {
+    if (tables.length === 0) {
       // 테이블이 없으면 빈 배열 반환
       return []
     }
 
-    // 헤더에서 기간 정보 추출
-    const headers: string[] = []
-    financialTable.find('thead th').each((i, th) => {
-      if (i > 0) {
-        // 첫 번째 열은 항목명
-        headers.push($(th).text().trim())
+    // 재무제표 테이블 찾기 (IFRS(연결) Annual 헤더가 있는 테이블 중 연도별 데이터가 있는 것)
+    let financialTable = $()
+    tables.each((i, table) => {
+      const $table = $(table)
+      const headers = $table.find('thead th, thead td').map((_, th) => $(th).text().trim()).get()
+      const headersText = headers.join(' ')
+
+      // "IFRS(연결)" + "Annual" 포함하고, "Net Quarter"가 없는 테이블 찾기 (연간 데이터만)
+      if (headersText.includes('IFRS') && headersText.includes('Annual') && !headersText.includes('Net Quarter')) {
+        financialTable = $table
+        return false // 루프 중단
       }
+    })
+
+    if (financialTable.length === 0) {
+      // 재무제표 테이블을 찾을 수 없으면 빈 배열 반환
+      return []
+    }
+
+    // 헤더에서 기간 정보 추출
+    // FnGuide 헤더 구조: IFRS(연결) | Annual | Net Quarter | 2022/12 | 2023/12 | 2024/12 | ...
+    const headers: string[] = []
+    financialTable.find('thead th, thead td').each((i, th) => {
+      headers.push($(th).text().trim())
     })
 
     // 데이터 행 파싱
     const rows: { [key: string]: string[] } = {}
     financialTable.find('tbody tr').each((_, tr) => {
-      const cells = $(tr).find('td')
+      const cells = $(tr).find('td, th')
       const rowName = cells.first().text().trim()
       const values: string[] = []
 
@@ -79,29 +93,41 @@ export async function scrapeFinancials(code: string): Promise<FinancialData[]> {
     })
 
     // 재무 데이터 구성
-    for (let i = 0; i < Math.min(headers.length, 4); i++) {
+    // 테이블 11 (연간 전용): 헤더[0] = IFRS(연결), 헤더[1] = Annual, 헤더[2] = 2020/12, 헤더[3] = 2021/12, ...
+    // values[0] = Annual 값, values[1] = 2020/12 값, values[2] = 2021/12 값, ...
+    // 연도별 데이터는 values[1]부터 시작 (헤더[2]부터)
+    for (let i = 2; i < Math.min(headers.length, 10); i++) {
       const period = headers[i] || ''
-      const isQuarterly = period.includes('Q') || period.includes('분기')
+
+      // 기간 필터링 (잠정실적, 추정치 제외)
+      if (!period || period.includes('Provisional') || period.includes('잠정') ||
+          period.includes('Estimate') || period.includes('추정') || period.includes('컨센서스')) {
+        continue
+      }
+
+      // 연간 테이블이므로 모두 annual
+      const isQuarterly = false
+      const valueIndex = i - 1 // 헤더 인덱스 2 = values 인덱스 1
 
       const financial: FinancialData = {
         period,
         periodType: isQuarterly ? 'quarterly' : 'annual',
-        revenue: rows['매출액']?.[i] || rows['영업수익']?.[i] || '-',
-        costOfRevenue: rows['매출원가']?.[i] || '-',
-        grossProfit: rows['매출총이익']?.[i] || '-',
-        grossMargin: rows['매출총이익률']?.[i] || '-',
-        operatingProfit: rows['영업이익']?.[i] || '-',
-        operatingMargin: rows['영업이익률']?.[i] || '-',
-        netIncome: rows['당기순이익']?.[i] || rows['순이익']?.[i] || '-',
-        netMargin: rows['순이익률']?.[i] || '-',
-        ebitda: rows['EBITDA']?.[i] || '-',
+        revenue: rows['매출액']?.[valueIndex] || rows['영업수익']?.[valueIndex] || '-',
+        costOfRevenue: rows['매출원가']?.[valueIndex] || '-',
+        grossProfit: rows['매출총이익']?.[valueIndex] || '-',
+        grossMargin: rows['매출총이익률']?.[valueIndex] || '-',
+        operatingProfit: rows['영업이익']?.[valueIndex] || '-',
+        operatingMargin: rows['영업이익률']?.[valueIndex] || '-',
+        netIncome: rows['당기순이익']?.[valueIndex] || rows['순이익']?.[valueIndex] || '-',
+        netMargin: rows['순이익률']?.[valueIndex] || '-',
+        ebitda: rows['EBITDA']?.[valueIndex] || '-',
         // 추가 재무 지표
-        totalAssets: rows['자산총계']?.[i] || rows['자산']?.[i] || '-',
-        totalLiabilities: rows['부채총계']?.[i] || rows['부채']?.[i] || '-',
-        totalEquity: rows['자본총계']?.[i] || rows['자본']?.[i] || '-',
-        debtRatio: rows['부채비율']?.[i] || '-',
-        operatingCashFlow: rows['영업활동현금흐름']?.[i] || rows['영업현금흐름']?.[i] || '-',
-        freeCashFlow: rows['잉여현금흐름']?.[i] || rows['FCF']?.[i] || '-',
+        totalAssets: rows['자산총계']?.[valueIndex] || rows['자산']?.[valueIndex] || '-',
+        totalLiabilities: rows['부채총계']?.[valueIndex] || rows['부채']?.[valueIndex] || '-',
+        totalEquity: rows['자본총계']?.[valueIndex] || rows['자본']?.[valueIndex] || '-',
+        debtRatio: rows['부채비율']?.[valueIndex] || '-',
+        operatingCashFlow: rows['영업활동현금흐름']?.[valueIndex] || rows['영업현금흐름']?.[valueIndex] || '-',
+        freeCashFlow: rows['잉여현금흐름']?.[valueIndex] || rows['FCF']?.[valueIndex] || '-',
       }
 
       // 값 정리

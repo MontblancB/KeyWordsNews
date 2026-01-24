@@ -1,6 +1,5 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import googleTrends from 'google-trends-api'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30 // 30초 타임아웃
@@ -17,24 +16,48 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Google Trends API 호출 (Node.js)
-    const resultsString = await googleTrends.realTimeTrends({
-      geo: 'KR', // 한국
-      category: 'all',
+    // 최근 24시간 뉴스에서 키워드 추출
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
+
+    const recentNews = await prisma.news.findMany({
+      where: {
+        publishedAt: { gte: oneDayAgo },
+        aiKeywords: { isEmpty: false },
+      },
+      select: {
+        aiKeywords: true,
+        publishedAt: true,
+      },
+      orderBy: { publishedAt: 'desc' },
+      take: 200,
     })
 
-    const results = JSON.parse(resultsString)
+    // 키워드 빈도 계산 (시간 가중치)
+    const keywordFrequency = new Map<string, number>()
+    const now = Date.now()
 
-    // 실시간 트렌드 추출
-    const trendingSearches = results.storySummaries?.trendingStories || []
-    const keywords = trendingSearches
+    recentNews.forEach((news) => {
+      const hoursSincePublished =
+        (now - new Date(news.publishedAt).getTime()) / (1000 * 60 * 60)
+      const timeWeight = Math.max(0, 1 - hoursSincePublished / 24)
+
+      news.aiKeywords.forEach((keyword) => {
+        if (keyword && keyword.length >= 2) {
+          const current = keywordFrequency.get(keyword) || 0
+          keywordFrequency.set(keyword, current + timeWeight)
+        }
+      })
+    })
+
+    // 상위 20개 추출
+    const keywords = Array.from(keywordFrequency.entries())
+      .sort((a, b) => b[1] - a[1])
       .slice(0, 20)
-      .map((story: any, index: number) => ({
-        keyword: story.title || story.entityNames?.[0] || '',
+      .map(([keyword, _], index) => ({
+        keyword,
         rank: index + 1,
         country: 'south_korea',
       }))
-      .filter((item: any) => item.keyword) // 빈 키워드 제거
 
     if (keywords.length === 0) {
       throw new Error('No trends found')
@@ -44,7 +67,7 @@ export async function POST(request: NextRequest) {
     const collectedAt = new Date()
 
     await prisma.$transaction(
-      keywords.map((trend: any) =>
+      keywords.map((trend) =>
         prisma.trend.create({
           data: {
             keyword: trend.keyword,

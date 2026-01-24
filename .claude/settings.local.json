@@ -84,7 +84,9 @@
       "Bash(wc:*)",
       "Bash(npm run update-dart:*)",
       "Bash(DART_API_KEY=\"\" npm run update-dart)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(tsx:*)",
+      "Bash(npm uninstall:*)"
     ]
   },
   "hooks": {
