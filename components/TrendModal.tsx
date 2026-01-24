@@ -134,11 +134,6 @@ export default function TrendModal({ isOpen, onClose }: TrendModalProps) {
                             <div className="text-sm text-gray-900 dark:text-gray-100 font-medium">
                               {trend.keyword}
                             </div>
-                            {trend.traffic && (
-                              <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                검색량: {trend.traffic}
-                              </div>
-                            )}
                           </div>
                           <span className="text-xs text-gray-400 dark:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
                             클릭하여 관련 뉴스 보기 →

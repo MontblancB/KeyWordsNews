@@ -1,14 +1,18 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useInfiniteNewsSearch } from '@/hooks/useNews'
 import NewsCard from '@/components/NewsCard'
 import BottomNav from '@/components/BottomNav'
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 
 export default function SearchPage() {
-  const [keyword, setKeyword] = useState('')
-  const [searchQuery, setSearchQuery] = useState('')
+  const searchParams = useSearchParams()
+  const queryParam = searchParams.get('q') || ''
+
+  const [keyword, setKeyword] = useState(queryParam)
+  const [searchQuery, setSearchQuery] = useState(queryParam)
   const loadMoreRef = useRef<HTMLDivElement>(null)
 
   const {
@@ -26,6 +30,14 @@ export default function SearchPage() {
       setSearchQuery(keyword.trim())
     }
   }
+
+  // URL 쿼리 파라미터가 변경되면 자동으로 검색 실행
+  useEffect(() => {
+    if (queryParam) {
+      setKeyword(queryParam)
+      setSearchQuery(queryParam)
+    }
+  }, [queryParam])
 
   // 무한 스크롤: Intersection Observer 사용
   useEffect(() => {
