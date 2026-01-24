@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Groq from 'groq-sdk'
 
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-})
-
 export async function POST(req: NextRequest) {
   try {
     const { keyword } = await req.json()
+
+    // Groq 클라이언트를 함수 내부에서 초기화 (빌드 시 환경 변수 오류 방지)
+    const groq = new Groq({
+      apiKey: process.env.GROQ_API_KEY || '',
+    })
 
     if (!keyword) {
       return NextResponse.json(
