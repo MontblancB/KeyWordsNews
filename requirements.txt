@@ -1,1 +1,1 @@
-pytrends==4.9.2
+trendspyg
