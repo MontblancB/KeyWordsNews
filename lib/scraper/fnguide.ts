@@ -50,9 +50,9 @@ export async function scrapeFinancials(code: string): Promise<FinancialData[]> {
 
     // 재무제표 테이블 찾기 (IFRS(연결) Annual 헤더가 있는 테이블 중 연도별 데이터가 있는 것)
     let financialTable: any = null
-    tables.each((i, table) => {
+    tables.each((i: number, table: any) => {
       const $table = $(table)
-      const headers = $table.find('thead th, thead td').map((_, th) => $(th).text().trim()).get()
+      const headers = $table.find('thead th, thead td').map((_: number, th: any) => $(th).text().trim()).get()
       const headersText = headers.join(' ')
 
       // "IFRS(연결)" + "Annual" 포함하고, "Net Quarter"가 없는 테이블 찾기 (연간 데이터만)
@@ -70,18 +70,18 @@ export async function scrapeFinancials(code: string): Promise<FinancialData[]> {
     // 헤더에서 기간 정보 추출
     // FnGuide 헤더 구조: IFRS(연결) | Annual | Net Quarter | 2022/12 | 2023/12 | 2024/12 | ...
     const headers: string[] = []
-    financialTable.find('thead th, thead td').each((i, th) => {
+    financialTable.find('thead th, thead td').each((i: number, th: any) => {
       headers.push($(th).text().trim())
     })
 
     // 데이터 행 파싱
     const rows: { [key: string]: string[] } = {}
-    financialTable.find('tbody tr').each((_, tr) => {
+    financialTable.find('tbody tr').each((_: number, tr: any) => {
       const cells = $(tr).find('td, th')
       const rowName = cells.first().text().trim()
       const values: string[] = []
 
-      cells.each((i, td) => {
+      cells.each((i: number, td: any) => {
         if (i > 0) {
           values.push($(td).text().trim())
         }
@@ -188,12 +188,12 @@ export async function scrapeFnGuideIndicators(
     const indicators: Partial<InvestmentIndicators> = {}
 
     // 투자지표 섹션에서 PER, PBR, ROE 등 추출
-    $('table').each((_, table) => {
+    $('table').each((_: number, table: any) => {
       $(table)
         .find('tr')
-        .each((_, tr) => {
+        .each((_: number, tr: any) => {
           const cells = $(tr).find('td, th')
-          cells.each((i, cell) => {
+          cells.each((i: number, cell: any) => {
             const text = $(cell).text().trim()
             const nextValue = $(cells[i + 1])
               .text()
@@ -279,10 +279,10 @@ export async function scrapeFnGuideCompanyInfo(
     const companyInfo: Partial<CompanyInfo> = {}
 
     // 기업 개요 섹션에서 정보 추출
-    $('table').each((_, table) => {
+    $('table').each((_: number, table: any) => {
       $(table)
         .find('tr')
-        .each((_, tr) => {
+        .each((_: number, tr: any) => {
           const th = $(tr).find('th').text().trim()
           const td = $(tr).find('td').first().text().trim()
 
