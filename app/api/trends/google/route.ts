@@ -123,16 +123,20 @@ export async function GET(request: NextRequest) {
     if (sortedKeywords.length === 0) {
       console.log('[Trends] No AI keywords found, trying title extraction')
 
-      // 뉴스에 키워드가 없는 경우, 제목에서 추출 (기간 확대: 7일)
-      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+      // 뉴스에 키워드가 없는 경우, 제목에서 추출
+      // 조건 없이 최신 500개 뉴스 가져오기 (날짜 필터 제거)
       const newsWithTitles = await prisma.news.findMany({
-        where: { publishedAt: { gte: sevenDaysAgo } },
         select: { title: true, publishedAt: true },
         orderBy: { publishedAt: 'desc' },
-        take: 500, // 더 많은 뉴스 확인
+        take: 500,
       })
 
       console.log(`[Trends] Found ${newsWithTitles.length} news for title extraction`)
+
+      if (newsWithTitles.length > 0) {
+        console.log(`[Trends] Latest news publishedAt: ${newsWithTitles[0].publishedAt}`)
+        console.log(`[Trends] Oldest news publishedAt: ${newsWithTitles[newsWithTitles.length - 1].publishedAt}`)
+      }
 
       // 스마트 키워드 추출 (불용어 제외, 시간 가중치 적용)
       const titleKeywords = new Map<string, number>()
@@ -141,7 +145,8 @@ export async function GET(request: NextRequest) {
       newsWithTitles.forEach((news) => {
         const hoursSincePublished =
           (now - new Date(news.publishedAt).getTime()) / (1000 * 60 * 60)
-        const timeWeight = Math.max(0.1, 1 - hoursSincePublished / (7 * 24)) // 최소 0.1 가중치
+        // 최근 24시간 뉴스에 높은 가중치, 그 이후는 감소
+        const timeWeight = Math.max(0.1, 1 - hoursSincePublished / 24)
 
         // 제목에서 키워드 추출
         const title = news.title

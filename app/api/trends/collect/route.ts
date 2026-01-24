@@ -86,9 +86,8 @@ export async function POST(request: NextRequest) {
     if (keywords.length === 0) {
       console.log('[Trends Collect] No AI keywords, trying title extraction')
 
-      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+      // 조건 없이 최신 500개 뉴스 가져오기
       const newsWithTitles = await prisma.news.findMany({
-        where: { publishedAt: { gte: sevenDaysAgo } },
         select: { title: true, publishedAt: true },
         orderBy: { publishedAt: 'desc' },
         take: 500,
@@ -102,7 +101,7 @@ export async function POST(request: NextRequest) {
       newsWithTitles.forEach((news) => {
         const hoursSincePublished =
           (now - new Date(news.publishedAt).getTime()) / (1000 * 60 * 60)
-        const timeWeight = Math.max(0.1, 1 - hoursSincePublished / (7 * 24))
+        const timeWeight = Math.max(0.1, 1 - hoursSincePublished / 24)
 
         // 제목에서 키워드 추출
         const title = news.title
