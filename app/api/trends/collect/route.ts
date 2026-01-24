@@ -16,9 +16,15 @@ const STOPWORDS = new Set([
   // 일반적인 단어
   '것', '수', '때', '등', '중', '내', '위', '통해', '대해', '관련', '있다', '없다', '하다',
   '있는', '없는', '하는', '된', '되는', '한', '할', '위한', '대한', '관한',
-  '뉴스', '기사', '보도', '발표', '공개', '전달', '알려', '밝혀',
+  '뉴스', '기사', '보도', '발표', '공개', '전달', '알려', '밝혀', '속보', '긴급',
   // 날짜/시간
   '오늘', '어제', '내일', '올해', '작년', '내년', '이번', '지난', '다음', '월', '일', '년',
+  // 도메인/기술 용어
+  'com', 'co', 'kr', 'net', 'org', 'www', 'http', 'https',
+  // 뉴스 출처/플랫폼
+  '네이트', '네이버', '다음', 'daum', 'naver', 'google', '구글',
+  // 카테고리
+  '글로벌', '스포츠', '연예', '문화', '사회', '정치', '경제', 'IT',
 ])
 
 /**
@@ -125,8 +131,19 @@ export async function POST(request: NextRequest) {
         const timeWeight = Math.max(0.1, 1 - hoursSincePublished / 24)
 
         // 제목에서 키워드 추출
-        const title = news.title
-          .replace(/[\[\]{}():;,\.!?'"…·]/g, ' ')
+        let title = news.title
+          // 출처 제거
+          .split(/[-|]/)
+          .shift() || ''
+
+        title = title
+          // 대괄호 안 내용 제거
+          .replace(/\[.*?\]/g, ' ')
+          // 특수문자 제거
+          .replace(/[→←↑↓…·""''""「」『』【】〈〉《》]/g, ' ')
+          .replace(/[\[\]{}():;,\.!?'"]/g, ' ')
+          // 년생 패턴 유지
+          .replace(/\d{2,4}년생/g, (match) => match)
           .replace(/\s+/g, ' ')
           .trim()
 
@@ -137,7 +154,9 @@ export async function POST(request: NextRequest) {
             return (
               w.length >= 2 &&
               !STOPWORDS.has(w) &&
-              !/^[0-9]+$/.test(w)
+              !/^[0-9]+$/.test(w) &&
+              /[가-힣]/.test(w) &&
+              !/^[^가-힣a-zA-Z0-9]+$/.test(w)
             )
           })
 
