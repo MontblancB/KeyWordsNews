@@ -334,14 +334,14 @@ export default function HomePage() {
         <BreakingBanner />
 
         {/* TrendNow & InsightNow & SummarizeNow & BubbleNow 버튼 (Feature Flag로 제어) */}
-        {(FEATURE_FLAGS.ENABLE_TREND_NOW || (FEATURE_FLAGS.ENABLE_DAILY_INSIGHT && allNews.length >= 5)) && (
+        {allNews.length >= 5 && (FEATURE_FLAGS.ENABLE_TREND_NOW || FEATURE_FLAGS.ENABLE_DAILY_INSIGHT) && (
           <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
             <div className="flex gap-2 p-3 overflow-x-auto">
               {/* TrendNow 버튼 - 가장 왼쪽 */}
               {FEATURE_FLAGS.ENABLE_TREND_NOW && <TrendButton />}
 
-              {/* InsightNow & SummarizeNow 버튼 */}
-              {FEATURE_FLAGS.ENABLE_DAILY_INSIGHT && allNews.length >= 5 && (
+              {/* InsightNow & SummarizeNow & BubbleNow 버튼 */}
+              {FEATURE_FLAGS.ENABLE_DAILY_INSIGHT && (
                 <>
                   <InsightButton
                     onClick={handleOpenInsight}

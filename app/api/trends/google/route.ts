@@ -41,7 +41,21 @@ export async function GET(request: NextRequest) {
         take: 20,
       })
 
-      if (cachedTrends.length > 0) {
+      // 더미 데이터 감지 (뉴스, 한국, 정부, 경제, 사회)
+      const DUMMY_KEYWORDS = new Set(['뉴스', '한국', '정부', '경제', '사회'])
+      const isDummyData =
+        cachedTrends.length === 5 &&
+        cachedTrends.every((t) => DUMMY_KEYWORDS.has(t.keyword))
+
+      if (isDummyData) {
+        console.warn('[Trends] Dummy data detected, deleting and refreshing...')
+        // 더미 데이터 삭제
+        await prisma.trend.deleteMany({
+          where: { collectedAt: cachedTrends[0].collectedAt },
+        })
+        // 강제 새로고침으로 진행
+      } else if (cachedTrends.length > 0) {
+        console.log('[Trends] Returning cached data')
         return Response.json({
           success: true,
           data: cachedTrends,
