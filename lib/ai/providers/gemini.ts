@@ -2,7 +2,7 @@ import { AIProvider, AIProviderConfig, SummaryResult } from '../types'
 
 /**
  * Google Gemini AI Provider
- * Gemini 2.5 Flash를 사용한 고속 뉴스 요약
+ * Gemini 2.5 Flash Lite를 사용한 고속 뉴스 요약
  *
  * 개선사항:
  * - maxOutputTokens: 4000 (응답 잘림 방지)
@@ -21,7 +21,7 @@ export class GeminiProvider implements AIProvider {
 
   constructor(config: AIProviderConfig) {
     this.apiKey = config.apiKey
-    this.model = config.model || 'gemini-2.5-flash'
+    this.model = config.model || 'gemini-2.5-flash-lite'
     this.temperature = config.temperature ?? 0.3
     this.maxTokens = config.maxTokens ?? 4000  // 2400 → 4000 (응답 잘림 방지)
   }
