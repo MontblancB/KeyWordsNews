@@ -277,16 +277,23 @@ export async function fetchFallbackFromPriceHistory(): Promise<TrendingStocksDat
           if (code === '1' || code === '2') changeType = 'up'
           else if (code === '4' || code === '5') changeType = 'down'
 
+          // 이미 부호가 포함된 값(-100, -0.17)과 부호 없는 값(10800, 6.44) 모두 처리
+          const rawChange = String(lastTrading.compareToPreviousClosePrice).replace(/^-/, '')
+          const rawPercent = String(lastTrading.fluctuationsRatio).replace(/^-/, '')
           const sign = changeType === 'up' ? '+' : changeType === 'down' ? '-' : ''
+
+          // volume은 숫자로 올 수 있으므로 문자열로 변환 후 콤마 포맷팅
+          const volNum = Number(String(lastTrading.accumulatedTradingVolume).replace(/,/g, ''))
+          const volumeStr = volNum.toLocaleString('ko-KR')
 
           return {
             code: s.itemCode,
             name: s.stockName,
             price: lastTrading.closePrice,
-            change: `${sign}${lastTrading.compareToPreviousClosePrice}`,
-            changePercent: `${sign}${lastTrading.fluctuationsRatio}`,
+            change: `${sign}${rawChange}`,
+            changePercent: `${sign}${rawPercent}`,
             changeType,
-            volume: lastTrading.accumulatedTradingVolume,
+            volume: volumeStr,
             tradingDate: lastTrading.localTradedAt?.split('T')[0] || '',
           } as TrendingStockItem & { tradingDate: string }
         } catch {
