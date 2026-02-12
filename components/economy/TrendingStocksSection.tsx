@@ -24,6 +24,16 @@ function formatVolume(volumeStr: string): string {
   return volumeStr
 }
 
+function formatTradingDate(dateStr: string): string {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  const weekdays = ['일', '월', '화', '수', '목', '금', '토']
+  const month = date.getMonth() + 1
+  const day = date.getDate()
+  const weekday = weekdays[date.getDay()]
+  return `${month}/${day}(${weekday}) 종가 기준`
+}
+
 function StockRow({
   item,
   showVolume,
@@ -98,6 +108,8 @@ export default function TrendingStocksSection({ onStockClick }: TrendingStocksSe
   const { buttonClasses } = useColorTheme()
 
   const items: TrendingStockItem[] = data ? data[activeCategory] : []
+  const isMarketClosed = data && !data.marketOpen
+  const tradingDateLabel = data?.tradingDate ? formatTradingDate(data.tradingDate) : ''
 
   return (
     <section>
@@ -109,6 +121,12 @@ export default function TrendingStocksSection({ onStockClick }: TrendingStocksSe
             실시간 주목 종목
           </h2>
         </div>
+        {/* 장 마감 시 거래일 표시 */}
+        {isMarketClosed && tradingDateLabel && (
+          <span className="text-[10px] text-gray-500 dark:text-gray-400">
+            {tradingDateLabel}
+          </span>
+        )}
       </div>
 
       {/* 서브탭 */}
@@ -159,7 +177,7 @@ export default function TrendingStocksSection({ onStockClick }: TrendingStocksSe
 
         {!isLoading && !error && items.length === 0 && data && (
           <div className="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
-            장 운영 시간이 아닙니다
+            데이터를 준비 중입니다. 장 시작 후 자동으로 업데이트됩니다.
           </div>
         )}
       </div>

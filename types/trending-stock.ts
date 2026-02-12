@@ -21,5 +21,7 @@ export interface TrendingStocksData {
   volume: TrendingStockItem[]   // 거래량 상위 10
   gainers: TrendingStockItem[]  // 상승률 상위 10
   losers: TrendingStockItem[]   // 하락률 상위 10
+  marketOpen: boolean           // 현재 장 운영 여부
+  tradingDate: string           // 기준 거래일 (예: "2026-02-12")
   lastUpdated: string
 }

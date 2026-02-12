@@ -3,6 +3,7 @@
  *
  * - 상승률/하락률 상위: 네이버 모바일 주식 JSON API (m.stock.naver.com)
  * - 거래량 상위: 네이버 금융 HTML 스크래핑 + ETF 필터링
+ * - 장 외 시간: DB 캐시에서 직전 거래일 데이터 반환
  */
 
 import * as cheerio from 'cheerio'
@@ -19,12 +20,52 @@ const ETF_KEYWORDS = [
   'ETN', '스팩', '리츠', 'SPAC', '인버스', '레버리지', '선물',
 ]
 
+// ─── 마켓 상태 감지 ───
+
+type MarketStatus = 'OPEN' | 'CLOSE' | 'PREOPEN' | 'UNKNOWN'
+
+interface MarketInfo {
+  status: MarketStatus
+  tradingDate: string // YYYY-MM-DD
+}
+
+/**
+ * 네이버 모바일 API에서 마켓 상태 확인
+ * up 엔드포인트의 응답에 marketStatus와 tradingDate 포함
+ */
+async function checkMarketStatus(): Promise<MarketInfo> {
+  try {
+    const res = await fetch(
+      'https://m.stock.naver.com/api/stocks/up?page=1&pageSize=1',
+      { headers: { 'User-Agent': USER_AGENT } }
+    )
+    if (!res.ok) return { status: 'UNKNOWN', tradingDate: getTodayDateString() }
+
+    const data = await res.json()
+    const status: MarketStatus = data.marketStatus || 'UNKNOWN'
+
+    // 종목 데이터가 있으면 localTradedAt에서 날짜 추출
+    if (data.stocks?.[0]?.localTradedAt) {
+      const tradingDate = data.stocks[0].localTradedAt.split('T')[0]
+      return { status, tradingDate }
+    }
+
+    return { status, tradingDate: getTodayDateString() }
+  } catch {
+    return { status: 'UNKNOWN', tradingDate: getTodayDateString() }
+  }
+}
+
+function getTodayDateString(): string {
+  return new Date().toISOString().split('T')[0]
+}
+
 // ─── 네이버 모바일 JSON API (상승/하락) ───
 
 interface NaverMobileStock {
   itemCode: string
   stockName: string
-  stockEndType: string // "stock" | "etf" etc.
+  stockEndType: string
   closePrice: string
   compareToPreviousClosePrice: string
   compareToPreviousPrice: {
@@ -34,13 +75,15 @@ interface NaverMobileStock {
   }
   fluctuationsRatio: string
   accumulatedTradingVolume: string
+  localTradedAt?: string
   stockExchangeType: {
-    nameEng: string // "KOSPI" | "KOSDAQ"
+    nameEng: string
   }
 }
 
 interface NaverMobileResponse {
   stocks: NaverMobileStock[]
+  marketStatus: string
 }
 
 function mobileStockToItem(stock: NaverMobileStock, rank: number): TrendingStockItem {
@@ -88,8 +131,6 @@ function isETFOrNonStock(name: string): boolean {
 }
 
 async function fetchNaverVolumeRanking(): Promise<TrendingStockItem[]> {
-  // KOSPI(sosok=0) + KOSDAQ(sosok=1) 각각 가져와서 합침
-  // 네이버 금융 PC 페이지는 EUC-KR 인코딩이므로 TextDecoder 사용
   const decoder = new TextDecoder('euc-kr')
   const [kospiHtml, kosdaqHtml] = await Promise.all(
     [0, 1].map(async (sosok) => {
@@ -126,7 +167,6 @@ async function fetchNaverVolumeRanking(): Promise<TrendingStockItem[]> {
       const pctRaw = $(tds[4]).text().trim()
       const volume = $(tds[5]).text().trim()
 
-      // 등락 판별: 퍼센트 부호로
       let changeType: ChangeType = 'unchanged'
       if (pctRaw.includes('+')) changeType = 'up'
       else if (pctRaw.includes('-')) changeType = 'down'
@@ -149,7 +189,6 @@ async function fetchNaverVolumeRanking(): Promise<TrendingStockItem[]> {
   const kospiItems = parseVolumeTable(kospiHtml)
   const kosdaqItems = parseVolumeTable(kosdaqHtml)
 
-  // 합쳐서 거래량 기준 정렬
   const all = [...kospiItems, ...kosdaqItems]
     .sort((a, b) => {
       const volA = Number(a.volume.replace(/,/g, ''))
@@ -165,9 +204,40 @@ async function fetchNaverVolumeRanking(): Promise<TrendingStockItem[]> {
 // ─── 메인 함수 ───
 
 /**
- * 실시간 주목 종목 데이터 수집 (병렬)
+ * 실시간 주목 종목 데이터 수집
+ * - 장중: 실시간 데이터 수집 + marketOpen: true
+ * - 장외: 빈 데이터 반환 (호출측에서 DB 캐시 사용)
  */
-export async function fetchTrendingStocks(): Promise<TrendingStocksData> {
+export async function fetchTrendingStocks(): Promise<TrendingStocksData | null> {
+  const marketInfo = await checkMarketStatus()
+
+  // PREOPEN이면서 데이터가 없는 경우 → null 반환 (DB 캐시 사용 필요)
+  if (marketInfo.status === 'PREOPEN' || marketInfo.status === 'CLOSE') {
+    // 장 마감 직후(CLOSE)에도 데이터가 있을 수 있으므로 시도
+    try {
+      const [volume, gainers, losers] = await Promise.all([
+        fetchNaverVolumeRanking(),
+        fetchNaverMobileRanking('up'),
+        fetchNaverMobileRanking('down'),
+      ])
+
+      const hasData = volume.length > 0 || gainers.length > 0 || losers.length > 0
+      if (!hasData) return null
+
+      return {
+        volume,
+        gainers,
+        losers,
+        marketOpen: false,
+        tradingDate: marketInfo.tradingDate,
+        lastUpdated: new Date().toISOString(),
+      }
+    } catch {
+      return null
+    }
+  }
+
+  // 장중 (OPEN) 또는 상태 알 수 없음
   const [volume, gainers, losers] = await Promise.all([
     fetchNaverVolumeRanking(),
     fetchNaverMobileRanking('up'),
@@ -178,6 +248,8 @@ export async function fetchTrendingStocks(): Promise<TrendingStocksData> {
     volume,
     gainers,
     losers,
+    marketOpen: marketInfo.status === 'OPEN',
+    tradingDate: marketInfo.tradingDate,
     lastUpdated: new Date().toISOString(),
   }
 }
