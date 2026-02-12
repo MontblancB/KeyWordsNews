@@ -89,6 +89,8 @@ function isETFOrNonStock(name: string): boolean {
 
 async function fetchNaverVolumeRanking(): Promise<TrendingStockItem[]> {
   // KOSPI(sosok=0) + KOSDAQ(sosok=1) 각각 가져와서 합침
+  // 네이버 금융 PC 페이지는 EUC-KR 인코딩이므로 TextDecoder 사용
+  const decoder = new TextDecoder('euc-kr')
   const [kospiHtml, kosdaqHtml] = await Promise.all(
     [0, 1].map(async (sosok) => {
       const res = await fetch(
@@ -96,7 +98,8 @@ async function fetchNaverVolumeRanking(): Promise<TrendingStockItem[]> {
         { headers: { 'User-Agent': USER_AGENT } }
       )
       if (!res.ok) throw new Error(`Naver volume page error: ${res.status}`)
-      return res.text()
+      const buffer = await res.arrayBuffer()
+      return decoder.decode(buffer)
     })
   )
 
