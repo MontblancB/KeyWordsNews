@@ -100,37 +100,10 @@ export async function GET(request: Request) {
       })
     }
 
-    // 실시간 데이터 없음 (장외) → 인메모리 캐시 확인
-    if (cachedData) {
-      return NextResponse.json({
-        success: true,
-        data: { ...cachedData, marketOpen: false },
-        cached: true,
-        source: 'memory',
-      })
-    }
-
-    // 인메모리 캐시도 없음 (cold start) → DB 캐시 확인
-    console.log('[Trending Stocks] Cold start during off-hours, loading from DB')
-    const dbData = await loadFromDB()
-    if (dbData) {
-      // DB 데이터를 인메모리 캐시에도 저장
-      cachedData = { ...dbData, marketOpen: false }
-      lastFetchTime = now
-
-      return NextResponse.json({
-        success: true,
-        data: { ...dbData, marketOpen: false },
-        cached: true,
-        source: 'database',
-      })
-    }
-
-    // DB에도 없음 (최초 배포 후 장 시작 전) → 직전 거래일 데이터 직접 수집
-    console.log('[Trending Stocks] No DB cache, fetching fallback from price history')
+    // 실시간 데이터 없음 (장외) → fallback으로 직전 거래일 데이터 수집
+    console.log('[Trending Stocks] Off-hours, fetching fallback from price history')
     const fallbackData = await fetchFallbackFromPriceHistory()
     if (fallbackData) {
-      // fallback 데이터를 캐시에 저장
       cachedData = fallbackData
       lastFetchTime = now
       saveToDB(fallbackData) // fire-and-forget
@@ -143,7 +116,32 @@ export async function GET(request: Request) {
       })
     }
 
-    // fallback도 실패 시 빈 데이터 반환
+    // fallback 실패 → 인메모리 캐시 확인
+    if (cachedData) {
+      return NextResponse.json({
+        success: true,
+        data: { ...cachedData, marketOpen: false },
+        cached: true,
+        source: 'memory',
+      })
+    }
+
+    // 인메모리 캐시도 없음 → DB 캐시 확인
+    console.log('[Trending Stocks] Fallback failed, loading from DB')
+    const dbData = await loadFromDB()
+    if (dbData) {
+      cachedData = { ...dbData, marketOpen: false }
+      lastFetchTime = now
+
+      return NextResponse.json({
+        success: true,
+        data: { ...dbData, marketOpen: false },
+        cached: true,
+        source: 'database',
+      })
+    }
+
+    // 모든 소스 실패 시 빈 데이터 반환
     return NextResponse.json({
       success: true,
       data: {
