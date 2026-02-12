@@ -1,167 +1,178 @@
 /**
- * KRX 한국거래소 JSON API 클라이언트
+ * 실시간 주목 종목 데이터 수집
  *
- * 전종목 시세를 단일 API 호출로 가져와서
- * 거래량 상위 / 상승률 상위 / 하락률 상위를 계산합니다.
+ * - 상승률/하락률 상위: 네이버 모바일 주식 JSON API (m.stock.naver.com)
+ * - 거래량 상위: 네이버 금융 HTML 스크래핑 + ETF 필터링
  */
 
+import * as cheerio from 'cheerio'
 import type { TrendingStockItem, TrendingStocksData } from '@/types/trending-stock'
 import type { ChangeType } from '@/types/economy'
 
-// KRX API 응답 항목
-interface KRXStockItem {
-  ISU_SRT_CD: string    // 종목코드 (005930)
-  ISU_ABBRV: string     // 종목명 (삼성전자)
-  TDD_CLSPRC: string    // 종가(현재가) ("81,200")
-  CMPPREVDD_PRC: string // 전일대비 ("1,200")
-  FLUC_RT: string       // 등락률 ("1.50")
-  FLUC_TP_CD: string    // 등락구분 ("1"=상승, "2"=하락, "3"=보합)
-  ACC_TRDVOL: string    // 거래량 ("12,345,678")
-  ACC_TRDVAL: string    // 거래대금
-  MKTCAP: string        // 시가총액
-  MKT_NM?: string       // 시장구분
-}
-
-interface KRXResponse {
-  OutBlock_1: KRXStockItem[]
-}
+const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
 
 // ETF/ETN/리츠 등 비주식 종목 필터링 키워드
 const ETF_KEYWORDS = [
   'KODEX', 'TIGER', 'KBSTAR', 'ARIRANG', 'HANARO', 'SOL', 'KINDEX',
   'KOSEF', 'SMART', 'TIMEFOLIO', 'ACE', 'BNK', 'FOCUS', 'WOORI',
   'PLUS', 'TREX', 'VITA', 'MIRAE', 'TRUE', 'RISE',
-  // ETN
-  'QV', 'TRUE', 'NH',
-  // 리츠/스팩
-  '스팩', '리츠', 'SPAC',
+  'ETN', '스팩', '리츠', 'SPAC', '인버스', '레버리지', '선물',
 ]
 
-/**
- * 오늘 날짜를 YYYYMMDD 형식으로 반환
- */
-function getTodayString(): string {
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = String(now.getMonth() + 1).padStart(2, '0')
-  const day = String(now.getDate()).padStart(2, '0')
-  return `${year}${month}${day}`
-}
+// ─── 네이버 모바일 JSON API (상승/하락) ───
 
-/**
- * 콤마 제거 후 숫자 변환
- */
-function parseNumber(str: string): number {
-  return Number(str.replace(/,/g, ''))
-}
-
-/**
- * ETF/ETN 등 비주식 종목인지 확인
- */
-function isETFOrNonStock(name: string): boolean {
-  return ETF_KEYWORDS.some((keyword) => name.includes(keyword))
-}
-
-/**
- * KRX 전종목 시세 조회
- */
-async function fetchKRXAllStocks(): Promise<KRXStockItem[]> {
-  const trdDd = getTodayString()
-
-  const params = new URLSearchParams({
-    bld: 'dbms/MDC/STAT/standard/MDCSTAT01501',
-    locale: 'ko_KR',
-    mktId: 'ALL',
-    trdDd,
-    share: '1',
-    money: '1',
-    csvxls_is498: 'false',
-  })
-
-  const response = await fetch(
-    'http://data.krx.co.kr/comm/bldAttendant/getJsonData.cmd',
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'User-Agent': 'Mozilla/5.0',
-      },
-      body: params.toString(),
-    }
-  )
-
-  if (!response.ok) {
-    throw new Error(`KRX API error: ${response.status}`)
+interface NaverMobileStock {
+  itemCode: string
+  stockName: string
+  stockEndType: string // "stock" | "etf" etc.
+  closePrice: string
+  compareToPreviousClosePrice: string
+  compareToPreviousPrice: {
+    code: string // "1"=상한, "2"=상승, "3"=보합, "4"=하한, "5"=하락
+    text: string
+    name: string
   }
-
-  const data: KRXResponse = await response.json()
-
-  if (!data.OutBlock_1 || data.OutBlock_1.length === 0) {
-    throw new Error('KRX API returned empty data')
+  fluctuationsRatio: string
+  accumulatedTradingVolume: string
+  stockExchangeType: {
+    nameEng: string // "KOSPI" | "KOSDAQ"
   }
-
-  return data.OutBlock_1
 }
 
-/**
- * KRX 항목을 TrendingStockItem으로 변환
- */
-function toTrendingItem(item: KRXStockItem, rank: number): TrendingStockItem {
-  const flucType = item.FLUC_TP_CD
+interface NaverMobileResponse {
+  stocks: NaverMobileStock[]
+}
+
+function mobileStockToItem(stock: NaverMobileStock, rank: number): TrendingStockItem {
+  const code = stock.compareToPreviousPrice.code
   let changeType: ChangeType = 'unchanged'
-  if (flucType === '1') changeType = 'up'
-  else if (flucType === '2') changeType = 'down'
+  if (code === '1' || code === '2') changeType = 'up'
+  else if (code === '4' || code === '5') changeType = 'down'
 
   const sign = changeType === 'up' ? '+' : changeType === 'down' ? '-' : ''
 
   return {
     rank,
-    code: item.ISU_SRT_CD,
-    name: item.ISU_ABBRV,
-    price: item.TDD_CLSPRC,
-    change: `${sign}${item.CMPPREVDD_PRC}`,
-    changePercent: `${sign}${item.FLUC_RT}`,
+    code: stock.itemCode,
+    name: stock.stockName,
+    price: stock.closePrice,
+    change: `${sign}${stock.compareToPreviousClosePrice}`,
+    changePercent: `${sign}${stock.fluctuationsRatio}`,
     changeType,
-    volume: item.ACC_TRDVOL,
+    volume: stock.accumulatedTradingVolume,
   }
 }
 
-/**
- * 실시간 주목 종목 데이터 수집
- */
-export async function fetchTrendingStocks(): Promise<TrendingStocksData> {
-  const allStocks = await fetchKRXAllStocks()
-
-  // ETF/ETN 등 비주식 종목 필터링 + 거래량 0 제외
-  const stocks = allStocks.filter(
-    (item) =>
-      !isETFOrNonStock(item.ISU_ABBRV) &&
-      parseNumber(item.ACC_TRDVOL) > 0 &&
-      parseNumber(item.TDD_CLSPRC) > 0
+async function fetchNaverMobileRanking(type: 'up' | 'down'): Promise<TrendingStockItem[]> {
+  const response = await fetch(
+    `https://m.stock.naver.com/api/stocks/${type}?page=1&pageSize=10`,
+    { headers: { 'User-Agent': USER_AGENT } }
   )
 
-  // 거래량 상위 10
-  const byVolume = [...stocks]
-    .sort((a, b) => parseNumber(b.ACC_TRDVOL) - parseNumber(a.ACC_TRDVOL))
-    .slice(0, 10)
-    .map((item, i) => toTrendingItem(item, i + 1))
+  if (!response.ok) {
+    throw new Error(`Naver mobile API error (${type}): ${response.status}`)
+  }
 
-  // 상승률 상위 10 (FLUC_TP_CD === '1'인 종목만)
-  const gainers = [...stocks]
-    .filter((item) => item.FLUC_TP_CD === '1')
-    .sort((a, b) => parseFloat(b.FLUC_RT) - parseFloat(a.FLUC_RT))
-    .slice(0, 10)
-    .map((item, i) => toTrendingItem(item, i + 1))
+  const data: NaverMobileResponse = await response.json()
 
-  // 하락률 상위 10 (FLUC_TP_CD === '2'인 종목만)
-  const losers = [...stocks]
-    .filter((item) => item.FLUC_TP_CD === '2')
-    .sort((a, b) => parseFloat(a.FLUC_RT) - parseFloat(b.FLUC_RT))
+  return data.stocks
+    .filter((s) => s.stockEndType === 'stock')
     .slice(0, 10)
-    .map((item, i) => toTrendingItem(item, i + 1))
+    .map((s, i) => mobileStockToItem(s, i + 1))
+}
+
+// ─── 네이버 금융 HTML 스크래핑 (거래량) ───
+
+function isETFOrNonStock(name: string): boolean {
+  return ETF_KEYWORDS.some((keyword) => name.toUpperCase().includes(keyword.toUpperCase()))
+}
+
+async function fetchNaverVolumeRanking(): Promise<TrendingStockItem[]> {
+  // KOSPI(sosok=0) + KOSDAQ(sosok=1) 각각 가져와서 합침
+  const [kospiHtml, kosdaqHtml] = await Promise.all(
+    [0, 1].map(async (sosok) => {
+      const res = await fetch(
+        `https://finance.naver.com/sise/sise_quant.naver?sosok=${sosok}`,
+        { headers: { 'User-Agent': USER_AGENT } }
+      )
+      if (!res.ok) throw new Error(`Naver volume page error: ${res.status}`)
+      return res.text()
+    })
+  )
+
+  const parseVolumeTable = (html: string): TrendingStockItem[] => {
+    const $ = cheerio.load(html, { decodeEntities: false })
+    const items: TrendingStockItem[] = []
+
+    $('table.type_2 tr').each((_, row) => {
+      const tds = $(row).find('td')
+      if (tds.length < 6) return
+
+      const no = $(tds[0]).text().trim()
+      if (!no || isNaN(parseInt(no))) return
+
+      const nameEl = $(tds[1]).find('a.tltle')
+      const name = nameEl.text().trim()
+      const code = (nameEl.attr('href') || '').match(/code=(\d+)/)?.[1] || ''
+
+      if (!code || !name) return
+      if (isETFOrNonStock(name)) return
+
+      const price = $(tds[2]).text().trim()
+      const changeRaw = $(tds[3]).text().trim().replace(/\s+/g, '')
+      const pctRaw = $(tds[4]).text().trim()
+      const volume = $(tds[5]).text().trim()
+
+      // 등락 판별: 퍼센트 부호로
+      let changeType: ChangeType = 'unchanged'
+      if (pctRaw.includes('+')) changeType = 'up'
+      else if (pctRaw.includes('-')) changeType = 'down'
+
+      items.push({
+        rank: 0,
+        code,
+        name,
+        price,
+        change: changeRaw,
+        changePercent: pctRaw,
+        changeType,
+        volume,
+      })
+    })
+
+    return items
+  }
+
+  const kospiItems = parseVolumeTable(kospiHtml)
+  const kosdaqItems = parseVolumeTable(kosdaqHtml)
+
+  // 합쳐서 거래량 기준 정렬
+  const all = [...kospiItems, ...kosdaqItems]
+    .sort((a, b) => {
+      const volA = Number(a.volume.replace(/,/g, ''))
+      const volB = Number(b.volume.replace(/,/g, ''))
+      return volB - volA
+    })
+    .slice(0, 10)
+    .map((item, i) => ({ ...item, rank: i + 1 }))
+
+  return all
+}
+
+// ─── 메인 함수 ───
+
+/**
+ * 실시간 주목 종목 데이터 수집 (병렬)
+ */
+export async function fetchTrendingStocks(): Promise<TrendingStocksData> {
+  const [volume, gainers, losers] = await Promise.all([
+    fetchNaverVolumeRanking(),
+    fetchNaverMobileRanking('up'),
+    fetchNaverMobileRanking('down'),
+  ])
 
   return {
-    volume: byVolume,
+    volume,
     gainers,
     losers,
     lastUpdated: new Date().toISOString(),
