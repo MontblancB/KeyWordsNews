@@ -1,6 +1,7 @@
 'use client'
 
 import IndicatorCard from '@/components/economy/IndicatorCard'
+import TrendingStocksSection from '@/components/economy/TrendingStocksSection'
 import {
   ChartBarIcon,
   GlobeAltIcon,
@@ -8,14 +9,16 @@ import {
   SparklesIcon,
   CircleStackIcon,
 } from '@heroicons/react/24/outline'
+import { FEATURE_FLAGS } from '@/lib/feature-flags'
 import type { Indicator, EconomyData } from '@/types/economy'
 
 interface IndicatorsSectionProps {
   data: EconomyData
   onIndicatorClick: (indicator: Indicator) => void
+  onStockClick?: (code: string, name: string) => void
 }
 
-export default function IndicatorsSection({ data, onIndicatorClick }: IndicatorsSectionProps) {
+export default function IndicatorsSection({ data, onIndicatorClick, onStockClick }: IndicatorsSectionProps) {
   return (
     <div className="space-y-3">
       {/* 국내 지수 */}
@@ -31,6 +34,11 @@ export default function IndicatorsSection({ data, onIndicatorClick }: Indicators
           <IndicatorCard indicator={data.domestic.kosdaq} onClick={onIndicatorClick} />
         </div>
       </section>
+
+      {/* 실시간 주목 종목 */}
+      {FEATURE_FLAGS.ENABLE_TRENDING_STOCKS && (
+        <TrendingStocksSection onStockClick={onStockClick} />
+      )}
 
       {/* 해외 지수 */}
       <section>

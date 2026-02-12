@@ -79,6 +79,23 @@ export const FEATURE_FLAGS = {
    * @default true
    */
   ENABLE_TREND_NOW: true,
+
+  /**
+   * 실시간 주목 종목 기능
+   * - 경제 > 지표 탭에서 거래량/상승률/하락률 상위 종목 표시
+   * - KRX 한국거래소 JSON API 기반
+   * - false로 설정 시 섹션이 표시되지 않음
+   *
+   * 관련 파일:
+   * - components/economy/TrendingStocksSection.tsx
+   * - hooks/useTrendingStocks.ts
+   * - app/api/economy/trending-stocks/route.ts
+   * - lib/api/krx.ts
+   *
+   * @version 2.38.0
+   * @default true
+   */
+  ENABLE_TRENDING_STOCKS: true,
 } as const
 
 export type FeatureFlags = typeof FEATURE_FLAGS

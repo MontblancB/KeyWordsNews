@@ -18,8 +18,8 @@
 ### 배포 정보
 - **URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
-- **현재 버전**: 2.37.1
-- **마지막 업데이트**: 2026-01-24
+- **현재 버전**: 2.38.0
+- **마지막 업데이트**: 2026-02-13
 
 ---
 
@@ -321,6 +321,14 @@ rm -rf node_modules && npm install
 
 ## 최근 업데이트
 
+### v2.38.0 (2026-02-13) - 실시간 주목 종목
+- 🔥 **Trending Stocks**: 경제 > 지표 탭에 실시간 주목 종목 섹션 추가
+- 📊 **KRX API**: 한국거래소 공식 JSON API로 전종목 시세 조회 (스크래핑 대비 안정성 우수)
+- 📈 **3가지 뷰**: 거래량 상위 / 상승률 상위 / 하락률 상위 각 10개 종목
+- 🔗 **주식 연동**: 종목 클릭 시 주식 탭으로 자동 전환 + 종목 정보 로드
+- 🎛️ **Feature Flag**: `ENABLE_TRENDING_STOCKS` 플래그로 ON/OFF
+- ⚡ **3분 캐시**: 서버 인메모리 + React Query 이중 캐시
+
 ### v2.37.1 (2026-01-24) - 2025년 잠정실적 수집
 - 📊 **잠정실적 포함**: Provisional (P) 데이터 수집 (이미 발표된 실적)
 - 🚫 **추정치 제외**: Estimate (E) 데이터만 필터링 (미래 예측)
@@ -510,5 +518,5 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 
 ---
 
-**Last Updated**: 2026-01-24
-**Version**: 2.33.0
+**Last Updated**: 2026-02-13
+**Version**: 2.38.0

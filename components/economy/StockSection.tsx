@@ -1,16 +1,34 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { MagnifyingGlassIcon, ClockIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import StockSearch from './StockSearch'
 import StockInfoCard from './StockInfoCard'
 import { useStockInfo, useRecentStocks } from '@/hooks/useStock'
 import type { StockSearchItem } from '@/types/stock'
 
-export default function StockSection() {
+interface StockSectionProps {
+  initialStock?: { code: string; name: string } | null
+}
+
+export default function StockSection({ initialStock }: StockSectionProps) {
   const [selectedStock, setSelectedStock] = useState<StockSearchItem | null>(null)
   const { recentStocks, addRecentStock, removeRecentStock } = useRecentStocks()
   const { data: stockInfo, isLoading, error } = useStockInfo(selectedStock)
+
+  // initialStock이 변경되면 자동으로 종목 선택
+  useEffect(() => {
+    if (initialStock) {
+      const stock: StockSearchItem = {
+        code: initialStock.code,
+        name: initialStock.name,
+        market: 'KOSPI', // KRX 데이터이므로 기본값
+      }
+      setSelectedStock(stock)
+      addRecentStock(stock)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialStock])
 
   // 종목 선택
   const handleSelectStock = (stock: StockSearchItem) => {

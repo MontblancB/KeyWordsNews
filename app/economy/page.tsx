@@ -24,10 +24,19 @@ export default function EconomyPage() {
   const [selectedIndicator, setSelectedIndicator] = useState<Indicator | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
+  // 주목 종목 → 주식탭 연동
+  const [pendingStock, setPendingStock] = useState<{ code: string; name: string } | null>(null)
+
   // 지표 클릭 핸들러
   const handleIndicatorClick = (indicator: Indicator) => {
     setSelectedIndicator(indicator)
     setIsModalOpen(true)
+  }
+
+  // 주목 종목 클릭 → 주식 탭으로 전환
+  const handleTrendingStockClick = (code: string, name: string) => {
+    setPendingStock({ code, name })
+    setActiveTab('stock')
   }
 
   // 모달 닫기
@@ -90,13 +99,13 @@ export default function EconomyPage() {
             )}
 
             {data && (
-              <IndicatorsSection data={data} onIndicatorClick={handleIndicatorClick} />
+              <IndicatorsSection data={data} onIndicatorClick={handleIndicatorClick} onStockClick={handleTrendingStockClick} />
             )}
           </>
         )}
 
         {/* 주식 탭 */}
-        {activeTab === 'stock' && <StockSection />}
+        {activeTab === 'stock' && <StockSection initialStock={pendingStock} />}
       </main>
 
       {/* TradingView 차트 모달 */}
