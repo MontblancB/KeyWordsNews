@@ -201,6 +201,159 @@ async function fetchNaverVolumeRanking(): Promise<TrendingStockItem[]> {
   return all
 }
 
+// ─── 장외 시간 Fallback (marketValue + price API) ───
+
+interface MarketValueStock {
+  itemCode: string
+  stockName: string
+  stockEndType: string
+  closePrice: string
+  compareToPreviousClosePrice: string
+  compareToPreviousPrice: {
+    code: string
+    text: string
+    name: string
+  }
+  fluctuationsRatio: string
+  accumulatedTradingVolume: string
+  localTradedAt?: string
+}
+
+interface PriceHistoryItem {
+  localTradedAt: string
+  closePrice: string
+  compareToPreviousClosePrice: string
+  compareToPreviousPrice: {
+    code: string
+    text: string
+    name: string
+  }
+  fluctuationsRatio: string
+  accumulatedTradingVolume: string
+}
+
+/**
+ * 장외 시간 cold start 시 직전 거래일 데이터를 수집하는 fallback
+ *
+ * 1. marketValue API로 시가총액 상위 30개 보통주 수집
+ * 2. 각 종목의 price API에서 직전 거래일(변동값 != 0) 데이터 추출
+ * 3. 거래량/상승률/하락률 기준으로 정렬하여 TrendingStocksData 구성
+ */
+export async function fetchFallbackFromPriceHistory(): Promise<TrendingStocksData | null> {
+  try {
+    // 시가총액 상위 50개 → 보통주만 필터링하여 30개 확보
+    const res = await fetch(
+      'https://m.stock.naver.com/api/stocks/marketValue?page=1&pageSize=50',
+      { headers: { 'User-Agent': USER_AGENT } }
+    )
+    if (!res.ok) return null
+
+    const data = await res.json()
+    const stocks: MarketValueStock[] = (data.stocks || [])
+      .filter((s: MarketValueStock) => s.stockEndType === 'stock')
+      .slice(0, 30)
+
+    if (stocks.length === 0) return null
+
+    // 각 종목의 최근 가격 이력에서 직전 거래일 데이터 추출
+    const results = await Promise.all(
+      stocks.map(async (s) => {
+        try {
+          const pr = await fetch(
+            `https://m.stock.naver.com/api/stock/${s.itemCode}/price?pageSize=5&page=1`,
+            { headers: { 'User-Agent': USER_AGENT } }
+          )
+          if (!pr.ok) return null
+
+          const prices: PriceHistoryItem[] = await pr.json()
+          // 변동값이 0이 아닌 가장 최근 항목 = 직전 거래일 실제 데이터
+          const lastTrading = prices.find(
+            (p) => p.compareToPreviousClosePrice !== '0'
+          )
+          if (!lastTrading) return null
+
+          const code = lastTrading.compareToPreviousPrice.code
+          let changeType: ChangeType = 'unchanged'
+          if (code === '1' || code === '2') changeType = 'up'
+          else if (code === '4' || code === '5') changeType = 'down'
+
+          const sign = changeType === 'up' ? '+' : changeType === 'down' ? '-' : ''
+
+          return {
+            code: s.itemCode,
+            name: s.stockName,
+            price: lastTrading.closePrice,
+            change: `${sign}${lastTrading.compareToPreviousClosePrice}`,
+            changePercent: `${sign}${lastTrading.fluctuationsRatio}`,
+            changeType,
+            volume: lastTrading.accumulatedTradingVolume,
+            tradingDate: lastTrading.localTradedAt?.split('T')[0] || '',
+          } as TrendingStockItem & { tradingDate: string }
+        } catch {
+          return null
+        }
+      })
+    )
+
+    const validResults = results.filter(
+      (r): r is TrendingStockItem & { tradingDate: string } => r !== null
+    )
+
+    if (validResults.length === 0) return null
+
+    // 거래일 추출 (첫 번째 유효 결과에서)
+    const tradingDate = validResults[0].tradingDate
+
+    // 거래량 상위 10
+    const volume = [...validResults]
+      .sort((a, b) => {
+        const volA = Number(String(a.volume).replace(/,/g, ''))
+        const volB = Number(String(b.volume).replace(/,/g, ''))
+        return volB - volA
+      })
+      .slice(0, 10)
+      .map((item, i) => ({ ...item, rank: i + 1 }))
+
+    // 상승률 상위 10
+    const gainers = [...validResults]
+      .filter((r) => r.changeType === 'up')
+      .sort((a, b) => {
+        const pctA = Math.abs(parseFloat(a.changePercent))
+        const pctB = Math.abs(parseFloat(b.changePercent))
+        return pctB - pctA
+      })
+      .slice(0, 10)
+      .map((item, i) => ({ ...item, rank: i + 1 }))
+
+    // 하락률 상위 10
+    const losers = [...validResults]
+      .filter((r) => r.changeType === 'down')
+      .sort((a, b) => {
+        const pctA = Math.abs(parseFloat(a.changePercent))
+        const pctB = Math.abs(parseFloat(b.changePercent))
+        return pctB - pctA
+      })
+      .slice(0, 10)
+      .map((item, i) => ({ ...item, rank: i + 1 }))
+
+    // tradingDate 프로퍼티 제거 (TrendingStockItem 타입에 없음)
+    const cleanItems = (items: (TrendingStockItem & { tradingDate: string })[]) =>
+      items.map(({ tradingDate: _, ...rest }) => rest as TrendingStockItem)
+
+    return {
+      volume: cleanItems(volume),
+      gainers: cleanItems(gainers),
+      losers: cleanItems(losers),
+      marketOpen: false,
+      tradingDate,
+      lastUpdated: new Date().toISOString(),
+    }
+  } catch (error) {
+    console.error('[Trending Stocks] Fallback fetch error:', error)
+    return null
+  }
+}
+
 // ─── 메인 함수 ───
 
 /**

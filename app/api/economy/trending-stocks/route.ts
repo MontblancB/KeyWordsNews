@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { type Prisma } from '@prisma/client'
-import { fetchTrendingStocks } from '@/lib/api/krx'
+import { fetchTrendingStocks, fetchFallbackFromPriceHistory } from '@/lib/api/krx'
 import { prisma } from '@/lib/db/prisma'
 import type { TrendingStocksData } from '@/types/trending-stock'
 
@@ -126,7 +126,24 @@ export async function GET(request: Request) {
       })
     }
 
-    // DB에도 없음 (최초 배포 후 장 시작 전)
+    // DB에도 없음 (최초 배포 후 장 시작 전) → 직전 거래일 데이터 직접 수집
+    console.log('[Trending Stocks] No DB cache, fetching fallback from price history')
+    const fallbackData = await fetchFallbackFromPriceHistory()
+    if (fallbackData) {
+      // fallback 데이터를 캐시에 저장
+      cachedData = fallbackData
+      lastFetchTime = now
+      saveToDB(fallbackData) // fire-and-forget
+
+      return NextResponse.json({
+        success: true,
+        data: fallbackData,
+        cached: false,
+        source: 'fallback',
+      })
+    }
+
+    // fallback도 실패 시 빈 데이터 반환
     return NextResponse.json({
       success: true,
       data: {
@@ -161,6 +178,19 @@ export async function GET(request: Request) {
         source: 'database',
       })
     }
+
+    // 에러 상태에서도 fallback 시도
+    try {
+      const fallbackData = await fetchFallbackFromPriceHistory()
+      if (fallbackData) {
+        return NextResponse.json({
+          success: true,
+          data: fallbackData,
+          cached: false,
+          source: 'fallback',
+        })
+      }
+    } catch { /* fallback도 실패 */ }
 
     return NextResponse.json(
       { success: false, error: 'Failed to fetch trending stocks' },
