@@ -107,8 +107,9 @@ function mobileStockToItem(stock: NaverMobileStock, rank: number): TrendingStock
 }
 
 async function fetchNaverMobileRanking(type: 'up' | 'down'): Promise<TrendingStockItem[]> {
+  // ETF/ETN이 많으므로 넉넉하게 요청 후 보통주만 필터링하여 10개 추출
   const response = await fetch(
-    `https://m.stock.naver.com/api/stocks/${type}?page=1&pageSize=10`,
+    `https://m.stock.naver.com/api/stocks/${type}?page=1&pageSize=80`,
     { headers: { 'User-Agent': USER_AGENT } }
   )
 
