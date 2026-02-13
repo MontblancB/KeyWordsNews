@@ -21,6 +21,11 @@ interface IndicatorsSectionProps {
 export default function IndicatorsSection({ data, onIndicatorClick, onStockClick }: IndicatorsSectionProps) {
   return (
     <div className="space-y-3">
+      {/* 실시간 주요 종목 */}
+      {FEATURE_FLAGS.ENABLE_TRENDING_STOCKS && (
+        <TrendingStocksSection onStockClick={onStockClick} />
+      )}
+
       {/* 국내 지수 */}
       <section>
         <div className="flex items-center gap-2 mb-2">
@@ -34,11 +39,6 @@ export default function IndicatorsSection({ data, onIndicatorClick, onStockClick
           <IndicatorCard indicator={data.domestic.kosdaq} onClick={onIndicatorClick} />
         </div>
       </section>
-
-      {/* 실시간 주목 종목 */}
-      {FEATURE_FLAGS.ENABLE_TRENDING_STOCKS && (
-        <TrendingStocksSection onStockClick={onStockClick} />
-      )}
 
       {/* 해외 지수 */}
       <section>

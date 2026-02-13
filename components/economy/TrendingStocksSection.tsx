@@ -111,7 +111,7 @@ export default function TrendingStocksSection({ onStockClick }: TrendingStocksSe
         <div className="flex items-center gap-2">
           <FireIcon className="w-4 h-4 text-red-500 dark:text-red-400" />
           <h2 className="text-sm font-bold text-gray-800 dark:text-gray-200">
-            실시간 주목 종목
+            실시간 주요 종목
           </h2>
         </div>
         {/* 장 마감 시 거래일 표시 */}

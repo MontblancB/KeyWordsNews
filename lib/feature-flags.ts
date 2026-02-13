@@ -81,7 +81,7 @@ export const FEATURE_FLAGS = {
   ENABLE_TREND_NOW: true,
 
   /**
-   * 실시간 주목 종목 기능
+   * 실시간 주요 종목 기능
    * - 경제 > 지표 탭에서 거래량/상승률/하락률 상위 종목 표시
    * - KRX 한국거래소 JSON API 기반
    * - false로 설정 시 섹션이 표시되지 않음
