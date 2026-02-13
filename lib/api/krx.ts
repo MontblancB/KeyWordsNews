@@ -241,11 +241,12 @@ async function fetchNaverVolumeRanking(): Promise<TrendingStockItem[]> {
   const kospiItems = parseVolumeTable(kospiHtml)
   const kosdaqItems = parseVolumeTable(kosdaqHtml)
 
+  // 거래대금(가격×거래량) 기준 내림차순 정렬
   const all = [...kospiItems, ...kosdaqItems]
     .sort((a, b) => {
-      const volA = Number(a.volume.replace(/,/g, ''))
-      const volB = Number(b.volume.replace(/,/g, ''))
-      return volB - volA
+      const valA = Number(a.price.replace(/,/g, '')) * Number(a.volume.replace(/,/g, ''))
+      const valB = Number(b.price.replace(/,/g, '')) * Number(b.volume.replace(/,/g, ''))
+      return valB - valA
     })
     .slice(0, 10)
     .map((item, i) => ({ ...item, rank: i + 1 }))
@@ -369,12 +370,12 @@ export async function fetchFallbackFromPriceHistory(): Promise<TrendingStocksDat
     // 거래일 추출 (첫 번째 유효 결과에서)
     const tradingDate = validResults[0].tradingDate
 
-    // 거래량 상위 10
+    // 거래대금 상위 10
     const volume = [...validResults]
       .sort((a, b) => {
-        const volA = Number(String(a.volume).replace(/,/g, ''))
-        const volB = Number(String(b.volume).replace(/,/g, ''))
-        return volB - volA
+        const valA = Number(String(a.price).replace(/,/g, '')) * Number(String(a.volume).replace(/,/g, ''))
+        const valB = Number(String(b.price).replace(/,/g, '')) * Number(String(b.volume).replace(/,/g, ''))
+        return valB - valA
       })
       .slice(0, 10)
       .map((item, i) => ({ ...item, rank: i + 1 }))

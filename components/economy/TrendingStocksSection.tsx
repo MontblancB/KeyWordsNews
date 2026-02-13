@@ -12,7 +12,7 @@ interface TrendingStocksSectionProps {
 }
 
 const SUB_TABS: { id: TrendingCategory; label: string }[] = [
-  { id: 'volume', label: '거래량' },
+  { id: 'volume', label: '거래대금' },
   { id: 'gainers', label: '상승' },
   { id: 'losers', label: '하락' },
 ]
