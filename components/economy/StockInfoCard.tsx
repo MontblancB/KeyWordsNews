@@ -479,7 +479,10 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
                   <th className="text-left py-2 pr-2">항목</th>
                   {recentFinancials.map((f, i) => (
                     <th key={i} className="text-right py-2 px-1 whitespace-nowrap">
-                      {f.period}
+                      <span>{f.period}</span>
+                      {f.isProvisional && (
+                        <span className="ml-0.5 text-[9px] text-amber-500 dark:text-amber-400 font-normal" title="잠정실적 (감사 전)">P</span>
+                      )}
                     </th>
                   ))}
                 </tr>
@@ -621,6 +624,11 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
               </tbody>
             </table>
           </div>
+          {recentFinancials.some(f => f.isProvisional) && (
+            <p className="text-[10px] text-amber-500 dark:text-amber-400 mt-1">
+              <span className="font-medium">P</span> 잠정실적 (감사 전 수치로 확정 실적과 다를 수 있음)
+            </p>
+          )}
         </div>
       )}
 

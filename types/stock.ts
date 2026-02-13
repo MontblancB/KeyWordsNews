@@ -86,6 +86,7 @@ export interface FinancialData {
   debtRatio: string // 부채비율
   operatingCashFlow: string // 영업현금흐름
   freeCashFlow: string // 잉여현금흐름
+  isProvisional?: boolean // 잠정실적 여부 (P)
 }
 
 // 종목 전체 정보

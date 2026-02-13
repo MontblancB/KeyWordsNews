@@ -143,6 +143,9 @@ export async function scrapeFinancials(code: string): Promise<FinancialData[]> {
         continue
       }
 
+      // 잠정실적(P) 여부 감지
+      const isProvisional = period.includes('(P)') || period.includes('Provisional')
+
       const yearMatch = period.match(/(\d{4}\/\d{2})/)
       if (!yearMatch) continue
       period = yearMatch[1]
@@ -206,6 +209,7 @@ export async function scrapeFinancials(code: string): Promise<FinancialData[]> {
         debtRatio,
         operatingCashFlow: cleanValue(findRowByKeyword(rows, '영업활동현금흐름')?.[valueIndex] || findRowByKeyword(rows, '영업현금흐름')?.[valueIndex] || '-'),
         freeCashFlow: cleanValue(findRowByKeyword(rows, '잉여현금흐름')?.[valueIndex] || findRowByKeyword(rows, 'FCF')?.[valueIndex] || '-'),
+        ...(isProvisional && { isProvisional: true }),
       }
 
       financials.push(financial)
