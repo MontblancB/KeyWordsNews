@@ -18,7 +18,7 @@
 ### 배포 정보
 - **URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
-- **현재 버전**: 2.38.0
+- **현재 버전**: 2.38.1
 - **마지막 업데이트**: 2026-02-13
 
 ---
@@ -321,6 +321,15 @@ rm -rf node_modules && npm install
 
 ## 최근 업데이트
 
+### v2.38.1 (2026-02-13) - 주식 상세정보 정확도 대폭 개선
+- 🔧 **시가총액 파싱 버그 수정**: "조" 단위 누락 → PER/PBR/EPS/BPS 계산 전부 오류 해결
+- 📊 **FnGuide 투자지표 통합**: PER, PBR, EPS, BPS, ROE 등을 FnGuide에서 직접 수집 (최우선)
+- 🏭 **업종 필드 수정**: "동일업종 PER" 잘못된 값 필터링 + FnGuide 업종 정보 활용
+- 📈 **발행주식수 정확도**: marketCap/price 추정 대신 실제 발행주식수 사용 (EPS/BPS 정확)
+- 📅 **DART 연도 범위 확장**: currentYear-1(2025)부터 시작하여 최신 사업보고서 조회
+- ➖ **적자 기업 마진 표시**: 영업이익률/순이익률 음수(적자)도 정상 표시
+- 🏢 **기업정보 보완**: FnGuide 기업개요 데이터를 추가 소스로 활용
+
 ### v2.38.0 (2026-02-13) - 실시간 주목 종목
 - 🔥 **Trending Stocks**: 경제 > 지표 탭에 실시간 주목 종목 섹션 추가
 - 📊 **KRX API**: 한국거래소 공식 JSON API로 전종목 시세 조회 (스크래핑 대비 안정성 우수)
@@ -519,4 +528,4 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 ---
 
 **Last Updated**: 2026-02-13
-**Version**: 2.38.0
+**Version**: 2.38.1

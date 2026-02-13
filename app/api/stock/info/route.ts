@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { scrapeKoreanStockPrice, scrapeUSStockPrice, scrapeUSCompanyInfo, scrapeUSInvestmentIndicators, scrapeUSFinancialData } from '@/lib/scraper/yahoo-stock'
 import { scrapeCompanyInfo, scrapeInvestmentIndicators, scrapeFinancialData as scrapeNaverFinancials } from '@/lib/scraper/naver-stock'
 import { getDartCompanyInfo, getDartFinancials } from '@/lib/api/dart'
-import { scrapeFinancials as scrapeFnGuideFinancials } from '@/lib/scraper/fnguide'
+import { scrapeFinancials as scrapeFnGuideFinancials, scrapeFnGuideIndicators, scrapeFnGuideCompanyInfo } from '@/lib/scraper/fnguide'
 import { fetchUSFinancialStatements } from '@/lib/api/finnhub'
 import { scrapeAdvancedIndicators } from '@/lib/scraper/naver-investment-indicators'
 import { scrapeCompanyOverview } from '@/lib/scraper/naver-company-overview'
@@ -53,19 +53,44 @@ function isKoreanStock(code: string): boolean {
 }
 
 /**
+ * 발행주식수 파싱
+ * "5,919,637,922주 / 75.17%" → 5919637922
+ * "5,919,637,922주" → 5919637922
+ */
+function parseListedShares(sharesStr?: string): number {
+  if (!sharesStr || sharesStr === '-') return 0
+  // "5,919,637,922주 / 75.17%" 또는 "5,919,637,922주" 형식
+  const match = sharesStr.match(/([\d,]+)\s*주/)
+  if (match) {
+    return parseFloat(match[1].replace(/,/g, ''))
+  }
+  // 숫자만 있는 경우
+  const numMatch = sharesStr.match(/([\d,]+)/)
+  if (numMatch) {
+    return parseFloat(numMatch[1].replace(/,/g, ''))
+  }
+  return 0
+}
+
+/**
  * 투자지표 계산
- * Yahoo Finance 시세 + DART 재무제표로 계산
+ * 시세 + 재무제표 + 발행주식수로 계산
  */
 function calculateIndicators(
   marketCap: number, // 시가총액 (원)
   currentPrice: number, // 현재가 (원)
-  financials: any
+  financials: any,
+  listedSharesStr?: string, // 발행주식수 문자열
 ): Partial<InvestmentIndicators> {
+  const actualShares = parseListedShares(listedSharesStr)
+  const estimatedShares = currentPrice > 0 && marketCap > 0 ? marketCap / currentPrice : 0
+  const shares = actualShares > 0 ? actualShares : estimatedShares
+
   log({
     level: 'INFO',
     source: 'calculateIndicators',
     message: '투자지표 계산 시작',
-    data: { marketCap, currentPrice },
+    data: { marketCap, currentPrice, actualShares, estimatedShares, sharesUsed: actualShares > 0 ? 'actual' : 'estimated' },
   })
 
   const indicators: Partial<InvestmentIndicators> = {}
@@ -79,80 +104,57 @@ function calculateIndicators(
     return indicators
   }
 
-  const latest = financials[0]
+  // 가장 최근 연간 데이터 찾기 (FnGuide는 최신이 마지막)
+  const sortedFinancials = [...financials].sort((a: any, b: any) => {
+    const periodA = a.period || ''
+    const periodB = b.period || ''
+    return periodB.localeCompare(periodA)
+  })
+  const latest = sortedFinancials[0]
 
-  // 숫자 파싱 헬퍼
+  // 숫자 파싱 헬퍼 (억원 단위 → 원 단위 변환)
   const parseAmount = (value: string): number => {
     if (!value || value === '-') return 0
     return parseFloat(value.replace(/,/g, ''))
   }
 
-  const revenue = parseAmount(latest.revenue)
   const netIncome = parseAmount(latest.netIncome)
   const totalAssets = parseAmount(latest.totalAssets)
   const totalEquity = parseAmount(latest.totalEquity)
 
+  // FnGuide 재무제표는 억원 단위 → 원 단위로 변환 필요
+  // PER = 시가총액(원) / 당기순이익(억원 * 1억)
+  const netIncomeWon = netIncome * 100000000
+
   // PER (주가수익비율) = 시가총액 / 당기순이익
-  if (marketCap > 0 && netIncome > 0) {
-    indicators.per = (marketCap / netIncome).toFixed(2)
-    log({
-      level: 'SUCCESS',
-      source: 'calculateIndicators',
-      message: `PER 계산 성공: ${indicators.per}`,
-    })
+  if (marketCap > 0 && netIncomeWon !== 0) {
+    indicators.per = (marketCap / netIncomeWon).toFixed(2)
   }
 
   // PBR (주가순자산비율) = 시가총액 / 자본총계
-  if (marketCap > 0 && totalEquity > 0) {
-    indicators.pbr = (marketCap / totalEquity).toFixed(2)
-    log({
-      level: 'SUCCESS',
-      source: 'calculateIndicators',
-      message: `PBR 계산 성공: ${indicators.pbr}`,
-    })
+  const totalEquityWon = totalEquity * 100000000
+  if (marketCap > 0 && totalEquityWon > 0) {
+    indicators.pbr = (marketCap / totalEquityWon).toFixed(2)
   }
 
   // EPS (주당순이익) = 당기순이익 / 발행주식수
-  // 주의: 발행주식수가 필요하므로 간단히 시가총액/현재가로 추정
-  if (currentPrice > 0 && netIncome > 0 && marketCap > 0) {
-    const shares = marketCap / currentPrice
-    indicators.eps = (netIncome / shares).toFixed(0)
-    log({
-      level: 'SUCCESS',
-      source: 'calculateIndicators',
-      message: `EPS 계산 성공: ${indicators.eps}`,
-    })
+  if (shares > 0 && netIncomeWon !== 0) {
+    indicators.eps = Math.round(netIncomeWon / shares).toLocaleString('ko-KR')
   }
 
   // BPS (주당순자산) = 자본총계 / 발행주식수
-  if (currentPrice > 0 && totalEquity > 0 && marketCap > 0) {
-    const shares = marketCap / currentPrice
-    indicators.bps = (totalEquity / shares).toFixed(0)
-    log({
-      level: 'SUCCESS',
-      source: 'calculateIndicators',
-      message: `BPS 계산 성공: ${indicators.bps}`,
-    })
+  if (shares > 0 && totalEquityWon > 0) {
+    indicators.bps = Math.round(totalEquityWon / shares).toLocaleString('ko-KR')
   }
 
   // ROE (자기자본이익률) = (당기순이익 / 자본총계) * 100
-  if (netIncome > 0 && totalEquity > 0) {
+  if (netIncome !== 0 && totalEquity > 0) {
     indicators.roe = ((netIncome / totalEquity) * 100).toFixed(2) + '%'
-    log({
-      level: 'SUCCESS',
-      source: 'calculateIndicators',
-      message: `ROE 계산 성공: ${indicators.roe}`,
-    })
   }
 
   // ROA (총자산이익률) = (당기순이익 / 자산총계) * 100
-  if (netIncome > 0 && totalAssets > 0) {
+  if (netIncome !== 0 && totalAssets > 0) {
     indicators.roa = ((netIncome / totalAssets) * 100).toFixed(2) + '%'
-    log({
-      level: 'SUCCESS',
-      source: 'calculateIndicators',
-      message: `ROA 계산 성공: ${indicators.roa}`,
-    })
   }
 
   const calculatedCount = Object.keys(indicators).length
@@ -240,7 +242,7 @@ export async function GET(request: NextRequest) {
         message: '한국 주식 데이터 수집 시작 (Yahoo + DART)',
       })
 
-      const [yahooPrice, naverCompanyInfo, naverIndicators, naverFinancials, dartCompanyInfo, dartFinancials, fnguideFinancials, advancedIndicators, companyOverview] = await Promise.all([
+      const [yahooPrice, naverCompanyInfo, naverIndicators, naverFinancials, dartCompanyInfo, dartFinancials, fnguideFinancials, fnguideIndicators, fnguideCompanyInfo, advancedIndicators, companyOverview] = await Promise.all([
         scrapeKoreanStockPrice(stockCode, market || 'KOSPI'),
         scrapeCompanyInfo(stockCode),
         scrapeInvestmentIndicators(stockCode),
@@ -248,6 +250,8 @@ export async function GET(request: NextRequest) {
         getDartCompanyInfo(stockCode),
         getDartFinancials(stockCode),
         scrapeFnGuideFinancials(stockCode),
+        scrapeFnGuideIndicators(stockCode),
+        scrapeFnGuideCompanyInfo(stockCode),
         scrapeAdvancedIndicators(stockCode),
         scrapeCompanyOverview(stockCode),
       ])
@@ -255,13 +259,20 @@ export async function GET(request: NextRequest) {
       // 시가총액 파싱 (네이버 금융에서 가져옴)
       const parseMarketCap = (marketCapStr: string): number => {
         if (!marketCapStr || marketCapStr === '-') return 0
-        // "123,456억원" 형식을 숫자로 변환 (억원 단위 -> 원 단위)
-        const match = marketCapStr.match(/([\d,]+)억원/)
-        if (match) {
-          const value = parseFloat(match[1].replace(/,/g, ''))
-          return value * 100000000 // 억원 -> 원
+        let totalEok = 0
+
+        // "1,068조4,946억원" 또는 "1,068조 4,946억원" 형식 처리
+        const joMatch = marketCapStr.match(/([\d,]+)조/)
+        if (joMatch) {
+          totalEok += parseFloat(joMatch[1].replace(/,/g, '')) * 10000 // 1조 = 10000억
         }
-        return 0
+
+        const eokMatch = marketCapStr.match(/([\d,]+)억/)
+        if (eokMatch) {
+          totalEok += parseFloat(eokMatch[1].replace(/,/g, ''))
+        }
+
+        return totalEok * 100000000 // 억원 -> 원
       }
 
       const marketCap = naverCompanyInfo ? parseMarketCap(naverCompanyInfo.marketCap) : 0
@@ -275,10 +286,13 @@ export async function GET(request: NextRequest) {
       const financialsForCalculation = fnguideFinancials.length > 0
         ? fnguideFinancials
         : (dartFinancials.length > 0 ? dartFinancials : naverFinancials)
+      // 발행주식수: FnGuide > 네이버 금융
+      const listedSharesStr = fnguideCompanyInfo?.listedShares || naverCompanyInfo?.listedShares
       const calculatedIndicators = calculateIndicators(
         marketCap,
         currentPrice,
-        financialsForCalculation
+        financialsForCalculation,
+        listedSharesStr
       )
 
       stockInfo = {
@@ -297,39 +311,47 @@ export async function GET(request: NextRequest) {
           prevClose: '0',
         },
         company: {
-          // 네이버 금융 우선, DART 보완, 기업개요 보완
-          industry: naverCompanyInfo?.industry || dartCompanyInfo?.industry || '-',
-          ceo: dartCompanyInfo?.ceo || naverCompanyInfo?.ceo || '-',
-          establishedDate: dartCompanyInfo?.establishedDate || naverCompanyInfo?.establishedDate || '-',
-          fiscalMonth: dartCompanyInfo?.fiscalMonth || naverCompanyInfo?.fiscalMonth || '-',
-          employees: companyOverview.employees || naverCompanyInfo?.employees || '-',
+          // FnGuide > DART > 네이버 금융 우선순위
+          industry: (() => {
+            // "동일업종 PER" 같은 잘못된 값 필터링
+            const naverIndustry = naverCompanyInfo?.industry
+            const isValidIndustry = (v?: string) => v && v !== '-' && !v.includes('동일업종') && !v.includes('PER')
+            if (isValidIndustry(fnguideCompanyInfo?.industry)) return fnguideCompanyInfo!.industry!
+            if (isValidIndustry(naverIndustry)) return naverIndustry!
+            if (isValidIndustry(dartCompanyInfo?.industry)) return dartCompanyInfo!.industry!
+            return '-'
+          })(),
+          ceo: dartCompanyInfo?.ceo || fnguideCompanyInfo?.ceo || naverCompanyInfo?.ceo || '-',
+          establishedDate: dartCompanyInfo?.establishedDate || fnguideCompanyInfo?.establishedDate || naverCompanyInfo?.establishedDate || '-',
+          fiscalMonth: dartCompanyInfo?.fiscalMonth || fnguideCompanyInfo?.fiscalMonth || naverCompanyInfo?.fiscalMonth || '-',
+          employees: companyOverview.employees || fnguideCompanyInfo?.employees || naverCompanyInfo?.employees || '-',
           marketCap: naverCompanyInfo?.marketCap || (marketCap > 0 ? marketCap.toLocaleString() + '원' : '-'),
           headquarters: dartCompanyInfo?.headquarters || naverCompanyInfo?.headquarters || '-',
-          website: dartCompanyInfo?.website || naverCompanyInfo?.website || '-',
-          businessDescription: companyOverview.businessDescription || naverCompanyInfo?.businessDescription || '-',
-          mainProducts: companyOverview.mainProducts || naverCompanyInfo?.mainProducts || '-',
-          faceValue: naverCompanyInfo?.faceValue || '-',
-          listedDate: naverCompanyInfo?.listedDate || '-',
-          listedShares: naverCompanyInfo?.listedShares || '-',
-          foreignOwnership: naverCompanyInfo?.foreignOwnership || '-',
-          capital: naverCompanyInfo?.capital || '-',
+          website: dartCompanyInfo?.website || fnguideCompanyInfo?.website || naverCompanyInfo?.website || '-',
+          businessDescription: companyOverview.businessDescription || fnguideCompanyInfo?.businessDescription || naverCompanyInfo?.businessDescription || '-',
+          mainProducts: companyOverview.mainProducts || fnguideCompanyInfo?.mainProducts || naverCompanyInfo?.mainProducts || '-',
+          faceValue: fnguideCompanyInfo?.faceValue || naverCompanyInfo?.faceValue || '-',
+          listedDate: fnguideCompanyInfo?.listedDate || naverCompanyInfo?.listedDate || '-',
+          listedShares: fnguideCompanyInfo?.listedShares || naverCompanyInfo?.listedShares || '-',
+          foreignOwnership: fnguideCompanyInfo?.foreignOwnership || naverCompanyInfo?.foreignOwnership || '-',
+          capital: fnguideCompanyInfo?.capital || naverCompanyInfo?.capital || '-',
         },
         indicators: {
-          // 고급 지표 > 네이버 금융 > DART 계산 순
-          per: naverIndicators?.per || calculatedIndicators.per || '-',
-          pbr: naverIndicators?.pbr || calculatedIndicators.pbr || '-',
-          eps: naverIndicators?.eps || calculatedIndicators.eps || '-',
-          bps: naverIndicators?.bps || calculatedIndicators.bps || '-',
-          roe: advancedIndicators.roe || naverIndicators?.roe || calculatedIndicators.roe || '-',
-          roa: advancedIndicators.roa || naverIndicators?.roa || calculatedIndicators.roa || '-',
-          dividendYield: naverIndicators?.dividendYield || '-',
-          week52High: naverIndicators?.week52High || '-',
-          week52Low: naverIndicators?.week52Low || '-',
-          psr: advancedIndicators.psr || naverIndicators?.psr || '-',
-          dps: naverIndicators?.dps || '-',
-          currentRatio: advancedIndicators.currentRatio || naverIndicators?.currentRatio || '-',
-          quickRatio: advancedIndicators.quickRatio || naverIndicators?.quickRatio || '-',
-          beta: advancedIndicators.beta || naverIndicators?.beta || '-',
+          // FnGuide > 네이버 고급지표 > 네이버 금융 > 계산값 순
+          per: fnguideIndicators?.per || naverIndicators?.per || calculatedIndicators.per || '-',
+          pbr: fnguideIndicators?.pbr || naverIndicators?.pbr || calculatedIndicators.pbr || '-',
+          eps: fnguideIndicators?.eps || naverIndicators?.eps || calculatedIndicators.eps || '-',
+          bps: fnguideIndicators?.bps || naverIndicators?.bps || calculatedIndicators.bps || '-',
+          roe: fnguideIndicators?.roe || advancedIndicators.roe || naverIndicators?.roe || calculatedIndicators.roe || '-',
+          roa: fnguideIndicators?.roa || advancedIndicators.roa || naverIndicators?.roa || calculatedIndicators.roa || '-',
+          dividendYield: fnguideIndicators?.dividendYield || naverIndicators?.dividendYield || '-',
+          week52High: fnguideIndicators?.week52High || naverIndicators?.week52High || '-',
+          week52Low: fnguideIndicators?.week52Low || naverIndicators?.week52Low || '-',
+          psr: fnguideIndicators?.psr || advancedIndicators.psr || naverIndicators?.psr || '-',
+          dps: fnguideIndicators?.dps || naverIndicators?.dps || '-',
+          currentRatio: fnguideIndicators?.currentRatio || advancedIndicators.currentRatio || naverIndicators?.currentRatio || '-',
+          quickRatio: fnguideIndicators?.quickRatio || advancedIndicators.quickRatio || naverIndicators?.quickRatio || '-',
+          beta: fnguideIndicators?.beta || advancedIndicators.beta || naverIndicators?.beta || '-',
         },
         financials: fnguideFinancials.length > 0
           ? fnguideFinancials

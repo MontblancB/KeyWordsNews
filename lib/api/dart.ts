@@ -260,9 +260,10 @@ export async function getDartFinancials(
     return []
   }
 
-  // 연도가 지정되지 않은 경우, 가장 최근 데이터 검색 (2024 → 2023 → 2022)
+  // 연도가 지정되지 않은 경우, 가장 최근 데이터 검색 (2025 → 2024 → 2023 → 2022)
   const currentYear = new Date().getFullYear()
   const yearsToTry = year ? [year] : [
+    (currentYear - 1).toString(), // 2025
     (currentYear - 2).toString(), // 2024
     (currentYear - 3).toString(), // 2023
     (currentYear - 4).toString(), // 2022
@@ -375,18 +376,18 @@ export async function getDartFinancials(
   const totalLiabilities = parseAmount(financial.totalLiabilities)
   const totalEquity = parseAmount(financial.totalEquity)
 
-  // 매출총이익률 = (매출총이익 / 매출액) * 100
-  if (revenue > 0 && grossProfit > 0) {
+  // 매출총이익률 = (매출총이익 / 매출액) * 100 (음수 허용)
+  if (revenue > 0 && grossProfit !== 0) {
     financial.grossMargin = ((grossProfit / revenue) * 100).toFixed(2) + '%'
   }
 
-  // 영업이익률 = (영업이익 / 매출액) * 100
-  if (revenue > 0 && operatingProfit > 0) {
+  // 영업이익률 = (영업이익 / 매출액) * 100 (적자 시 음수)
+  if (revenue > 0 && operatingProfit !== 0) {
     financial.operatingMargin = ((operatingProfit / revenue) * 100).toFixed(2) + '%'
   }
 
-  // 순이익률 = (당기순이익 / 매출액) * 100
-  if (revenue > 0 && netIncome > 0) {
+  // 순이익률 = (당기순이익 / 매출액) * 100 (적자 시 음수)
+  if (revenue > 0 && netIncome !== 0) {
     financial.netMargin = ((netIncome / revenue) * 100).toFixed(2) + '%'
   }
 
