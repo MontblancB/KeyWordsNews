@@ -167,21 +167,26 @@ async function fetchNaverVolumeRanking(): Promise<TrendingStockItem[]> {
       if (isETFOrNonStock(name)) return
 
       const price = $(tds[2]).text().trim()
-      const changeRaw = $(tds[3]).text().trim().replace(/\s+/g, '')
+      // "상승142" → "142", "하락1,200" → "1,200" 숫자만 추출
+      const changeText = $(tds[3]).text().trim().replace(/\s+/g, '')
+      const changeNum = changeText.replace(/[^\d,]/g, '')
       const pctRaw = $(tds[4]).text().trim()
       const volume = $(tds[5]).text().trim()
 
       let changeType: ChangeType = 'unchanged'
-      if (pctRaw.includes('+')) changeType = 'up'
-      else if (pctRaw.includes('-')) changeType = 'down'
+      if (pctRaw.includes('+') || changeText.includes('상승') || changeText.includes('상한')) changeType = 'up'
+      else if (pctRaw.includes('-') || changeText.includes('하락') || changeText.includes('하한')) changeType = 'down'
+
+      const sign = changeType === 'up' ? '+' : changeType === 'down' ? '-' : ''
+      const pctNum = pctRaw.replace(/[^\d.]/g, '')
 
       items.push({
         rank: 0,
         code,
         name,
         price,
-        change: changeRaw,
-        changePercent: pctRaw,
+        change: `${sign}${changeNum}`,
+        changePercent: `${sign}${pctNum}`,
         changeType,
         volume,
       })
