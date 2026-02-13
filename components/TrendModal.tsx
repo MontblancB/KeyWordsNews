@@ -11,6 +11,27 @@ interface TrendModalProps {
   onClose: () => void
 }
 
+const SOURCE_LABELS: Record<string, string> = {
+  signal_bz: '시그널 실시간 검색어',
+  google_trends_rss: 'Google Trends 급상승 검색어',
+  local_analysis: '최근 24시간 뉴스 키워드 분석',
+}
+
+const STATE_BADGES: Record<string, { label: string; className: string }> = {
+  n: {
+    label: 'NEW',
+    className: 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30',
+  },
+  '+': {
+    label: '▲',
+    className: 'text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30',
+  },
+  s: {
+    label: '-',
+    className: 'text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-800',
+  },
+}
+
 export default function TrendModal({ isOpen, onClose }: TrendModalProps) {
   const router = useRouter()
   const { data, isLoading, refetch, isRefetching, error } = useTrends()
@@ -82,8 +103,7 @@ export default function TrendModal({ isOpen, onClose }: TrendModalProps) {
                 <div className="px-6 pb-6">
                   {isLoading ? (
                     <div className="space-y-1 max-h-[60vh] overflow-y-auto">
-                      {/* 스켈레톤 UI - 20개 아이템 */}
-                      {Array.from({ length: 20 }).map((_, index) => (
+                      {Array.from({ length: 10 }).map((_, index) => (
                         <div
                           key={index}
                           className="w-full flex items-center gap-3 p-3 rounded-lg"
@@ -117,10 +137,17 @@ export default function TrendModal({ isOpen, onClose }: TrendModalProps) {
                             {trend.rank}
                           </span>
                           <div className="flex-1 min-w-0">
-                            <div className="text-sm text-gray-900 dark:text-gray-100 font-medium">
+                            <div className="text-sm text-gray-900 dark:text-gray-100 font-medium truncate">
                               {trend.keyword}
                             </div>
                           </div>
+                          {/* Signal.bz 상태 배지 */}
+                          {trend.state && STATE_BADGES[trend.state] && (
+                            <span className={`text-[11px] font-medium px-1.5 py-0.5 rounded flex-shrink-0 ${STATE_BADGES[trend.state].className}`}>
+                              {STATE_BADGES[trend.state].label}
+                            </span>
+                          )}
+                          {/* Google Trends 트래픽 배지 */}
                           {trend.traffic && (
                             <span className="text-[11px] font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 px-1.5 py-0.5 rounded flex-shrink-0">
                               {trend.traffic}
@@ -138,9 +165,7 @@ export default function TrendModal({ isOpen, onClose }: TrendModalProps) {
                 {/* 출처 및 기준 시간 */}
                 <div className="px-6 pb-6 space-y-2">
                   <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
-                    {data?.source === 'google_trends_rss'
-                      ? 'Google Trends 실시간 급상승 검색어'
-                      : '최근 24시간 뉴스 키워드 분석'}
+                    {SOURCE_LABELS[data?.source || ''] || '실시간 검색어'}
                   </p>
                   {data?.collectedAt && (
                     <p className="text-xs text-gray-400 dark:text-gray-500 text-center">

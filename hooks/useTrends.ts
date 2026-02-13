@@ -7,9 +7,10 @@ interface Trend {
   keyword: string
   rank: number
   country: string
+  traffic?: string  // Google Trends RSS 트래픽 정보 (예: "100+", "500+")
+  state?: string    // 상태: n=신규, +=상승, s=유지 (Signal.bz)
   collectedAt?: string
   createdAt?: string
-  traffic?: string  // Google Trends RSS 트래픽 정보 (예: "100+", "500+")
 }
 
 interface TrendsResponse {
@@ -17,7 +18,7 @@ interface TrendsResponse {
   data: Trend[]
   cached: boolean
   collectedAt: string
-  source?: string  // 'google_trends_rss' 또는 'local_analysis'
+  source?: string  // 'signal_bz' | 'google_trends_rss' | 'local_analysis'
 }
 
 export function useTrends() {

@@ -71,7 +71,8 @@ model Trend {
   rank        Int
   country     String   @default("south_korea")
   traffic     String?  // Google Trends 트래픽 규모 (예: "200+", "100+")
-  source      String   @default("google_trends_rss") // 데이터 출처: google_trends_rss | local_analysis
+  state       String?  // 상태: n=신규, +=상승, s=유지 (Signal.bz)
+  source      String   @default("google_trends_rss") // 데이터 출처: signal_bz | google_trends_rss | local_analysis
 
   // 메타데이터
   collectedAt DateTime @default(now())

@@ -18,7 +18,7 @@
 ### 배포 정보
 - **URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
-- **현재 버전**: 2.39.1
+- **현재 버전**: 2.40.0
 - **마지막 업데이트**: 2026-02-13
 
 ---
@@ -320,6 +320,14 @@ rm -rf node_modules && npm install
 ---
 
 ## 최근 업데이트
+
+### v2.40.0 (2026-02-13) - TrendNow Signal.bz 실시간 검색어 통합
+- 🔥 **Signal.bz 1차 소스**: 네이버 기반 실시간 검색어를 1차 데이터 소스로 추가
+- 🔄 **3단계 폴백**: Signal.bz → Google Trends RSS → 자체 뉴스 분석
+- 🏷️ **상태 배지**: 신규(NEW)/상승(▲)/유지(-) 상태 표시 (Signal.bz)
+- 💾 **DB 스키마 확장**: Trend 모델에 traffic, state, source 컬럼 추가
+- 🔧 **캐시 응답 수정**: source/traffic/state 필드가 캐시에서도 정상 반환
+- ♻️ **API 리팩토링**: 중복 저장 로직을 saveTrendsAndRespond로 통합
 
 ### v2.39.0 (2026-02-13) - TrendNow Google Trends RSS 전환
 - 🔥 **Google Trends RSS**: TrendNow 데이터 소스를 Google Trends 실시간 급상승 검색어로 전환
