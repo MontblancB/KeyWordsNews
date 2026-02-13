@@ -75,6 +75,8 @@ interface NaverMobileStock {
   }
   fluctuationsRatio: string
   accumulatedTradingVolume: string
+  accumulatedTradingValue?: string           // 거래대금 (백만원)
+  accumulatedTradingValueKrwHangeul?: string // "1,296억원"
   localTradedAt?: string
   stockExchangeType: {
     nameEng: string
@@ -84,6 +86,33 @@ interface NaverMobileStock {
 interface NaverMobileResponse {
   stocks: NaverMobileStock[]
   marketStatus: string
+}
+
+/**
+ * 거래대금(원) → "1,296억", "3.2조" 등으로 포맷팅
+ */
+function formatTradingValue(valueInWon: number): string {
+  if (valueInWon >= 1_000_000_000_000) {
+    return `${(valueInWon / 1_000_000_000_000).toFixed(1)}조`
+  }
+  if (valueInWon >= 100_000_000) {
+    const billions = Math.round(valueInWon / 100_000_000)
+    return `${billions.toLocaleString()}억`
+  }
+  if (valueInWon >= 10_000) {
+    return `${Math.round(valueInWon / 10_000).toLocaleString()}만`
+  }
+  return valueInWon.toLocaleString()
+}
+
+/**
+ * 가격 × 거래량으로 거래대금 근사값 계산
+ */
+function calcTradingValue(priceStr: string, volumeStr: string): string {
+  const price = Number(String(priceStr).replace(/,/g, ''))
+  const volume = Number(String(volumeStr).replace(/,/g, ''))
+  if (!price || !volume) return '-'
+  return formatTradingValue(price * volume)
 }
 
 function mobileStockToItem(stock: NaverMobileStock, rank: number): TrendingStockItem {
@@ -97,6 +126,18 @@ function mobileStockToItem(stock: NaverMobileStock, rank: number): TrendingStock
   const rawPercent = String(stock.fluctuationsRatio).replace(/^-/, '')
   const sign = changeType === 'up' ? '+' : changeType === 'down' ? '-' : ''
 
+  // 거래대금: API 제공값 우선, 없으면 가격×거래량으로 계산
+  let tradingValue: string
+  if (stock.accumulatedTradingValueKrwHangeul) {
+    tradingValue = stock.accumulatedTradingValueKrwHangeul.replace('원', '')
+  } else if (stock.accumulatedTradingValue) {
+    // accumulatedTradingValue는 백만원 단위
+    const valMillion = Number(String(stock.accumulatedTradingValue).replace(/,/g, ''))
+    tradingValue = formatTradingValue(valMillion * 1_000_000)
+  } else {
+    tradingValue = calcTradingValue(stock.closePrice, stock.accumulatedTradingVolume)
+  }
+
   return {
     rank,
     code: stock.itemCode,
@@ -106,6 +147,7 @@ function mobileStockToItem(stock: NaverMobileStock, rank: number): TrendingStock
     changePercent: `${sign}${rawPercent}`,
     changeType,
     volume: stock.accumulatedTradingVolume,
+    tradingValue,
   }
 }
 
@@ -189,6 +231,7 @@ async function fetchNaverVolumeRanking(): Promise<TrendingStockItem[]> {
         changePercent: `${sign}${pctNum}`,
         changeType,
         volume,
+        tradingValue: calcTradingValue(price, volume),
       })
     })
 
@@ -308,6 +351,7 @@ export async function fetchFallbackFromPriceHistory(): Promise<TrendingStocksDat
             changePercent: `${sign}${rawPercent}`,
             changeType,
             volume: volumeStr,
+            tradingValue: calcTradingValue(lastTrading.closePrice, String(lastTrading.accumulatedTradingVolume)),
             tradingDate: lastTrading.localTradedAt?.split('T')[0] || '',
           } as TrendingStockItem & { tradingDate: string }
         } catch {

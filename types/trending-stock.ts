@@ -12,7 +12,8 @@ export interface TrendingStockItem {
   change: string        // "+1,200"
   changePercent: string // "+1.50"
   changeType: ChangeType
-  volume: string        // "12,345,678"
+  volume: string        // "12,345,678" (거래량, 정렬용)
+  tradingValue: string  // "1,296억" (거래대금, 표시용)
 }
 
 export type TrendingCategory = 'volume' | 'gainers' | 'losers'

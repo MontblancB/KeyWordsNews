@@ -17,13 +17,6 @@ const SUB_TABS: { id: TrendingCategory; label: string }[] = [
   { id: 'losers', label: '하락' },
 ]
 
-function formatVolume(volumeStr: string): string {
-  const num = Number(String(volumeStr).replace(/,/g, ''))
-  if (num >= 100_000_000) return `${(num / 100_000_000).toFixed(1)}억주`
-  if (num >= 10_000) return `${Math.round(num / 10_000).toLocaleString()}만주`
-  return `${num.toLocaleString()}주`
-}
-
 function formatPrice(priceStr: string): string {
   return `${priceStr}원`
 }
@@ -83,9 +76,9 @@ function StockRow({
         {item.changePercent}%
       </span>
 
-      {/* 거래량 */}
+      {/* 거래대금 */}
       <span className="w-16 text-right text-[10px] text-gray-500 dark:text-gray-400 tabular-nums shrink-0">
-        {formatVolume(item.volume)}
+        {item.tradingValue}
       </span>
     </button>
   )
