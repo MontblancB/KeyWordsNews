@@ -32,8 +32,8 @@ export function useTrends() {
       }
       return res.json()
     },
-    staleTime: 60 * 60 * 1000, // 1시간
-    gcTime: 2 * 60 * 60 * 1000, // 2시간
+    staleTime: 10 * 60 * 1000, // 10분
+    gcTime: 20 * 60 * 1000, // 20분
     refetchOnWindowFocus: false,
     retry: 1,
   })

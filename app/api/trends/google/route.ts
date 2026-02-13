@@ -83,14 +83,14 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * DB 캐시 조회 (1시간 이내)
+ * DB 캐시 조회 (10분 이내)
  */
 async function getCachedTrends() {
-  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
+  const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000)
 
   const cachedTrends = await prisma.trend.findMany({
     where: {
-      collectedAt: { gte: oneHourAgo },
+      collectedAt: { gte: tenMinutesAgo },
       country: 'south_korea',
     },
     orderBy: { rank: 'asc' },
