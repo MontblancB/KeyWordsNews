@@ -311,30 +311,30 @@ export async function GET(request: NextRequest) {
           prevClose: '0',
         },
         company: {
-          // FnGuide > DART > 네이버 금융 우선순위
+          // 업종: FnGuide > 네이버(검증됨) > DART
           industry: (() => {
-            // "동일업종 PER" 같은 잘못된 값 필터링
-            const naverIndustry = naverCompanyInfo?.industry
             const isValidIndustry = (v?: string) => v && v !== '-' && !v.includes('동일업종') && !v.includes('PER')
             if (isValidIndustry(fnguideCompanyInfo?.industry)) return fnguideCompanyInfo!.industry!
-            if (isValidIndustry(naverIndustry)) return naverIndustry!
+            if (isValidIndustry(naverCompanyInfo?.industry)) return naverCompanyInfo!.industry!
             if (isValidIndustry(dartCompanyInfo?.industry)) return dartCompanyInfo!.industry!
             return '-'
           })(),
-          ceo: dartCompanyInfo?.ceo || fnguideCompanyInfo?.ceo || naverCompanyInfo?.ceo || '-',
-          establishedDate: dartCompanyInfo?.establishedDate || fnguideCompanyInfo?.establishedDate || naverCompanyInfo?.establishedDate || '-',
-          fiscalMonth: dartCompanyInfo?.fiscalMonth || fnguideCompanyInfo?.fiscalMonth || naverCompanyInfo?.fiscalMonth || '-',
-          employees: companyOverview.employees || fnguideCompanyInfo?.employees || naverCompanyInfo?.employees || '-',
+          // 기업정보: DART > 네이버 금융 (FnGuide SVD_Main은 기업정보 테이블이 없음)
+          ceo: dartCompanyInfo?.ceo || naverCompanyInfo?.ceo || '-',
+          establishedDate: dartCompanyInfo?.establishedDate || naverCompanyInfo?.establishedDate || '-',
+          fiscalMonth: dartCompanyInfo?.fiscalMonth || naverCompanyInfo?.fiscalMonth || '-',
+          employees: companyOverview.employees || naverCompanyInfo?.employees || '-',
           marketCap: naverCompanyInfo?.marketCap || (marketCap > 0 ? marketCap.toLocaleString() + '원' : '-'),
           headquarters: dartCompanyInfo?.headquarters || naverCompanyInfo?.headquarters || '-',
-          website: dartCompanyInfo?.website || fnguideCompanyInfo?.website || naverCompanyInfo?.website || '-',
-          businessDescription: companyOverview.businessDescription || fnguideCompanyInfo?.businessDescription || naverCompanyInfo?.businessDescription || '-',
-          mainProducts: companyOverview.mainProducts || fnguideCompanyInfo?.mainProducts || naverCompanyInfo?.mainProducts || '-',
-          faceValue: fnguideCompanyInfo?.faceValue || naverCompanyInfo?.faceValue || '-',
-          listedDate: fnguideCompanyInfo?.listedDate || naverCompanyInfo?.listedDate || '-',
+          website: dartCompanyInfo?.website || naverCompanyInfo?.website || '-',
+          businessDescription: companyOverview.businessDescription || naverCompanyInfo?.businessDescription || '-',
+          mainProducts: companyOverview.mainProducts || naverCompanyInfo?.mainProducts || '-',
+          faceValue: naverCompanyInfo?.faceValue || '-',
+          listedDate: naverCompanyInfo?.listedDate || '-',
+          // 발행주식수: FnGuide(천주→주 변환) > 네이버
           listedShares: fnguideCompanyInfo?.listedShares || naverCompanyInfo?.listedShares || '-',
-          foreignOwnership: fnguideCompanyInfo?.foreignOwnership || naverCompanyInfo?.foreignOwnership || '-',
-          capital: fnguideCompanyInfo?.capital || naverCompanyInfo?.capital || '-',
+          foreignOwnership: naverCompanyInfo?.foreignOwnership || '-',
+          capital: naverCompanyInfo?.capital || '-',
         },
         indicators: {
           // FnGuide > 네이버 고급지표 > 네이버 금융 > 계산값 순

@@ -3,6 +3,18 @@ import type { FinancialData, CompanyInfo, InvestmentIndicators } from '@/types/s
 
 /**
  * FnGuide 재무제표 스크래퍼
+ *
+ * FnGuide SVD_Main 페이지의 테이블 구조 (17개+):
+ * - Table 0: 시세 (종가, 거래량, 52주 최고/최저)
+ * - Table 7: 투자의견/컨센서스 (추정 EPS, PER)
+ * - Table 8-9: 비교분석 (삼성전자 vs KOSPI)
+ * - Table 10: IFRS(연결) Annual + Net Quarter (혼합)
+ * - Table 11: IFRS(연결) Annual Only ← 핵심 데이터 소스
+ * - Table 12: IFRS(연결) Net Quarter
+ * - Table 13-15: IFRS(별도) ← 별도 재무제표 (사용하지 않음)
+ *
+ * 중요: $('table') 전체 순회하면 별도(Table 14)의 값이 연결(Table 11)을 덮어씀
+ * → 반드시 IFRS(연결) Annual Only 테이블만 타겟팅해야 함
  */
 
 const USER_AGENT =
@@ -16,11 +28,81 @@ function cleanValue(text: string): string {
 }
 
 /**
+ * FnGuide HTML에서 IFRS(연결) Annual Only 테이블 찾기
+ */
+function findConsolidatedAnnualTable($: any): any | null {
+  const tables = $('table.us_table_ty1')
+  let financialTable: any | null = null
+
+  tables.each((_i: number, table: any) => {
+    const $table = $(table)
+    const headers = $table.find('thead th, thead td').map((_: number, th: any) => $(th).text().trim()).get()
+    const headersText = headers.join(' ')
+
+    // "IFRS(연결)" + "Annual" 포함하고, "Net Quarter"가 없는 테이블 (연간 전용)
+    if (headersText.includes('IFRS') && headersText.includes('Annual') && !headersText.includes('Net Quarter')) {
+      // "별도"가 아닌 "연결"만
+      if (!headersText.includes('별도')) {
+        financialTable = $table
+        return false // 루프 중단
+      }
+    }
+  })
+
+  return financialTable
+}
+
+/**
+ * 테이블에서 행 데이터 파싱
+ * FnGuide 행 이름에 설명 텍스트가 포함됨 (예: "영업이익률(%)(영업이익 / 영업수익) * 100영업이익률")
+ * → 키워드 매칭으로 처리
+ */
+function parseTableRows($: any, table: any): { [key: string]: string[] } {
+  const rows: { [key: string]: string[] } = {}
+
+  table.find('tbody tr').each((_: number, tr: any) => {
+    const cells = $(tr).find('td, th')
+    const rawName = cells.first().text().trim()
+    const values: string[] = []
+
+    cells.each((i: number, td: any) => {
+      if (i > 0) {
+        values.push($(td).text().trim())
+      }
+    })
+
+    if (rawName && values.length > 0) {
+      rows[rawName] = values
+    }
+  })
+
+  return rows
+}
+
+/**
+ * FnGuide 행 이름으로 값 찾기
+ * 행 이름에 설명 텍스트가 포함되므로 키워드 매칭
+ * 예: "영업이익률(%)(영업이익 / 영업수익) * 100영업이익률" → "영업이익률" 키워드로 매칭
+ */
+function findRowByKeyword(rows: { [key: string]: string[] }, keyword: string, excludeKeywords?: string[]): string[] | undefined {
+  for (const [name, values] of Object.entries(rows)) {
+    if (name.includes(keyword)) {
+      // 제외 키워드 체크
+      if (excludeKeywords && excludeKeywords.some(ek => name.includes(ek))) {
+        continue
+      }
+      return values
+    }
+  }
+  return undefined
+}
+
+/**
  * 재무제표 스크래핑 (FnGuide)
+ * IFRS(연결) Annual Only 테이블(Table 11)에서 추출
  */
 export async function scrapeFinancials(code: string): Promise<FinancialData[]> {
   try {
-    // FnGuide 기업 페이지
     const url = `https://comp.fnguide.com/SVO2/ASP/SVD_Main.asp?gicode=A${code}`
     const response = await fetch(url, {
       headers: {
@@ -37,65 +119,22 @@ export async function scrapeFinancials(code: string): Promise<FinancialData[]> {
     const html = await response.text()
     const $ = cheerio.load(html)
 
-    const financials: FinancialData[] = []
-
-    // 연간 재무제표 테이블 파싱
-    // FnGuide의 SVD_Main 페이지에서 재무 하이라이트 테이블
-    const tables = $('table.us_table_ty1')
-
-    if (tables.length === 0) {
-      // 테이블이 없으면 빈 배열 반환
-      return []
-    }
-
-    // 재무제표 테이블 찾기 (IFRS(연결) Annual 헤더가 있는 테이블 중 연도별 데이터가 있는 것)
-    let financialTable: any = null
-    tables.each((i: number, table: any) => {
-      const $table = $(table)
-      const headers = $table.find('thead th, thead td').map((_: number, th: any) => $(th).text().trim()).get()
-      const headersText = headers.join(' ')
-
-      // "IFRS(연결)" + "Annual" 포함하고, "Net Quarter"가 없는 테이블 찾기 (연간 데이터만)
-      if (headersText.includes('IFRS') && headersText.includes('Annual') && !headersText.includes('Net Quarter')) {
-        financialTable = $table
-        return false // 루프 중단
-      }
-    })
-
-    if (!financialTable || financialTable.length === 0) {
-      // 재무제표 테이블을 찾을 수 없으면 빈 배열 반환
+    const financialTable = findConsolidatedAnnualTable($)
+    if (!financialTable) {
       return []
     }
 
     // 헤더에서 기간 정보 추출
-    // FnGuide 헤더 구조: IFRS(연결) | Annual | Net Quarter | 2022/12 | 2023/12 | 2024/12 | ...
     const headers: string[] = []
-    financialTable.find('thead th, thead td').each((i: number, th: any) => {
+    financialTable.find('thead th, thead td').each((_i: number, th: any) => {
       headers.push($(th).text().trim())
     })
 
-    // 데이터 행 파싱
-    const rows: { [key: string]: string[] } = {}
-    financialTable.find('tbody tr').each((_: number, tr: any) => {
-      const cells = $(tr).find('td, th')
-      const rowName = cells.first().text().trim()
-      const values: string[] = []
+    const rows = parseTableRows($, financialTable)
 
-      cells.each((i: number, td: any) => {
-        if (i > 0) {
-          values.push($(td).text().trim())
-        }
-      })
+    const financials: FinancialData[] = []
 
-      if (rowName && values.length > 0) {
-        rows[rowName] = values
-      }
-    })
-
-    // 재무 데이터 구성
-    // 테이블 11 (연간 전용): 헤더[0] = IFRS(연결), 헤더[1] = Annual, 헤더[2] = 2020/12, 헤더[3] = 2021/12, ...
-    // values[0] = Annual 값, values[1] = 2020/12 값, values[2] = 2021/12 값, ...
-    // 연도별 데이터는 values[1]부터 시작 (헤더[2]부터)
+    // 헤더[0] = IFRS(연결), 헤더[1] = Annual, 헤더[2] = 2020/12, ...
     for (let i = 2; i < Math.min(headers.length, 10); i++) {
       let period = headers[i] || ''
 
@@ -104,54 +143,70 @@ export async function scrapeFinancials(code: string): Promise<FinancialData[]> {
         continue
       }
 
-      // 헤더에서 연도 정보 추출 (예: "2025/12(P)" 또는 "(P) : Provisional\n잠정실적\n\n2025/12(P)")
       const yearMatch = period.match(/(\d{4}\/\d{2})/)
-      if (!yearMatch) {
-        continue // 연도 정보가 없으면 스킵
-      }
-      period = yearMatch[1] // "2025/12" 형태로 정규화
+      if (!yearMatch) continue
+      period = yearMatch[1]
 
-      // 연간 테이블이므로 모두 annual
-      const isQuarterly = false
-      const valueIndex = i - 1 // 헤더 인덱스 2 = values 인덱스 1
+      const valueIndex = i - 1
+
+      // 기본 재무데이터
+      const revenue = cleanValue(findRowByKeyword(rows, '매출액')?.[valueIndex] || findRowByKeyword(rows, '영업수익')?.[valueIndex] || '-')
+      const operatingProfit = cleanValue(findRowByKeyword(rows, '영업이익', ['영업이익률', '영업이익(발표'])?.[valueIndex] || '-')
+      const netIncome = cleanValue(findRowByKeyword(rows, '당기순이익')?.[valueIndex] || '-')
+      const totalAssets = cleanValue(findRowByKeyword(rows, '자산총계')?.[valueIndex] || '-')
+      const totalLiabilities = cleanValue(findRowByKeyword(rows, '부채총계')?.[valueIndex] || '-')
+      const totalEquity = cleanValue(findRowByKeyword(rows, '자본총계')?.[valueIndex] || '-')
+
+      // FnGuide가 직접 제공하는 비율 데이터
+      const operatingMarginRow = findRowByKeyword(rows, '영업이익률')
+      const debtRatioRow = findRowByKeyword(rows, '부채비율')
+
+      let operatingMargin = cleanValue(operatingMarginRow?.[valueIndex] || '-')
+      let netMargin = '-'
+      let debtRatio = cleanValue(debtRatioRow?.[valueIndex] || '-')
+
+      // FnGuide에서 비율을 제공하지 않으면 직접 계산
+      const revenueNum = parseFloat(revenue.replace(/,/g, '')) || 0
+      const opProfitNum = parseFloat(operatingProfit.replace(/,/g, '')) || 0
+      const netIncomeNum = parseFloat(netIncome.replace(/,/g, '')) || 0
+      const totalLiabNum = parseFloat(totalLiabilities.replace(/,/g, '')) || 0
+      const totalEquityNum = parseFloat(totalEquity.replace(/,/g, '')) || 0
+
+      if (operatingMargin === '-' && revenueNum > 0 && opProfitNum !== 0) {
+        operatingMargin = ((opProfitNum / revenueNum) * 100).toFixed(2) + '%'
+      } else if (operatingMargin !== '-' && !operatingMargin.includes('%')) {
+        operatingMargin += '%'
+      }
+
+      if (revenueNum > 0 && netIncomeNum !== 0) {
+        netMargin = ((netIncomeNum / revenueNum) * 100).toFixed(2) + '%'
+      }
+
+      if (debtRatio === '-' && totalEquityNum > 0 && totalLiabNum > 0) {
+        debtRatio = ((totalLiabNum / totalEquityNum) * 100).toFixed(2) + '%'
+      } else if (debtRatio !== '-' && !debtRatio.includes('%')) {
+        debtRatio += '%'
+      }
 
       const financial: FinancialData = {
         period,
-        periodType: isQuarterly ? 'quarterly' : 'annual',
-        revenue: rows['매출액']?.[valueIndex] || rows['영업수익']?.[valueIndex] || '-',
-        costOfRevenue: rows['매출원가']?.[valueIndex] || '-',
-        grossProfit: rows['매출총이익']?.[valueIndex] || '-',
-        grossMargin: rows['매출총이익률']?.[valueIndex] || '-',
-        operatingProfit: rows['영업이익']?.[valueIndex] || '-',
-        operatingMargin: rows['영업이익률']?.[valueIndex] || '-',
-        netIncome: rows['당기순이익']?.[valueIndex] || rows['순이익']?.[valueIndex] || '-',
-        netMargin: rows['순이익률']?.[valueIndex] || '-',
-        ebitda: rows['EBITDA']?.[valueIndex] || '-',
-        // 추가 재무 지표
-        totalAssets: rows['자산총계']?.[valueIndex] || rows['자산']?.[valueIndex] || '-',
-        totalLiabilities: rows['부채총계']?.[valueIndex] || rows['부채']?.[valueIndex] || '-',
-        totalEquity: rows['자본총계']?.[valueIndex] || rows['자본']?.[valueIndex] || '-',
-        debtRatio: rows['부채비율']?.[valueIndex] || '-',
-        operatingCashFlow: rows['영업활동현금흐름']?.[valueIndex] || rows['영업현금흐름']?.[valueIndex] || '-',
-        freeCashFlow: rows['잉여현금흐름']?.[valueIndex] || rows['FCF']?.[valueIndex] || '-',
+        periodType: 'annual',
+        revenue,
+        costOfRevenue: cleanValue(findRowByKeyword(rows, '매출원가')?.[valueIndex] || '-'),
+        grossProfit: cleanValue(findRowByKeyword(rows, '매출총이익')?.[valueIndex] || '-'),
+        grossMargin: '-',
+        operatingProfit,
+        operatingMargin,
+        netIncome,
+        netMargin,
+        ebitda: cleanValue(findRowByKeyword(rows, 'EBITDA')?.[valueIndex] || '-'),
+        totalAssets,
+        totalLiabilities,
+        totalEquity,
+        debtRatio,
+        operatingCashFlow: cleanValue(findRowByKeyword(rows, '영업활동현금흐름')?.[valueIndex] || findRowByKeyword(rows, '영업현금흐름')?.[valueIndex] || '-'),
+        freeCashFlow: cleanValue(findRowByKeyword(rows, '잉여현금흐름')?.[valueIndex] || findRowByKeyword(rows, 'FCF')?.[valueIndex] || '-'),
       }
-
-      // 값 정리
-      financial.revenue = cleanValue(financial.revenue)
-      financial.costOfRevenue = cleanValue(financial.costOfRevenue)
-      financial.grossProfit = cleanValue(financial.grossProfit)
-      financial.grossMargin = cleanValue(financial.grossMargin)
-      financial.operatingProfit = cleanValue(financial.operatingProfit)
-      financial.operatingMargin = cleanValue(financial.operatingMargin)
-      financial.netIncome = cleanValue(financial.netIncome)
-      financial.netMargin = cleanValue(financial.netMargin)
-      financial.ebitda = cleanValue(financial.ebitda)
-      financial.totalAssets = cleanValue(financial.totalAssets)
-      financial.totalLiabilities = cleanValue(financial.totalLiabilities)
-      financial.totalEquity = cleanValue(financial.totalEquity)
-      financial.debtRatio = cleanValue(financial.debtRatio)
-      financial.operatingCashFlow = cleanValue(financial.operatingCashFlow)
-      financial.freeCashFlow = cleanValue(financial.freeCashFlow)
 
       financials.push(financial)
     }
@@ -164,7 +219,15 @@ export async function scrapeFinancials(code: string): Promise<FinancialData[]> {
 }
 
 /**
- * 투자 지표 스크래핑 (FnGuide)
+ * 투자지표 스크래핑 (FnGuide)
+ * IFRS(연결) Annual Only 테이블(Table 11)에서 최신 연도의 지표만 추출
+ *
+ * Table 11에 포함된 지표:
+ * - EPS(원), BPS(원), PER(배), PBR(배)
+ * - ROE(%), ROA(%)
+ * - DPS(원), 배당수익률(%)
+ * - 영업이익률(%), 부채비율(%)
+ * - 발행주식수 (천주)
  */
 export async function scrapeFnGuideIndicators(
   code: string
@@ -187,64 +250,81 @@ export async function scrapeFnGuideIndicators(
 
     const indicators: Partial<InvestmentIndicators> = {}
 
-    // 투자지표 섹션에서 PER, PBR, ROE 등 추출
-    $('table').each((_: number, table: any) => {
-      $(table)
-        .find('tr')
-        .each((_: number, tr: any) => {
-          const cells = $(tr).find('td, th')
-          cells.each((i: number, cell: any) => {
-            const text = $(cell).text().trim()
-            const nextValue = $(cells[i + 1])
-              .text()
-              .trim()
+    // IFRS(연결) Annual Only 테이블에서만 추출
+    const financialTable = findConsolidatedAnnualTable($)
+    if (!financialTable) {
+      return indicators
+    }
 
-            if (text === 'PER' || text.includes('PER(배)')) {
-              indicators.per = cleanValue(nextValue) || indicators.per
+    // 헤더에서 마지막 유효 연도 인덱스 찾기
+    const headers: string[] = []
+    financialTable.find('thead th, thead td').each((_i: number, th: any) => {
+      headers.push($(th).text().trim())
+    })
+
+    // 최신 유효 연도 인덱스 찾기 (추정치 제외)
+    let latestIndex = -1
+    for (let i = headers.length - 1; i >= 2; i--) {
+      const h = headers[i]
+      if (h && h.match(/\d{4}\/\d{2}/) && !h.includes('Estimate') && !h.includes('추정')) {
+        latestIndex = i - 1 // value index
+        break
+      }
+    }
+
+    if (latestIndex < 0) return indicators
+
+    const rows = parseTableRows($, financialTable)
+
+    // 최신 연도 데이터에서 지표 추출
+    const getValue = (keyword: string, excludeKeywords?: string[]): string | undefined => {
+      const row = findRowByKeyword(rows, keyword, excludeKeywords)
+      if (!row || !row[latestIndex]) return undefined
+      const val = cleanValue(row[latestIndex])
+      return val !== '-' ? val : undefined
+    }
+
+    indicators.per = getValue('PER')
+    indicators.pbr = getValue('PBR')
+    indicators.eps = getValue('EPS')
+    indicators.bps = getValue('BPS')
+    indicators.roe = getValue('ROE')
+    indicators.roa = getValue('ROA')
+    indicators.dps = getValue('DPS')
+    indicators.dividendYield = getValue('배당수익률') || getValue('배당')
+
+    // 52주 최고/최저 — Table 0 (시세 테이블)에서 추출
+    const priceTable = $('table.us_table_ty1').first()
+    if (priceTable.length) {
+      priceTable.find('tr').each((_: number, tr: any) => {
+        const thText = $(tr).find('th').text().trim()
+        if (thText.includes('52주') && thText.includes('최고')) {
+          const vals = $(tr).find('td')
+          if (vals.length >= 2) {
+            indicators.week52High = cleanValue($(vals[0]).text().trim())
+            indicators.week52Low = cleanValue($(vals[1]).text().trim())
+          }
+        }
+      })
+    }
+
+    // 베타 — Table 8 (비교분석)에서 추출
+    $('table.us_table_ty1').each((_: number, table: any) => {
+      const $table = $(table)
+      const headerText = $table.find('thead').text()
+      // 비교분석 테이블 (구분, 종목명, 업종, KOSPI 형식)
+      if (headerText.includes('구분') && headerText.includes('KOSPI')) {
+        $table.find('tbody tr').each((_: number, tr: any) => {
+          const th = $(tr).find('th, td').first().text().trim()
+          if (th.includes('베타') || th.includes('Beta')) {
+            const val = $(tr).find('td').first().text().trim()
+            if (val && val !== '-') {
+              indicators.beta = cleanValue(val)
             }
-            if (text === 'PBR' || text.includes('PBR(배)')) {
-              indicators.pbr = cleanValue(nextValue) || indicators.pbr
-            }
-            if (text === 'ROE' || text.includes('ROE(%)')) {
-              indicators.roe = cleanValue(nextValue) || indicators.roe
-            }
-            if (text === 'EPS' || text.includes('EPS(원)')) {
-              indicators.eps = cleanValue(nextValue) || indicators.eps
-            }
-            if (text === 'BPS' || text.includes('BPS(원)')) {
-              indicators.bps = cleanValue(nextValue) || indicators.bps
-            }
-            if (text.includes('배당수익률') || text.includes('배당률')) {
-              indicators.dividendYield = cleanValue(nextValue) || indicators.dividendYield
-            }
-            // 추가 지표
-            if (text === 'PSR' || text.includes('PSR(배)')) {
-              indicators.psr = cleanValue(nextValue) || indicators.psr
-            }
-            if (text === 'DPS' || text.includes('DPS(원)') || text.includes('주당배당금')) {
-              indicators.dps = cleanValue(nextValue) || indicators.dps
-            }
-            if (text.includes('52주') && text.includes('최고')) {
-              indicators.week52High = cleanValue(nextValue) || indicators.week52High
-            }
-            if (text.includes('52주') && text.includes('최저')) {
-              indicators.week52Low = cleanValue(nextValue) || indicators.week52Low
-            }
-            // 추가 지표
-            if (text === 'ROA' || text.includes('ROA(%)')) {
-              indicators.roa = cleanValue(nextValue) || indicators.roa
-            }
-            if (text.includes('유동비율')) {
-              indicators.currentRatio = cleanValue(nextValue) || indicators.currentRatio
-            }
-            if (text.includes('당좌비율')) {
-              indicators.quickRatio = cleanValue(nextValue) || indicators.quickRatio
-            }
-            if (text.includes('베타') || text.includes('Beta')) {
-              indicators.beta = cleanValue(nextValue) || indicators.beta
-            }
-          })
+          }
         })
+        return false
+      }
     })
 
     return indicators
@@ -256,6 +336,8 @@ export async function scrapeFnGuideIndicators(
 
 /**
  * 기업 상세 정보 스크래핑 (FnGuide)
+ * IFRS(연결) Annual Only 테이블에서 업종/발행주식수만 추출
+ * (다른 필드는 DART/네이버가 더 정확)
  */
 export async function scrapeFnGuideCompanyInfo(
   code: string
@@ -278,56 +360,48 @@ export async function scrapeFnGuideCompanyInfo(
 
     const companyInfo: Partial<CompanyInfo> = {}
 
-    // 기업 개요 섹션에서 정보 추출
-    $('table').each((_: number, table: any) => {
-      $(table)
-        .find('tr')
-        .each((_: number, tr: any) => {
-          const th = $(tr).find('th').text().trim()
-          const td = $(tr).find('td').first().text().trim()
+    // IFRS(연결) Annual 테이블에서 발행주식수 추출 (천주 단위)
+    const financialTable = findConsolidatedAnnualTable($)
+    if (financialTable) {
+      const rows = parseTableRows($, financialTable)
+      const sharesRow = findRowByKeyword(rows, '발행주식수')
+      if (sharesRow && sharesRow.length > 0) {
+        // 마지막 유효 값 사용 (최신 연도)
+        for (let i = sharesRow.length - 1; i >= 0; i--) {
+          const val = cleanValue(sharesRow[i])
+          if (val !== '-') {
+            // 천주 단위 → 실제 주수로 변환
+            const sharesInThousands = parseFloat(val.replace(/,/g, ''))
+            if (sharesInThousands > 0) {
+              const actualShares = Math.round(sharesInThousands * 1000)
+              companyInfo.listedShares = actualShares.toLocaleString('ko-KR') + '주'
+            }
+            break
+          }
+        }
+      }
+    }
 
-          if (th.includes('대표자') || th.includes('CEO')) {
-            companyInfo.ceo = td
+    // 비교분석 테이블 (Table 8)에서 업종 정보 추출
+    $('table.us_table_ty1').each((_: number, table: any) => {
+      const $table = $(table)
+      const headerText = $table.find('thead').text()
+      // 비교분석 테이블 식별 (구분 + 종목명 + 업종 + KOSPI)
+      if (headerText.includes('구분') && headerText.includes('KOSPI')) {
+        // 헤더의 두 번째 열이 업종명 (예: "코스피 전기·전자")
+        const headerCells = $table.find('thead th, thead td')
+        if (headerCells.length >= 3) {
+          const industryText = $(headerCells[2]).text().trim()
+            .replace(/\s+/g, ' ')
+            .replace(/코스피\s*/, '')
+            .replace(/코스닥\s*/, '')
+            .trim()
+          if (industryText && industryText.length > 1) {
+            companyInfo.industry = industryText
           }
-          if (th.includes('설립일')) {
-            companyInfo.establishedDate = td
-          }
-          if (th.includes('결산월') || th.includes('결산')) {
-            companyInfo.fiscalMonth = td
-          }
-          if (th.includes('직원') || th.includes('종업원')) {
-            companyInfo.employees = td
-          }
-          if (th.includes('업종')) {
-            companyInfo.industry = td
-          }
-          if (th.includes('홈페이지') || th.includes('웹사이트')) {
-            companyInfo.website = td
-          }
-          // 추가 정보
-          if (th.includes('액면가')) {
-            companyInfo.faceValue = td
-          }
-          if (th.includes('상장일')) {
-            companyInfo.listedDate = td
-          }
-          if (th.includes('상장주식') || th.includes('발행주식')) {
-            companyInfo.listedShares = td
-          }
-          if (th.includes('외국인') || th.includes('외인')) {
-            companyInfo.foreignOwnership = td
-          }
-          if (th.includes('자본금')) {
-            companyInfo.capital = td
-          }
-          // 추가 정보
-          if (th.includes('사업내용') || th.includes('주요사업')) {
-            companyInfo.businessDescription = td
-          }
-          if (th.includes('주요제품') || th.includes('주력제품') || th.includes('대표제품')) {
-            companyInfo.mainProducts = td
-          }
-        })
+        }
+        return false
+      }
     })
 
     return companyInfo
