@@ -18,10 +18,14 @@ const SUB_TABS: { id: TrendingCategory; label: string }[] = [
 ]
 
 function formatVolume(volumeStr: string): string {
-  const num = Number(volumeStr.replace(/,/g, ''))
-  if (num >= 100_000_000) return `${(num / 100_000_000).toFixed(1)}억`
-  if (num >= 10_000) return `${(num / 10_000).toFixed(0)}만`
-  return volumeStr
+  const num = Number(String(volumeStr).replace(/,/g, ''))
+  if (num >= 100_000_000) return `${(num / 100_000_000).toFixed(1)}억주`
+  if (num >= 10_000) return `${Math.round(num / 10_000).toLocaleString()}만주`
+  return `${num.toLocaleString()}주`
+}
+
+function formatPrice(priceStr: string): string {
+  return `${priceStr}원`
 }
 
 function formatTradingDate(dateStr: string): string {
@@ -36,11 +40,9 @@ function formatTradingDate(dateStr: string): string {
 
 function StockRow({
   item,
-  showVolume,
   onClick,
 }: {
   item: TrendingStockItem
-  showVolume: boolean
   onClick?: (code: string, name: string) => void
 }) {
   const isUp = item.changeType === 'up'
@@ -49,7 +51,7 @@ function StockRow({
   return (
     <button
       onClick={() => onClick?.(item.code, item.name)}
-      className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 active:bg-gray-100 dark:active:bg-gray-700 transition-colors rounded-lg"
+      className="w-full flex items-center gap-1.5 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 active:bg-gray-100 dark:active:bg-gray-700 transition-colors rounded-lg"
     >
       {/* 순위 */}
       <span className="w-5 text-xs font-bold text-gray-400 dark:text-gray-500 text-center shrink-0">
@@ -62,13 +64,13 @@ function StockRow({
       </span>
 
       {/* 현재가 */}
-      <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 tabular-nums shrink-0">
-        {item.price}
+      <span className="text-xs font-semibold text-gray-900 dark:text-gray-100 tabular-nums shrink-0">
+        {formatPrice(item.price)}
       </span>
 
       {/* 등락률 */}
       <span
-        className={`w-16 text-right text-xs font-medium tabular-nums shrink-0 flex items-center justify-end gap-0.5 ${
+        className={`w-14 text-right text-[11px] font-medium tabular-nums shrink-0 flex items-center justify-end gap-0.5 ${
           isUp
             ? 'text-red-500 dark:text-red-400'
             : isDown
@@ -81,12 +83,10 @@ function StockRow({
         {item.changePercent}%
       </span>
 
-      {/* 거래량 (거래량 탭에서만) */}
-      {showVolume && (
-        <span className="w-14 text-right text-[10px] text-gray-500 dark:text-gray-400 tabular-nums shrink-0">
-          {formatVolume(item.volume)}
-        </span>
-      )}
+      {/* 거래량 */}
+      <span className="w-16 text-right text-[10px] text-gray-500 dark:text-gray-400 tabular-nums shrink-0">
+        {formatVolume(item.volume)}
+      </span>
     </button>
   )
 }
@@ -168,7 +168,6 @@ export default function TrendingStocksSection({ onStockClick }: TrendingStocksSe
               <StockRow
                 key={item.code}
                 item={item}
-                showVolume={activeCategory === 'volume'}
                 onClick={onStockClick}
               />
             ))}
