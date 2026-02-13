@@ -64,11 +64,13 @@ export async function GET(request: NextRequest) {
         })
       } else if (cachedTrends.length > 0) {
         console.log('[Trends] Returning cached data')
+        const cachedSource = cachedTrends[0].source || 'google_trends_rss'
         return Response.json({
           success: true,
           data: cachedTrends,
           cached: true,
           collectedAt: cachedTrends[0].collectedAt,
+          source: cachedSource,
         })
       }
     }
@@ -90,6 +92,8 @@ export async function GET(request: NextRequest) {
               keyword: trend.keyword,
               rank: trend.rank,
               country: 'south_korea',
+              traffic: trend.traffic || null,
+              source: 'google_trends_rss',
               collectedAt,
             },
           })
@@ -266,6 +270,7 @@ async function analyzeLocalNews() {
             keyword: trend.keyword,
             rank: trend.rank,
             country: trend.country,
+            source: 'local_analysis',
             collectedAt,
           },
         })
@@ -296,6 +301,7 @@ async function analyzeLocalNews() {
           keyword: trend.keyword,
           rank: trend.rank,
           country: trend.country,
+          source: 'local_analysis',
           collectedAt,
         },
       })
