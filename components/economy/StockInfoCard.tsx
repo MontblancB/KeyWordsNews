@@ -43,6 +43,14 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
   // 국내/미국 주식 구분
   const isKoreanStock = market === 'KOSPI' || market === 'KOSDAQ' || market === 'KONEX'
 
+  // 최신 4개 연도 재무제표 (period 기준 내림차순 정렬 후 최근 4개 선택, 표시는 오름차순)
+  const recentFinancials = financials
+    ? [...financials]
+        .sort((a, b) => b.period.localeCompare(a.period))
+        .slice(0, 4)
+        .reverse()
+    : []
+
   // TradingView 심볼
   // 한국 주식: KRX:종목코드
   // 미국 주식: 심볼 그대로 (AAPL, TSLA 등)
@@ -469,7 +477,7 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
               <thead>
                 <tr className="text-gray-500 dark:text-gray-400">
                   <th className="text-left py-2 pr-2">항목</th>
-                  {financials.slice(0, 4).map((f, i) => (
+                  {recentFinancials.map((f, i) => (
                     <th key={i} className="text-right py-2 px-1 whitespace-nowrap">
                       {f.period}
                     </th>
@@ -480,7 +488,7 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
                 {/* 손익계산서 */}
                 <tr className="border-t border-gray-100 dark:border-gray-700">
                   <td className="py-2 pr-2 text-gray-500 dark:text-gray-400">매출액</td>
-                  {financials.slice(0, 4).map((f, i) => (
+                  {recentFinancials.map((f, i) => (
                     <td key={i} className="text-right py-2 px-1 font-medium">
                       {formatFinancialAmount(f.revenue, isKoreanStock)}
                     </td>
@@ -490,7 +498,7 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
                   <>
                     <tr className="border-t border-gray-100 dark:border-gray-700">
                       <td className="py-2 pr-2 text-gray-500 dark:text-gray-400">매출원가</td>
-                      {financials.slice(0, 4).map((f, i) => (
+                      {recentFinancials.map((f, i) => (
                         <td key={i} className="text-right py-2 px-1 font-medium text-gray-600 dark:text-gray-400">
                           {formatFinancialAmount(f.costOfRevenue, isKoreanStock)}
                         </td>
@@ -498,7 +506,7 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
                     </tr>
                     <tr className="border-t border-gray-100 dark:border-gray-700 bg-green-50/50 dark:bg-green-900/10">
                       <td className="py-2 pr-2 text-gray-500 dark:text-gray-400">매출총이익</td>
-                      {financials.slice(0, 4).map((f, i) => (
+                      {recentFinancials.map((f, i) => (
                         <td key={i} className="text-right py-2 px-1 font-medium text-green-600 dark:text-green-400">
                           {formatFinancialAmount(f.grossProfit, isKoreanStock)}
                         </td>
@@ -506,7 +514,7 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
                     </tr>
                     <tr className="border-t border-gray-100 dark:border-gray-700 bg-green-50/50 dark:bg-green-900/10">
                       <td className="py-2 pr-2 text-gray-500 dark:text-gray-400">매출총이익률</td>
-                      {financials.slice(0, 4).map((f, i) => (
+                      {recentFinancials.map((f, i) => (
                         <td key={i} className="text-right py-2 px-1 font-medium text-green-600 dark:text-green-400">
                           {f.grossMargin}
                         </td>
@@ -516,7 +524,7 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
                 )}
                 <tr className="border-t border-gray-100 dark:border-gray-700">
                   <td className="py-2 pr-2 text-gray-500 dark:text-gray-400">영업이익</td>
-                  {financials.slice(0, 4).map((f, i) => (
+                  {recentFinancials.map((f, i) => (
                     <td key={i} className="text-right py-2 px-1 font-medium">
                       {formatFinancialAmount(f.operatingProfit, isKoreanStock)}
                     </td>
@@ -525,7 +533,7 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
                 {showAllFinancials && (
                   <tr className="border-t border-gray-100 dark:border-gray-700">
                     <td className="py-2 pr-2 text-gray-500 dark:text-gray-400">EBITDA</td>
-                    {financials.slice(0, 4).map((f, i) => (
+                    {recentFinancials.map((f, i) => (
                       <td key={i} className="text-right py-2 px-1 font-medium text-purple-600 dark:text-purple-400">
                         {formatFinancialAmount(f.ebitda, isKoreanStock)}
                       </td>
@@ -534,7 +542,7 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
                 )}
                 <tr className="border-t border-gray-100 dark:border-gray-700">
                   <td className="py-2 pr-2 text-gray-500 dark:text-gray-400">당기순이익</td>
-                  {financials.slice(0, 4).map((f, i) => (
+                  {recentFinancials.map((f, i) => (
                     <td key={i} className="text-right py-2 px-1 font-medium">
                       {formatFinancialAmount(f.netIncome, isKoreanStock)}
                     </td>
@@ -546,7 +554,7 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
                   <>
                     <tr className="border-t border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/20">
                       <td className="py-2 pr-2 text-gray-500 dark:text-gray-400">영업이익률</td>
-                      {financials.slice(0, 4).map((f, i) => (
+                      {recentFinancials.map((f, i) => (
                         <td key={i} className="text-right py-2 px-1 font-medium text-green-600 dark:text-green-400">
                           {f.operatingMargin}
                         </td>
@@ -554,7 +562,7 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
                     </tr>
                     <tr className="border-t border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/20">
                       <td className="py-2 pr-2 text-gray-500 dark:text-gray-400">순이익률</td>
-                      {financials.slice(0, 4).map((f, i) => (
+                      {recentFinancials.map((f, i) => (
                         <td key={i} className="text-right py-2 px-1 font-medium text-green-600 dark:text-green-400">
                           {f.netMargin}
                         </td>
@@ -562,7 +570,7 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
                     </tr>
                     <tr className="border-t-2 border-gray-200 dark:border-gray-600">
                       <td className="py-2 pr-2 text-gray-500 dark:text-gray-400">자산총계</td>
-                      {financials.slice(0, 4).map((f, i) => (
+                      {recentFinancials.map((f, i) => (
                         <td key={i} className="text-right py-2 px-1 font-medium">
                           {formatFinancialAmount(f.totalAssets, isKoreanStock)}
                         </td>
@@ -570,7 +578,7 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
                     </tr>
                     <tr className="border-t border-gray-100 dark:border-gray-700">
                       <td className="py-2 pr-2 text-gray-500 dark:text-gray-400">부채총계</td>
-                      {financials.slice(0, 4).map((f, i) => (
+                      {recentFinancials.map((f, i) => (
                         <td key={i} className="text-right py-2 px-1 font-medium">
                           {formatFinancialAmount(f.totalLiabilities, isKoreanStock)}
                         </td>
@@ -578,7 +586,7 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
                     </tr>
                     <tr className="border-t border-gray-100 dark:border-gray-700">
                       <td className="py-2 pr-2 text-gray-500 dark:text-gray-400">자본총계</td>
-                      {financials.slice(0, 4).map((f, i) => (
+                      {recentFinancials.map((f, i) => (
                         <td key={i} className="text-right py-2 px-1 font-medium">
                           {formatFinancialAmount(f.totalEquity, isKoreanStock)}
                         </td>
@@ -586,7 +594,7 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
                     </tr>
                     <tr className="border-t border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/20">
                       <td className="py-2 pr-2 text-gray-500 dark:text-gray-400">부채비율</td>
-                      {financials.slice(0, 4).map((f, i) => (
+                      {recentFinancials.map((f, i) => (
                         <td key={i} className="text-right py-2 px-1 font-medium text-orange-600 dark:text-orange-400">
                           {f.debtRatio}
                         </td>
@@ -594,7 +602,7 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
                     </tr>
                     <tr className="border-t-2 border-gray-200 dark:border-gray-600 bg-blue-50/50 dark:bg-blue-900/10">
                       <td className="py-2 pr-2 text-gray-500 dark:text-gray-400">영업현금흐름</td>
-                      {financials.slice(0, 4).map((f, i) => (
+                      {recentFinancials.map((f, i) => (
                         <td key={i} className="text-right py-2 px-1 font-medium text-blue-600 dark:text-blue-400">
                           {formatFinancialAmount(f.operatingCashFlow, isKoreanStock)}
                         </td>
@@ -602,7 +610,7 @@ export default function StockInfoCard({ stockInfo }: StockInfoCardProps) {
                     </tr>
                     <tr className="border-t border-gray-100 dark:border-gray-700 bg-blue-50/50 dark:bg-blue-900/10">
                       <td className="py-2 pr-2 text-gray-500 dark:text-gray-400">잉여현금흐름</td>
-                      {financials.slice(0, 4).map((f, i) => (
+                      {recentFinancials.map((f, i) => (
                         <td key={i} className="text-right py-2 px-1 font-medium text-blue-600 dark:text-blue-400">
                           {formatFinancialAmount(f.freeCashFlow, isKoreanStock)}
                         </td>
