@@ -92,6 +92,9 @@ function mobileStockToItem(stock: NaverMobileStock, rank: number): TrendingStock
   if (code === '1' || code === '2') changeType = 'up'
   else if (code === '4' || code === '5') changeType = 'down'
 
+  // 이미 부호가 포함된 값(-50, -0.17)에서 부호 제거 후 sign 적용
+  const rawChange = String(stock.compareToPreviousClosePrice).replace(/^-/, '')
+  const rawPercent = String(stock.fluctuationsRatio).replace(/^-/, '')
   const sign = changeType === 'up' ? '+' : changeType === 'down' ? '-' : ''
 
   return {
@@ -99,8 +102,8 @@ function mobileStockToItem(stock: NaverMobileStock, rank: number): TrendingStock
     code: stock.itemCode,
     name: stock.stockName,
     price: stock.closePrice,
-    change: `${sign}${stock.compareToPreviousClosePrice}`,
-    changePercent: `${sign}${stock.fluctuationsRatio}`,
+    change: `${sign}${rawChange}`,
+    changePercent: `${sign}${rawPercent}`,
     changeType,
     volume: stock.accumulatedTradingVolume,
   }
