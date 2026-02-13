@@ -235,23 +235,28 @@ interface PriceHistoryItem {
 /**
  * 장외 시간 cold start 시 직전 거래일 데이터를 수집하는 fallback
  *
- * 1. marketValue API로 시가총액 상위 30개 보통주 수집
+ * 1. marketValue API로 시가총액 상위 보통주 수집 (2페이지, 최대 80개)
  * 2. 각 종목의 price API에서 직전 거래일(변동값 != 0) 데이터 추출
- * 3. 거래량/상승률/하락률 기준으로 정렬하여 TrendingStocksData 구성
+ * 3. 거래량/상승률/하락률 기준으로 정렬하여 각 10종목씩 TrendingStocksData 구성
  */
 export async function fetchFallbackFromPriceHistory(): Promise<TrendingStocksData | null> {
   try {
-    // 시가총액 상위 50개 → 보통주만 필터링하여 30개 확보
-    const res = await fetch(
-      'https://m.stock.naver.com/api/stocks/marketValue?page=1&pageSize=50',
-      { headers: { 'User-Agent': USER_AGENT } }
+    // 시가총액 상위 종목을 2페이지(각 50개)로 수집하여 충분한 종목 확보
+    const pages = await Promise.all(
+      [1, 2].map(async (page) => {
+        const res = await fetch(
+          `https://m.stock.naver.com/api/stocks/marketValue?page=${page}&pageSize=50`,
+          { headers: { 'User-Agent': USER_AGENT } }
+        )
+        if (!res.ok) return []
+        const data = await res.json()
+        return (data.stocks || []) as MarketValueStock[]
+      })
     )
-    if (!res.ok) return null
 
-    const data = await res.json()
-    const stocks: MarketValueStock[] = (data.stocks || [])
+    const stocks: MarketValueStock[] = pages
+      .flat()
       .filter((s: MarketValueStock) => s.stockEndType === 'stock')
-      .slice(0, 30)
 
     if (stocks.length === 0) return null
 
