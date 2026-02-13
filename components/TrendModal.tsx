@@ -121,8 +121,13 @@ export default function TrendModal({ isOpen, onClose }: TrendModalProps) {
                               {trend.keyword}
                             </div>
                           </div>
-                          <span className="text-xs text-gray-400 dark:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                            클릭하여 관련 뉴스 보기 →
+                          {trend.traffic && (
+                            <span className="text-[11px] font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 px-1.5 py-0.5 rounded flex-shrink-0">
+                              {trend.traffic}
+                            </span>
+                          )}
+                          <span className="text-xs text-gray-400 dark:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                            →
                           </span>
                         </button>
                       ))}
@@ -133,9 +138,9 @@ export default function TrendModal({ isOpen, onClose }: TrendModalProps) {
                 {/* 출처 및 기준 시간 */}
                 <div className="px-6 pb-6 space-y-2">
                   <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
-                    {data?.source?.includes('trendspyg')
-                      ? '🔥 Google Trends 실시간 검색어'
-                      : '📊 최근 24시간 뉴스 키워드 분석'}
+                    {data?.source === 'google_trends_rss'
+                      ? 'Google Trends 실시간 급상승 검색어'
+                      : '최근 24시간 뉴스 키워드 분석'}
                   </p>
                   {data?.collectedAt && (
                     <p className="text-xs text-gray-400 dark:text-gray-500 text-center">

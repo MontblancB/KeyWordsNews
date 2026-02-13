@@ -18,7 +18,7 @@
 ### 배포 정보
 - **URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
-- **현재 버전**: 2.38.3
+- **현재 버전**: 2.39.0
 - **마지막 업데이트**: 2026-02-13
 
 ---
@@ -320,6 +320,12 @@ rm -rf node_modules && npm install
 ---
 
 ## 최근 업데이트
+
+### v2.39.0 (2026-02-13) - TrendNow Google Trends RSS 전환
+- 🔥 **Google Trends RSS**: TrendNow 데이터 소스를 Google Trends 실시간 급상승 검색어로 전환
+- 📊 **트래픽 배지**: 각 키워드 옆에 검색 트래픽 규모 표시 (예: 500+, 1000+)
+- 🔄 **자동 폴백**: Google Trends RSS 장애 시 기존 자체 뉴스 분석으로 자동 전환
+- 🧹 **훅 간소화**: useTrends 훅에서 pytrends 의존성 제거, 단일 API 호출로 단순화
 
 ### v2.38.3 (2026-02-13) - 잠정실적(P) 표시 추가
 - 📋 **잠정실적 마크**: 재무제표 헤더에 잠정실적(P) 표시 추가 (감사 전 수치 구분)

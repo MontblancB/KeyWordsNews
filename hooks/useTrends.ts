@@ -9,8 +9,7 @@ interface Trend {
   country: string
   collectedAt?: string
   createdAt?: string
-  traffic?: string  // trendspyg 트래픽 정보 (예: "100+", "2000+")
-  news_headline?: string  // trendspyg 뉴스 헤드라인
+  traffic?: string  // Google Trends RSS 트래픽 정보 (예: "100+", "500+")
 }
 
 interface TrendsResponse {
@@ -18,28 +17,13 @@ interface TrendsResponse {
   data: Trend[]
   cached: boolean
   collectedAt: string
-  source?: string  // 'google_trends_trendspyg_rss' 또는 로컬 분석
-  total?: number
+  source?: string  // 'google_trends_rss' 또는 'local_analysis'
 }
 
 export function useTrends() {
   return useQuery<TrendsResponse>({
-    queryKey: ['trends', 'pytrends'],
+    queryKey: ['trends', 'google'],
     queryFn: async () => {
-      // Pytrends API 먼저 시도
-      try {
-        const res = await fetch('/api/trends/pytrends')
-        if (res.ok) {
-          const data = await res.json()
-          if (data.success) {
-            return data
-          }
-        }
-      } catch (error) {
-        console.warn('Pytrends API failed, falling back to local analysis')
-      }
-
-      // Fallback: 로컬 뉴스 분석
       const res = await fetch('/api/trends/google')
       if (!res.ok) {
         const error = await res.json()

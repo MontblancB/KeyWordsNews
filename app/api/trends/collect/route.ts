@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { newsService } from '@/lib/db/news'
 import { isDatabaseEnabled } from '@/lib/config/database'
 import { realtimeCollector } from '@/lib/rss/realtime-collector'
+import { fetchGoogleTrends } from '@/lib/api/google-trends'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30 // 30초 타임아웃
@@ -30,6 +31,7 @@ const STOPWORDS = new Set([
 /**
  * POST /api/trends/collect
  * GitHub Actions Cron용 트렌드 수집 엔드포인트
+ * 1차: Google Trends RSS, 폴백: 자체 뉴스 분석
  */
 export async function POST(request: NextRequest) {
   try {
@@ -39,134 +41,68 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // 최근 24시간 뉴스에서 키워드 추출
-    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
+    let keywords: { keyword: string; rank: number; country: string }[] = []
+    let source = 'local_analysis'
 
-    const recentNews = await prisma.news.findMany({
-      where: {
-        publishedAt: { gte: oneDayAgo },
-        aiKeywords: { isEmpty: false },
-      },
-      select: {
-        aiKeywords: true,
-        publishedAt: true,
-      },
-      orderBy: { publishedAt: 'desc' },
-      take: 200,
-    })
+    // 1차 시도: Google Trends RSS
+    console.log('[Trends Collect] Trying Google Trends RSS...')
+    const googleTrends = await fetchGoogleTrends()
 
-    console.log(`[Trends Collect] Found ${recentNews.length} news with AI keywords`)
-
-    // 키워드 빈도 계산 (시간 가중치)
-    const keywordFrequency = new Map<string, number>()
-    const now = Date.now()
-
-    recentNews.forEach((news) => {
-      const hoursSincePublished =
-        (now - new Date(news.publishedAt).getTime()) / (1000 * 60 * 60)
-      const timeWeight = Math.max(0, 1 - hoursSincePublished / 24)
-
-      news.aiKeywords.forEach((keyword) => {
-        const cleaned = keyword.trim()
-        // 불용어 제외, 2글자 이상, 숫자만인 경우 제외
-        if (
-          cleaned &&
-          cleaned.length >= 2 &&
-          !STOPWORDS.has(cleaned) &&
-          !/^[0-9]+$/.test(cleaned)
-        ) {
-          const current = keywordFrequency.get(cleaned) || 0
-          keywordFrequency.set(cleaned, current + timeWeight)
-        }
-      })
-    })
-
-    // 상위 20개 추출
-    let keywords = Array.from(keywordFrequency.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 20)
-      .map(([keyword, _], index) => ({
-        keyword,
-        rank: index + 1,
+    if (googleTrends && googleTrends.length > 0) {
+      console.log(`[Trends Collect] Google Trends RSS: ${googleTrends.length} trends`)
+      keywords = googleTrends.map((t) => ({
+        keyword: t.keyword,
+        rank: t.rank,
         country: 'south_korea',
       }))
+      source = 'google_trends_rss'
+    }
 
-    // AI 키워드가 없으면 제목에서 추출
+    // 2차 폴백: 자체 뉴스 키워드 분석
     if (keywords.length === 0) {
-      console.log('[Trends Collect] No AI keywords, trying title extraction')
+      console.log('[Trends Collect] Google Trends RSS failed, falling back to local analysis...')
 
-      // newsService 또는 realtimeCollector 사용
-      let allNews: any[] = []
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
 
-      if (isDatabaseEnabled()) {
-        console.log('[Trends Collect] Using database mode')
-        allNews = await newsService.getLatestNews(500, 0)
-      } else {
-        console.log('[Trends Collect] Using realtime RSS mode')
-        allNews = await realtimeCollector.collectAllRealtime()
-      }
+      const recentNews = await prisma.news.findMany({
+        where: {
+          publishedAt: { gte: oneDayAgo },
+          aiKeywords: { isEmpty: false },
+        },
+        select: {
+          aiKeywords: true,
+          publishedAt: true,
+        },
+        orderBy: { publishedAt: 'desc' },
+        take: 200,
+      })
 
-      console.log(`[Trends Collect] Found ${allNews.length} news for title extraction`)
+      console.log(`[Trends Collect] Found ${recentNews.length} news with AI keywords`)
 
-      if (allNews.length === 0) {
-        console.warn('[Trends Collect] No news found, skipping collection')
-        return Response.json({
-          success: false,
-          error: 'No news available',
-          count: 0,
-        })
-      }
-
-      const newsWithTitles = allNews.map((news) => ({
-        title: news.title,
-        publishedAt: new Date(news.publishedAt),
-      }))
-
-      const titleKeywords = new Map<string, number>()
+      // 키워드 빈도 계산 (시간 가중치)
+      const keywordFrequency = new Map<string, number>()
       const now = Date.now()
 
-      newsWithTitles.forEach((news) => {
+      recentNews.forEach((news) => {
         const hoursSincePublished =
           (now - new Date(news.publishedAt).getTime()) / (1000 * 60 * 60)
-        const timeWeight = Math.max(0.1, 1 - hoursSincePublished / 24)
+        const timeWeight = Math.max(0, 1 - hoursSincePublished / 24)
 
-        // 제목에서 키워드 추출
-        let title = news.title
-          // 출처 제거
-          .split(/[-|]/)
-          .shift() || ''
-
-        title = title
-          // 대괄호 안 내용 제거
-          .replace(/\[.*?\]/g, ' ')
-          // 특수문자 제거
-          .replace(/[→←↑↓…·""''""「」『』【】〈〉《》]/g, ' ')
-          .replace(/[\[\]{}():;,\.!?'"]/g, ' ')
-          // 년생 패턴 유지
-          .replace(/\d{2,4}년생/g, (match: string) => match)
-          .replace(/\s+/g, ' ')
-          .trim()
-
-        const words = title
-          .split(' ')
-          .map((w: string) => w.trim())
-          .filter((w: string) => {
-            return (
-              w.length >= 2 &&
-              !STOPWORDS.has(w) &&
-              !/^[0-9]+$/.test(w) &&
-              /[가-힣]/.test(w) &&
-              !/^[^가-힣a-zA-Z0-9]+$/.test(w)
-            )
-          })
-
-        words.forEach((word: string) => {
-          const current = titleKeywords.get(word) || 0
-          titleKeywords.set(word, current + timeWeight)
+        news.aiKeywords.forEach((keyword) => {
+          const cleaned = keyword.trim()
+          if (
+            cleaned &&
+            cleaned.length >= 2 &&
+            !STOPWORDS.has(cleaned) &&
+            !/^[0-9]+$/.test(cleaned)
+          ) {
+            const current = keywordFrequency.get(cleaned) || 0
+            keywordFrequency.set(cleaned, current + timeWeight)
+          }
         })
       })
 
-      keywords = Array.from(titleKeywords.entries())
+      keywords = Array.from(keywordFrequency.entries())
         .sort((a, b) => b[1] - a[1])
         .slice(0, 20)
         .map(([keyword, _], index) => ({
@@ -175,15 +111,91 @@ export async function POST(request: NextRequest) {
           country: 'south_korea',
         }))
 
-      console.log(`[Trends Collect] Extracted ${keywords.length} keywords from titles`)
-
+      // AI 키워드가 없으면 제목에서 추출
       if (keywords.length === 0) {
-        console.warn('[Trends Collect] No keywords extracted, skipping collection')
-        return Response.json({
-          success: false,
-          error: 'No trends available',
-          count: 0,
+        console.log('[Trends Collect] No AI keywords, trying title extraction')
+
+        let allNews: any[] = []
+
+        if (isDatabaseEnabled()) {
+          allNews = await newsService.getLatestNews(500, 0)
+        } else {
+          allNews = await realtimeCollector.collectAllRealtime()
+        }
+
+        console.log(`[Trends Collect] Found ${allNews.length} news for title extraction`)
+
+        if (allNews.length === 0) {
+          console.warn('[Trends Collect] No news found, skipping collection')
+          return Response.json({
+            success: false,
+            error: 'No news available',
+            count: 0,
+          })
+        }
+
+        const newsWithTitles = allNews.map((news) => ({
+          title: news.title,
+          publishedAt: new Date(news.publishedAt),
+        }))
+
+        const titleKeywords = new Map<string, number>()
+
+        newsWithTitles.forEach((news) => {
+          const hoursSincePublished =
+            (now - new Date(news.publishedAt).getTime()) / (1000 * 60 * 60)
+          const timeWeight = Math.max(0.1, 1 - hoursSincePublished / 24)
+
+          let title = news.title
+            .split(/[-|]/)
+            .shift() || ''
+
+          title = title
+            .replace(/\[.*?\]/g, ' ')
+            .replace(/[→←↑↓…·""''""「」『』【】〈〉《》]/g, ' ')
+            .replace(/[\[\]{}():;,\.!?'"]/g, ' ')
+            .replace(/\d{2,4}년생/g, (match: string) => match)
+            .replace(/\s+/g, ' ')
+            .trim()
+
+          const words = title
+            .split(' ')
+            .map((w: string) => w.trim())
+            .filter((w: string) => {
+              return (
+                w.length >= 2 &&
+                !STOPWORDS.has(w) &&
+                !/^[0-9]+$/.test(w) &&
+                /[가-힣]/.test(w) &&
+                !/^[^가-힣a-zA-Z0-9]+$/.test(w)
+              )
+            })
+
+          words.forEach((word: string) => {
+            const current = titleKeywords.get(word) || 0
+            titleKeywords.set(word, current + timeWeight)
+          })
         })
+
+        keywords = Array.from(titleKeywords.entries())
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 20)
+          .map(([keyword, _], index) => ({
+            keyword,
+            rank: index + 1,
+            country: 'south_korea',
+          }))
+
+        console.log(`[Trends Collect] Extracted ${keywords.length} keywords from titles`)
+
+        if (keywords.length === 0) {
+          console.warn('[Trends Collect] No keywords extracted, skipping collection')
+          return Response.json({
+            success: false,
+            error: 'No trends available',
+            count: 0,
+          })
+        }
       }
     }
 
@@ -212,6 +224,7 @@ export async function POST(request: NextRequest) {
     return Response.json({
       success: true,
       count: keywords.length,
+      source,
       collectedAt: collectedAt.toISOString(),
     })
   } catch (error: any) {

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { newsService } from '@/lib/db/news'
 import { isDatabaseEnabled } from '@/lib/config/database'
 import { realtimeCollector } from '@/lib/rss/realtime-collector'
+import { fetchGoogleTrends } from '@/lib/api/google-trends'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -30,7 +31,7 @@ const STOPWORDS = new Set([
 
 /**
  * GET /api/trends/google
- * 자체 뉴스 키워드 트렌드 분석
+ * Google Trends RSS 기반 실시간 검색어 (폴백: 자체 뉴스 키워드 분석)
  */
 export async function GET(request: NextRequest) {
   try {
@@ -50,7 +51,7 @@ export async function GET(request: NextRequest) {
         take: 20,
       })
 
-      // 더미 데이터 감지 (뉴스, 한국, 정부, 경제, 사회)
+      // 더미 데이터 감지
       const DUMMY_KEYWORDS = new Set(['뉴스', '한국', '정부', '경제', '사회'])
       const isDummyData =
         cachedTrends.length === 5 &&
@@ -58,11 +59,9 @@ export async function GET(request: NextRequest) {
 
       if (isDummyData) {
         console.warn('[Trends] Dummy data detected, deleting and refreshing...')
-        // 더미 데이터 삭제
         await prisma.trend.deleteMany({
           where: { collectedAt: cachedTrends[0].collectedAt },
         })
-        // 강제 새로고침으로 진행
       } else if (cachedTrends.length > 0) {
         console.log('[Trends] Returning cached data')
         return Response.json({
@@ -74,171 +73,23 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // 최근 24시간 뉴스에서 키워드 추출
-    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
+    // 1차 시도: Google Trends RSS
+    console.log('[Trends] Trying Google Trends RSS...')
+    const googleTrends = await fetchGoogleTrends()
 
-    const recentNews = await prisma.news.findMany({
-      where: {
-        publishedAt: { gte: oneDayAgo },
-        aiKeywords: { isEmpty: false },
-      },
-      select: {
-        aiKeywords: true,
-        publishedAt: true,
-      },
-      orderBy: { publishedAt: 'desc' },
-      take: 200, // 최근 200개 뉴스
-    })
+    if (googleTrends && googleTrends.length > 0) {
+      console.log(`[Trends] Google Trends RSS: ${googleTrends.length} trends`)
 
-    console.log(`[Trends] Found ${recentNews.length} news with AI keywords in last 24h`)
-
-    // 키워드 빈도 계산 (시간 가중치 적용)
-    const keywordFrequency = new Map<string, number>()
-    const now = Date.now()
-
-    recentNews.forEach((news) => {
-      const hoursSincePublished =
-        (now - new Date(news.publishedAt).getTime()) / (1000 * 60 * 60)
-
-      // 최근 뉴스일수록 높은 가중치 (최대 24시간 전까지)
-      const timeWeight = Math.max(0, 1 - hoursSincePublished / 24)
-
-      news.aiKeywords.forEach((keyword) => {
-        const cleaned = keyword.trim()
-        // 불용어 제외, 2글자 이상, 숫자만인 경우 제외
-        if (
-          cleaned &&
-          cleaned.length >= 2 &&
-          !STOPWORDS.has(cleaned) &&
-          !/^[0-9]+$/.test(cleaned)
-        ) {
-          const current = keywordFrequency.get(cleaned) || 0
-          keywordFrequency.set(cleaned, current + timeWeight)
-        }
-      })
-    })
-
-    // 빈도순 정렬 및 상위 20개 추출
-    const sortedKeywords = Array.from(keywordFrequency.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 20)
-      .map(([keyword, score], index) => ({
-        keyword,
-        rank: index + 1,
-        country: 'south_korea',
-        score: Math.round(score * 100) / 100, // 점수 포함 (참고용)
-      }))
-
-    if (sortedKeywords.length === 0) {
-      console.log('[Trends] No AI keywords found, trying title extraction')
-
-      // newsService 또는 realtimeCollector 사용 (메인 API와 동일)
-      let allNews: any[] = []
-
-      if (isDatabaseEnabled()) {
-        console.log('[Trends] Using database mode')
-        allNews = await newsService.getLatestNews(500, 0)
-      } else {
-        console.log('[Trends] Using realtime RSS mode')
-        allNews = await realtimeCollector.collectAllRealtime()
-      }
-
-      console.log(`[Trends] Found ${allNews.length} news for title extraction`)
-
-      if (allNews.length === 0) {
-        console.error('[Trends] No news found!')
-        throw new Error('No news data available')
-      }
-
-      console.log(`[Trends] Sample news title: "${allNews[0].title}"`)
-
-      const newsWithTitles = allNews.map((news) => ({
-        title: news.title,
-        publishedAt: new Date(news.publishedAt),
-      }))
-
-      // 스마트 키워드 추출 (불용어 제외, 시간 가중치 적용)
-      const titleKeywords = new Map<string, number>()
-      const now = Date.now()
-
-      newsWithTitles.forEach((news) => {
-        const hoursSincePublished =
-          (now - new Date(news.publishedAt).getTime()) / (1000 * 60 * 60)
-        // 최근 24시간 뉴스에 높은 가중치, 그 이후는 감소
-        const timeWeight = Math.max(0.1, 1 - hoursSincePublished / 24)
-
-        // 제목에서 키워드 추출
-        let title = news.title
-          // 출처 제거 (- 출처명, | 출처명)
-          .split(/[-|]/)
-          .shift() || ''  // 첫 번째 부분만 사용 (제목 부분)
-
-        title = title
-          // 대괄호 안 내용 제거 [Oh!쎈 이슈] 등
-          .replace(/\[.*?\]/g, ' ')
-          // 특수문자를 공백으로 치환
-          .replace(/[→←↑↓…·""''""「」『』【】〈〉《》]/g, ' ')
-          .replace(/[\[\]{}():;,\.!?'"]/g, ' ')
-          // 숫자+특수문자 조합 제거 (03년생 같은 패턴은 유지)
-          .replace(/\d{2,4}년생/g, (match: string) => match)  // 년생은 유지
-          // 여러 공백을 하나로
-          .replace(/\s+/g, ' ')
-          .trim()
-
-        const words = title
-          .split(' ')
-          .map((w: string) => w.trim())
-          .filter((w: string) => {
-            // 필터링 조건:
-            // 1. 2글자 이상
-            // 2. 불용어가 아님
-            // 3. 숫자만으로 이루어지지 않음
-            // 4. 한글 포함 (영문 전용 단어 제외)
-            // 5. 특수문자만으로 이루어지지 않음
-            return (
-              w.length >= 2 &&
-              !STOPWORDS.has(w) &&
-              !/^[0-9]+$/.test(w) &&
-              /[가-힣]/.test(w) &&  // 한글 포함 필수
-              !/^[^가-힣a-zA-Z0-9]+$/.test(w)  // 특수문자만 제외
-            )
-          })
-
-        words.forEach((word: string) => {
-          const current = titleKeywords.get(word) || 0
-          titleKeywords.set(word, current + timeWeight)
-        })
-      })
-
-      const titleTrends = Array.from(titleKeywords.entries())
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 20)
-        .map(([keyword, score], index) => ({
-          keyword,
-          rank: index + 1,
-          country: 'south_korea',
-          score: Math.round(score * 100) / 100,
-        }))
-
-      console.log(
-        `[Trends] Extracted ${titleTrends.length} keywords from titles:`,
-        titleTrends.map((t) => t.keyword).join(', ')
-      )
-
-      if (titleTrends.length === 0) {
-        console.error('[Trends] No keywords extracted from titles')
-        throw new Error('No trends available - insufficient news data')
-      }
+      const collectedAt = new Date()
 
       // DB 저장
-      const collectedAt = new Date()
       await prisma.$transaction(
-        titleTrends.map((trend) =>
+        googleTrends.map((trend) =>
           prisma.trend.create({
             data: {
               keyword: trend.keyword,
               rank: trend.rank,
-              country: trend.country,
+              country: 'south_korea',
               collectedAt,
             },
           })
@@ -247,22 +98,169 @@ export async function GET(request: NextRequest) {
 
       return Response.json({
         success: true,
-        data: titleTrends.map((t) => ({
-          ...t,
+        data: googleTrends.map((t) => ({
+          keyword: t.keyword,
+          rank: t.rank,
+          country: 'south_korea',
+          traffic: t.traffic,
           collectedAt: collectedAt.toISOString(),
           createdAt: collectedAt.toISOString(),
-          id: `temp-${t.rank}`,
+          id: `gt-${t.rank}`,
         })),
         cached: false,
         collectedAt: collectedAt.toISOString(),
+        source: 'google_trends_rss',
       })
     }
 
-    // DB에 저장
-    const collectedAt = new Date()
+    // 2차 폴백: 자체 뉴스 키워드 분석
+    console.log('[Trends] Google Trends RSS failed, falling back to local analysis...')
+    return await analyzeLocalNews()
+  } catch (error: any) {
+    console.error('Trends API Error:', error)
+    return Response.json(
+      {
+        success: false,
+        error: error.message || 'Failed to fetch trends',
+      },
+      { status: 500 }
+    )
+  }
+}
 
+/**
+ * 기존 자체 뉴스 키워드 분석 (폴백용)
+ */
+async function analyzeLocalNews() {
+  // 최근 24시간 뉴스에서 키워드 추출
+  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
+
+  const recentNews = await prisma.news.findMany({
+    where: {
+      publishedAt: { gte: oneDayAgo },
+      aiKeywords: { isEmpty: false },
+    },
+    select: {
+      aiKeywords: true,
+      publishedAt: true,
+    },
+    orderBy: { publishedAt: 'desc' },
+    take: 200,
+  })
+
+  console.log(`[Trends] Found ${recentNews.length} news with AI keywords in last 24h`)
+
+  // 키워드 빈도 계산 (시간 가중치 적용)
+  const keywordFrequency = new Map<string, number>()
+  const now = Date.now()
+
+  recentNews.forEach((news) => {
+    const hoursSincePublished =
+      (now - new Date(news.publishedAt).getTime()) / (1000 * 60 * 60)
+    const timeWeight = Math.max(0, 1 - hoursSincePublished / 24)
+
+    news.aiKeywords.forEach((keyword) => {
+      const cleaned = keyword.trim()
+      if (
+        cleaned &&
+        cleaned.length >= 2 &&
+        !STOPWORDS.has(cleaned) &&
+        !/^[0-9]+$/.test(cleaned)
+      ) {
+        const current = keywordFrequency.get(cleaned) || 0
+        keywordFrequency.set(cleaned, current + timeWeight)
+      }
+    })
+  })
+
+  // 빈도순 정렬 및 상위 20개 추출
+  const sortedKeywords = Array.from(keywordFrequency.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 20)
+    .map(([keyword, score], index) => ({
+      keyword,
+      rank: index + 1,
+      country: 'south_korea',
+      score: Math.round(score * 100) / 100,
+    }))
+
+  if (sortedKeywords.length === 0) {
+    console.log('[Trends] No AI keywords found, trying title extraction')
+
+    let allNews: any[] = []
+
+    if (isDatabaseEnabled()) {
+      allNews = await newsService.getLatestNews(500, 0)
+    } else {
+      allNews = await realtimeCollector.collectAllRealtime()
+    }
+
+    console.log(`[Trends] Found ${allNews.length} news for title extraction`)
+
+    if (allNews.length === 0) {
+      throw new Error('No news data available')
+    }
+
+    const newsWithTitles = allNews.map((news) => ({
+      title: news.title,
+      publishedAt: new Date(news.publishedAt),
+    }))
+
+    const titleKeywords = new Map<string, number>()
+
+    newsWithTitles.forEach((news) => {
+      const hoursSincePublished =
+        (now - new Date(news.publishedAt).getTime()) / (1000 * 60 * 60)
+      const timeWeight = Math.max(0.1, 1 - hoursSincePublished / 24)
+
+      let title = news.title
+        .split(/[-|]/)
+        .shift() || ''
+
+      title = title
+        .replace(/\[.*?\]/g, ' ')
+        .replace(/[→←↑↓…·""''""「」『』【】〈〉《》]/g, ' ')
+        .replace(/[\[\]{}():;,\.!?'"]/g, ' ')
+        .replace(/\d{2,4}년생/g, (match: string) => match)
+        .replace(/\s+/g, ' ')
+        .trim()
+
+      const words = title
+        .split(' ')
+        .map((w: string) => w.trim())
+        .filter((w: string) => {
+          return (
+            w.length >= 2 &&
+            !STOPWORDS.has(w) &&
+            !/^[0-9]+$/.test(w) &&
+            /[가-힣]/.test(w) &&
+            !/^[^가-힣a-zA-Z0-9]+$/.test(w)
+          )
+        })
+
+      words.forEach((word: string) => {
+        const current = titleKeywords.get(word) || 0
+        titleKeywords.set(word, current + timeWeight)
+      })
+    })
+
+    const titleTrends = Array.from(titleKeywords.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 20)
+      .map(([keyword, score], index) => ({
+        keyword,
+        rank: index + 1,
+        country: 'south_korea',
+        score: Math.round(score * 100) / 100,
+      }))
+
+    if (titleTrends.length === 0) {
+      throw new Error('No trends available - insufficient news data')
+    }
+
+    const collectedAt = new Date()
     await prisma.$transaction(
-      sortedKeywords.map((trend) =>
+      titleTrends.map((trend) =>
         prisma.trend.create({
           data: {
             keyword: trend.keyword,
@@ -276,23 +274,44 @@ export async function GET(request: NextRequest) {
 
     return Response.json({
       success: true,
-      data: sortedKeywords.map((k) => ({
-        ...k,
+      data: titleTrends.map((t) => ({
+        ...t,
         collectedAt: collectedAt.toISOString(),
         createdAt: collectedAt.toISOString(),
-        id: `temp-${k.rank}`,
+        id: `temp-${t.rank}`,
       })),
       cached: false,
       collectedAt: collectedAt.toISOString(),
+      source: 'local_analysis',
     })
-  } catch (error: any) {
-    console.error('Trends API Error:', error)
-    return Response.json(
-      {
-        success: false,
-        error: error.message || 'Failed to fetch trends',
-      },
-      { status: 500 }
-    )
   }
+
+  // DB에 저장
+  const collectedAt = new Date()
+
+  await prisma.$transaction(
+    sortedKeywords.map((trend) =>
+      prisma.trend.create({
+        data: {
+          keyword: trend.keyword,
+          rank: trend.rank,
+          country: trend.country,
+          collectedAt,
+        },
+      })
+    )
+  )
+
+  return Response.json({
+    success: true,
+    data: sortedKeywords.map((k) => ({
+      ...k,
+      collectedAt: collectedAt.toISOString(),
+      createdAt: collectedAt.toISOString(),
+      id: `temp-${k.rank}`,
+    })),
+    cached: false,
+    collectedAt: collectedAt.toISOString(),
+    source: 'local_analysis',
+  })
 }
