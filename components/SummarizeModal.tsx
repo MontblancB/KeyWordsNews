@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useCallback, useState } from 'react'
+import DOMPurify from 'isomorphic-dompurify'
 import {
   DocumentTextIcon,
   ExclamationCircleIcon,
@@ -183,7 +184,7 @@ export default function SummarizeModal({
                 <div
                   className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap"
                   dangerouslySetInnerHTML={{
-                    __html: formatContent(summaryData.summary),
+                    __html: DOMPurify.sanitize(formatContent(summaryData.summary)),
                   }}
                 />
               </div>

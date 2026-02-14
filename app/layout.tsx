@@ -1,10 +1,14 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { Providers } from './providers'
+import { Analytics } from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://key-words-news.vercel.app'),
   title: '키워드뉴스 - 실시간 뉴스',
-  description: 'RSS 기반 실시간 뉴스 서비스',
+  description:
+    '실시간 긴급 속보, 카테고리별 뉴스, AI 요약, 경제 지표를 한눈에 확인하는 뉴스 서비스',
   manifest: '/manifest.json',
   themeColor: '#2563eb',
   viewport: {
@@ -12,6 +16,21 @@ export const metadata: Metadata = {
     initialScale: 1,
     maximumScale: 5,
     userScalable: true,
+  },
+  openGraph: {
+    title: '키워드뉴스 - 실시간 뉴스',
+    description:
+      '실시간 긴급 속보, 카테고리별 뉴스, AI 요약, 경제 지표를 한눈에 확인하는 뉴스 서비스',
+    url: 'https://key-words-news.vercel.app',
+    siteName: '키워드뉴스',
+    locale: 'ko_KR',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: '키워드뉴스 - 실시간 뉴스',
+    description:
+      '실시간 긴급 속보, 카테고리별 뉴스, AI 요약, 경제 지표를 한눈에 확인하는 뉴스 서비스',
   },
   icons: {
     icon: [
@@ -48,6 +67,8 @@ export default function RootLayout({
             {children}
           </div>
         </Providers>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )

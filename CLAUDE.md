@@ -18,8 +18,8 @@
 ### 배포 정보
 - **URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
-- **현재 버전**: 2.40.0
-- **마지막 업데이트**: 2026-02-13
+- **현재 버전**: 2.41.0
+- **마지막 업데이트**: 2026-02-14
 
 ---
 
@@ -321,6 +321,15 @@ rm -rf node_modules && npm install
 
 ## 최근 업데이트
 
+### v2.41.0 (2026-02-14) - 서비스 런칭 기반 정비
+- 🔒 **보안 강화**: Finnhub API 키 하드코딩 제거, Security Headers 추가 (X-Frame-Options, CSP 등)
+- 🔍 **SEO 개선**: Open Graph/Twitter Card 메타태그, robots.txt, sitemap.xml 추가
+- 📄 **법적 준수**: 이용약관(/terms), 개인정보처리방침(/privacy) 페이지 생성
+- 🛡️ **XSS 방지**: InsightModal/SummarizeModal에 DOMPurify 적용
+- ⚠️ **에러 처리**: 글로벌 Error Boundary(error.tsx) 추가
+- 📊 **모니터링**: Vercel Analytics + Speed Insights 통합
+- 🔗 **설정 페이지**: 이용약관/개인정보처리방침 링크 추가
+
 ### v2.40.0 (2026-02-13) - TrendNow Signal.bz 실시간 검색어 통합
 - 🔥 **Signal.bz 1차 소스**: 네이버 기반 실시간 검색어를 1차 데이터 소스로 추가
 - 🔄 **3단계 폴백**: Signal.bz → Google Trends RSS → 자체 뉴스 분석
@@ -549,5 +558,5 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 
 ---
 
-**Last Updated**: 2026-02-13
-**Version**: 2.38.1
+**Last Updated**: 2026-02-14
+**Version**: 2.41.0

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useCallback, useState } from 'react'
+import DOMPurify from 'isomorphic-dompurify'
 import {
   LightBulbIcon,
   ExclamationCircleIcon,
@@ -177,7 +178,7 @@ export default function InsightModal({
                 <div
                   className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap"
                   dangerouslySetInnerHTML={{
-                    __html: formatContent(insightData.insights),
+                    __html: DOMPurify.sanitize(formatContent(insightData.insights)),
                   }}
                 />
               </div>

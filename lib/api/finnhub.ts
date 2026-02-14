@@ -6,8 +6,7 @@ import type { FinancialData } from '@/types/stock'
  * 해외 주식 지수, 암호화폐, 미국 주식 재무제표 수집
  */
 
-const FINNHUB_API_KEY =
-  process.env.FINNHUB_API_KEY || 'd5kv8vhr01qt47mfomh0d5kv8vhr01qt47mfomhg'
+const FINNHUB_API_KEY = process.env.FINNHUB_API_KEY || ''
 const FINNHUB_BASE_URL = 'https://finnhub.io/api/v1'
 
 interface FinnhubQuote {

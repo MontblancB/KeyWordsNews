@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import BottomNav from '@/components/BottomNav'
 import BreakingTabSourceManager from '@/components/BreakingTabSourceManager'
 import ThemeToggle from '@/components/ThemeToggle'
@@ -51,8 +52,22 @@ export default function SettingsPage() {
             </h3>
           </div>
           <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
-            <p>버전: 2.40.0</p>
-            <p>마지막 업데이트: 2026-02-13</p>
+            <p>버전: 2.41.0</p>
+            <p>마지막 업데이트: 2026-02-14</p>
+          </div>
+          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 flex gap-4 text-xs">
+            <Link
+              href="/terms"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              이용약관
+            </Link>
+            <Link
+              href="/privacy"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              개인정보처리방침
+            </Link>
           </div>
         </div>
       </main>
