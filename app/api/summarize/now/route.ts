@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import Groq from 'groq-sdk'
 import { FEATURE_FLAGS } from '@/lib/feature-flags'
+import {
+  callGroqJSON,
+  callGeminiJSON,
+  callOpenRouterJSON,
+  runWithFallback,
+  AllProvidersFailedError,
+} from '@/lib/ai/generate'
 
 interface NewsItem {
   title: string
@@ -12,6 +18,23 @@ interface NewsItem {
 interface SummaryResult {
   summary: string
   keywords: string[]
+}
+
+// Gemini 응답 스키마 (summary + keywords)
+const GEMINI_SCHEMA = {
+  type: 'object',
+  properties: {
+    summary: {
+      type: 'string',
+      description: '뉴스 종합 요약 텍스트 (마크다운 형식)',
+    },
+    keywords: {
+      type: 'array',
+      items: { type: 'string' },
+      description: '핵심 키워드 5개',
+    },
+  },
+  required: ['summary', 'keywords'],
 }
 
 // 종합 요약 시스템 프롬프트
@@ -70,231 +93,6 @@ ${newsText}
 }`
 }
 
-// Groq API 호출 함수
-async function generateWithGroq(prompt: string): Promise<SummaryResult> {
-  const groq = new Groq({
-    apiKey: process.env.GROQ_API_KEY,
-  })
-
-  const response = await groq.chat.completions.create({
-    model: 'llama-3.3-70b-versatile',
-    messages: [
-      { role: 'system', content: SUMMARIZE_SYSTEM_PROMPT },
-      { role: 'user', content: prompt },
-    ],
-    temperature: 0.3,
-    max_tokens: 5000,  // 2500 → 5000 (응답 잘림 방지를 위해 2배 증가)
-    response_format: { type: 'json_object' },
-  })
-
-  const content = response.choices[0]?.message?.content || ''
-
-  const result = JSON.parse(content) as SummaryResult
-  if (!result.summary || !Array.isArray(result.keywords)) {
-    throw new Error('Invalid response format')
-  }
-  result.keywords = result.keywords.slice(0, 5)
-
-  return result
-}
-
-// Gemini API 호출 함수 (2nd 폴백)
-async function generateWithGemini(prompt: string): Promise<SummaryResult> {
-  const baseUrl = 'https://generativelanguage.googleapis.com/v1beta'
-  const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash'
-
-  const response = await fetch(
-    `${baseUrl}/models/${model}:generateContent`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': process.env.GEMINI_API_KEY || '',
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                text: `${SUMMARIZE_SYSTEM_PROMPT}\n\n${prompt}`,
-              },
-            ],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.3,
-          maxOutputTokens: 8000,  // 4000 → 8000 (응답 잘림 방지를 위해 2배 증가)
-          responseMimeType: 'application/json',
-          responseJsonSchema: {
-            type: 'object',
-            properties: {
-              summary: {
-                type: 'string',
-                description: '뉴스 종합 요약 텍스트 (마크다운 형식)',
-              },
-              keywords: {
-                type: 'array',
-                items: { type: 'string' },
-                description: '핵심 키워드 5개',
-              },
-            },
-            required: ['summary', 'keywords'],
-          },
-        },
-      }),
-    }
-  )
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}))
-    throw new Error(`Gemini API error: ${response.status} - ${JSON.stringify(errorData)}`)
-  }
-
-  const data = await response.json()
-
-  // 응답에서 텍스트 및 메타데이터 추출
-  const content = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
-  const finishReason = data.candidates?.[0]?.finishReason
-  const safetyRatings = data.candidates?.[0]?.safetyRatings
-  const blockReason = data.promptFeedback?.blockReason
-
-  // 디버깅
-  console.log('[Gemini] finishReason:', finishReason)
-  console.log('[Gemini] Content length:', content.length)
-  console.log('[Gemini] Content end (last 50 chars):', JSON.stringify(content.slice(-50)))
-
-  // 응답이 비어있는 경우 상세 에러
-  if (!content) {
-    let errorDetail = 'Empty response from Gemini'
-    if (blockReason) errorDetail += ` (blockReason: ${blockReason})`
-    if (finishReason) errorDetail += ` (finishReason: ${finishReason})`
-    if (safetyRatings) errorDetail += ` (safety: ${JSON.stringify(safetyRatings)})`
-    throw new Error(errorDetail)
-  }
-
-  // finishReason이 MAX_TOKENS면 응답이 잘렸을 가능성
-  const isTruncated = finishReason === 'MAX_TOKENS' || finishReason === 'LENGTH'
-
-  // JSON 파싱 헬퍼 함수
-  function tryParseJson(jsonStr: string): SummaryResult | null {
-    try {
-      return JSON.parse(jsonStr) as SummaryResult
-    } catch {
-      return null
-    }
-  }
-
-  // 잘린 JSON 복구 시도 함수
-  function tryRepairJson(jsonStr: string): SummaryResult | null {
-    // 1. summary 필드만 있어도 OK (keywords는 빈 배열로)
-    // 패턴: { "summary": "..." (잘림)
-    const summaryMatch = jsonStr.match(/"summary"\s*:\s*"((?:[^"\\]|\\.)*)/)
-    if (summaryMatch) {
-      const summaryContent = summaryMatch[1]
-      // 잘린 문자열 끝에 닫는 따옴표 추가
-      const repairedJson = `{"summary": "${summaryContent}", "keywords": []}`
-      const parsed = tryParseJson(repairedJson)
-      if (parsed) {
-        console.log('[Gemini] JSON repaired successfully')
-        return parsed
-      }
-    }
-    return null
-  }
-
-  let result: SummaryResult | null = null
-
-  // 1. 직접 파싱 시도
-  result = tryParseJson(content)
-
-  // 2. 실패 시 - 잘린 JSON 복구 시도
-  if (!result && isTruncated) {
-    console.log('[Gemini] Response truncated, attempting repair...')
-    result = tryRepairJson(content)
-  }
-
-  // 3. 여전히 실패 - 정규식으로 summary 추출
-  if (!result) {
-    console.log('[Gemini] Direct parse failed, trying regex extraction...')
-
-    // summary 필드 내용 추출 (이스케이프된 따옴표 처리)
-    const summaryRegex = /"summary"\s*:\s*"((?:[^"\\]|\\["\\nrt])*)"/
-    const match = content.match(summaryRegex)
-
-    if (match) {
-      const extractedSummary = match[1]
-        .replace(/\\n/g, '\n')
-        .replace(/\\"/g, '"')
-        .replace(/\\\\/g, '\\')
-
-      // keywords 추출 시도
-      const keywordsMatch = content.match(/"keywords"\s*:\s*\[([\s\S]*?)\]/)
-      let keywords: string[] = []
-      if (keywordsMatch) {
-        const keywordsStr = keywordsMatch[1]
-        keywords = keywordsStr.match(/"([^"]+)"/g)?.map((k: string) => k.replace(/"/g, '')) || []
-      }
-
-      result = { summary: extractedSummary, keywords }
-      console.log('[Gemini] Extracted via regex, summary length:', extractedSummary.length)
-    }
-  }
-
-  // 4. 최종 실패
-  if (!result) {
-    throw new Error(`JSON parse failed. finishReason: ${finishReason}, Content preview: "${content.slice(0, 200)}...", Content end: "${content.slice(-100)}"`)
-  }
-  if (!result.summary || !Array.isArray(result.keywords)) {
-    throw new Error('Invalid response format')
-  }
-  result.keywords = result.keywords.slice(0, 5)
-
-  return result
-}
-
-// OpenRouter API 호출 함수 (3rd 폴백)
-async function generateWithOpenRouter(prompt: string): Promise<SummaryResult> {
-  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-      'Content-Type': 'application/json',
-      'HTTP-Referer': process.env.VERCEL_APP_URL || 'http://localhost:3000',
-      'X-Title': 'KeyWordsNews',
-    },
-    body: JSON.stringify({
-      model: process.env.OPENROUTER_MODEL || 'meta-llama/llama-3.1-70b-instruct:free',
-      messages: [
-        { role: 'system', content: SUMMARIZE_SYSTEM_PROMPT },
-        { role: 'user', content: prompt },
-      ],
-      temperature: 0.3,
-      max_tokens: 5000,  // 2500 → 5000 (응답 잘림 방지를 위해 2배 증가)
-    }),
-  })
-
-  if (!response.ok) {
-    throw new Error(`OpenRouter API error: ${response.status}`)
-  }
-
-  const data = await response.json()
-  const content = data.choices?.[0]?.message?.content || ''
-
-  // JSON 추출 (마크다운 코드 블록 처리)
-  const jsonMatch = content.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) {
-    throw new Error('No JSON found in response')
-  }
-
-  const result = JSON.parse(jsonMatch[0]) as SummaryResult
-  if (!result.summary || !Array.isArray(result.keywords)) {
-    throw new Error('Invalid response format')
-  }
-  result.keywords = result.keywords.slice(0, 5)
-
-  return result
-}
-
 /**
  * POST /api/summarize/now
  *
@@ -335,91 +133,56 @@ export async function POST(request: NextRequest) {
       )
       .join('\n\n')
 
-    const prompt = createSummarizePrompt(newsText, newsList.length)
+    const userPrompt = createSummarizePrompt(newsText, newsList.length)
 
-    let result: SummaryResult
-    let provider: string = 'groq'
-
-    // 각 프로바이더의 시도 결과 및 에러 수집
-    const providerAttempts: { provider: string; error: string }[] = []
-
-    // 1차 시도: Groq
-    if (process.env.GROQ_API_KEY) {
-      try {
-        console.log('[SummarizeNow] Trying Groq...')
-        result = await generateWithGroq(prompt)
-        return NextResponse.json({
-          success: true,
-          data: result,
-          provider,
-        })
-      } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : 'Unknown error'
-        console.error('[SummarizeNow] Groq failed:', errorMsg)
-        providerAttempts.push({ provider: 'Groq', error: errorMsg })
-        // 폴백으로 진행
-      }
-    } else {
-      providerAttempts.push({ provider: 'Groq', error: 'API 키 미설정' })
+    const baseOptions = {
+      systemPrompt: SUMMARIZE_SYSTEM_PROMPT,
+      userPrompt,
+      temperature: 0.3,
+      maxTokens: 5000,
+      primaryField: 'summary',
+      logPrefix: '[SummarizeNow]',
     }
 
-    // 2차 시도: Gemini (2nd 폴백)
-    if (process.env.GEMINI_API_KEY) {
-      try {
-        console.log('[SummarizeNow] Falling back to Gemini...')
-        provider = 'gemini'
-        result = await generateWithGemini(prompt)
-        return NextResponse.json({
-          success: true,
-          data: result,
-          provider,
-        })
-      } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : 'Unknown error'
-        console.error('[SummarizeNow] Gemini failed:', errorMsg)
-        providerAttempts.push({ provider: 'Gemini', error: errorMsg })
-        // 다음 폴백으로 진행
-      }
-    } else {
-      providerAttempts.push({ provider: 'Gemini', error: 'API 키 미설정' })
-    }
-
-    // 3차 시도: OpenRouter (3rd 폴백)
-    if (process.env.OPENROUTER_API_KEY) {
-      try {
-        console.log('[SummarizeNow] Falling back to OpenRouter...')
-        provider = 'openrouter'
-        result = await generateWithOpenRouter(prompt)
-        return NextResponse.json({
-          success: true,
-          data: result,
-          provider,
-        })
-      } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : 'Unknown error'
-        console.error('[SummarizeNow] OpenRouter failed:', errorMsg)
-        providerAttempts.push({ provider: 'OpenRouter', error: errorMsg })
-      }
-    } else {
-      providerAttempts.push({ provider: 'OpenRouter', error: 'API 키 미설정' })
-    }
-
-    // 모든 프로바이더 실패 - 상세 에러 메시지 생성
-    const errorDetails = providerAttempts
-      .map((attempt) => `[${attempt.provider}] ${attempt.error}`)
-      .join(' → ')
-
-    console.error('[SummarizeNow] All providers failed:', errorDetails)
-
-    return NextResponse.json(
-      {
-        error: `모든 AI 프로바이더 실패`,
-        details: errorDetails,
-        attempts: providerAttempts
-      },
-      { status: 500 }
+    const { result, provider } = await runWithFallback<SummaryResult>(
+      [
+        {
+          provider: 'groq',
+          fn: () => callGroqJSON<SummaryResult>(baseOptions),
+        },
+        {
+          provider: 'gemini',
+          fn: () => callGeminiJSON<SummaryResult>({
+            ...baseOptions,
+            maxTokens: 8000, // Gemini는 더 넉넉하게
+            geminiSchema: GEMINI_SCHEMA,
+          }),
+        },
+        {
+          provider: 'openrouter',
+          fn: () => callOpenRouterJSON<SummaryResult>(baseOptions),
+        },
+      ],
+      '[SummarizeNow]'
     )
+
+    return NextResponse.json({
+      success: true,
+      data: result,
+      provider,
+    })
   } catch (error) {
+    if (error instanceof AllProvidersFailedError) {
+      return NextResponse.json(
+        {
+          error: '모든 AI 프로바이더 실패',
+          details: error.details,
+          attempts: error.attempts,
+        },
+        { status: 500 }
+      )
+    }
+
     console.error('[SummarizeNow API Error]', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Unknown error' },

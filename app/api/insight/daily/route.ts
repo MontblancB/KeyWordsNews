@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import Groq from 'groq-sdk'
 import { FEATURE_FLAGS } from '@/lib/feature-flags'
+import { CATEGORY_EXPERTS, CATEGORY_NAMES } from '@/lib/ai/experts'
+import {
+  callGroqJSON,
+  callGeminiJSON,
+  callOpenRouterJSON,
+  runWithFallback,
+  AllProvidersFailedError,
+} from '@/lib/ai/generate'
 
 interface NewsItem {
   title: string
@@ -14,48 +21,21 @@ interface InsightResult {
   keywords: string[]
 }
 
-// 카테고리별 전문가 설정
-const CATEGORY_EXPERTS: Record<string, { name: string; expertise: string; perspective: string }> = {
-  politics: {
-    name: '정치 전문 애널리스트',
-    expertise: '정치학 박사, 20년 경력의 정치 기자 출신으로 국내외 정치 동향, 정책 분석, 선거 전략에 정통합니다.',
-    perspective: '정치적 역학관계, 정책의 실효성, 여론의 흐름, 향후 정치 지형 변화를 중심으로 분석합니다. 각 정치 세력의 의도와 전략, 법안의 사회적 영향, 국제 정치와의 연관성을 파악합니다.',
+// Gemini 응답 스키마 (insights + keywords)
+const GEMINI_SCHEMA = {
+  type: 'object',
+  properties: {
+    insights: {
+      type: 'string',
+      description: '뉴스 분석 인사이트 텍스트 (마크다운 형식)',
+    },
+    keywords: {
+      type: 'array',
+      items: { type: 'string' },
+      description: '핵심 키워드 5개',
+    },
   },
-  economy: {
-    name: '경제 전문 애널리스트',
-    expertise: '경제학 박사, 월가 투자은행 출신으로 거시경제, 금융시장, 기업 분석에 정통합니다.',
-    perspective: '시장에 미치는 영향, 투자 시사점, 산업 트렌드, 정책의 경제적 파급효과를 중심으로 분석합니다. 숫자와 데이터를 기반으로 객관적 전망을 제시합니다.',
-  },
-  society: {
-    name: '사회 전문 애널리스트',
-    expertise: '사회학 박사, 시민단체 활동가 출신으로 사회 현상, 인구 변화, 사회 갈등에 정통합니다.',
-    perspective: '사회 구조적 원인, 시민 생활에 미치는 영향, 세대/계층 간 갈등, 사회 변화의 방향성을 중심으로 분석합니다. 약자의 관점과 공동체적 가치를 고려합니다.',
-  },
-  world: {
-    name: '국제 전문 애널리스트',
-    expertise: '국제관계학 박사, 외교부 출신으로 국제 정세, 지정학, 글로벌 이슈에 정통합니다.',
-    perspective: '국제 역학관계, 지정학적 의미, 한국에 미치는 영향, 글로벌 트렌드와의 연관성을 중심으로 분석합니다. 다양한 국가의 입장과 이해관계를 균형 있게 다룹니다.',
-  },
-  tech: {
-    name: 'IT/과학 전문 애널리스트',
-    expertise: '컴퓨터공학 박사, 실리콘밸리 테크기업 출신으로 기술 혁신, AI, 스타트업 생태계에 정통합니다.',
-    perspective: '기술의 혁신성, 시장 파괴력, 사회적 영향, 미래 기술 트렌드를 중심으로 분석합니다. 기술의 가능성과 한계, 윤리적 고려사항을 함께 다룹니다.',
-  },
-  sports: {
-    name: '스포츠 전문 애널리스트',
-    expertise: '체육학 박사, 전직 프로선수 출신으로 각종 스포츠, 선수 분석, 스포츠 산업에 정통합니다.',
-    perspective: '경기력 분석, 팀/선수의 전략, 스포츠 산업 동향, 팬 문화를 중심으로 분석합니다. 승부의 핵심 요인과 감동적인 스토리를 전달합니다.',
-  },
-  entertainment: {
-    name: '연예 전문 애널리스트',
-    expertise: '문화콘텐츠학 박사, 엔터테인먼트 업계 경력으로 K-POP, 드라마, 영화 산업에 정통합니다.',
-    perspective: '콘텐츠의 완성도, 시장 반응, 아티스트의 성장, 한류 트렌드를 중심으로 분석합니다. 대중문화의 사회적 의미와 글로벌 영향력을 다룹니다.',
-  },
-  culture: {
-    name: '문화 전문 애널리스트',
-    expertise: '문화인류학 박사, 문화재단 출신으로 예술, 전통문화, 문화정책에 정통합니다.',
-    perspective: '문화적 가치, 예술적 의미, 전통과 현대의 조화, 문화 다양성을 중심으로 분석합니다. 문화가 사회에 미치는 영향과 보존의 중요성을 강조합니다.',
-  },
+  required: ['insights', 'keywords'],
 }
 
 // 종합 탭용 멀티 전문가 시스템 프롬프트
@@ -105,19 +85,6 @@ ${expert.perspective}
 **중요: 각 항목은 1-2줄로 핵심만 축약해서 작성합니다.**
 
 답변은 반드시 JSON 형식으로 작성합니다. 쉬운 한글로 작성하고 한자어는 피합니다.`
-}
-
-// 카테고리 한글명
-const CATEGORY_NAMES: Record<string, string> = {
-  general: '종합',
-  politics: '정치',
-  economy: '경제',
-  society: '사회',
-  world: '국제',
-  tech: 'IT/과학',
-  sports: '스포츠',
-  entertainment: '연예',
-  culture: '문화',
 }
 
 // 종합 탭용 프롬프트
@@ -202,368 +169,6 @@ function createPrompt(newsText: string, newsCount: number, category: string | nu
   return createCategoryPrompt(newsText, newsCount, category)
 }
 
-// Groq API 호출 함수
-async function generateWithGroq(prompt: string, systemPrompt: string): Promise<InsightResult> {
-  const groq = new Groq({
-    apiKey: process.env.GROQ_API_KEY,
-  })
-
-  const response = await groq.chat.completions.create({
-    model: 'llama-3.3-70b-versatile',
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: prompt },
-    ],
-    temperature: 0.4,
-    max_tokens: 8000,  // 4000 → 8000 (응답 잘림 방지를 위해 2배 증가)
-    response_format: { type: 'json_object' },
-  })
-
-  const content = response.choices[0]?.message?.content || ''
-  const finishReason = response.choices[0]?.finish_reason
-
-  // 디버깅
-  console.log('[Groq] finishReason:', finishReason)
-  console.log('[Groq] Content length:', content.length)
-
-  // finishReason이 length면 응답이 잘렸을 가능성
-  const isTruncated = finishReason === 'length'
-
-  // JSON 파싱 헬퍼 함수
-  function tryParseJson(jsonStr: string): InsightResult | null {
-    try {
-      return JSON.parse(jsonStr) as InsightResult
-    } catch {
-      return null
-    }
-  }
-
-  // 잘린 JSON 복구 시도 함수
-  function tryRepairJson(jsonStr: string): InsightResult | null {
-    const insightsMatch = jsonStr.match(/"insights"\s*:\s*"((?:[^"\\]|\\.)*)/)
-    if (insightsMatch) {
-      const insightsContent = insightsMatch[1]
-      const repairedJson = `{"insights": "${insightsContent}", "keywords": []}`
-      const parsed = tryParseJson(repairedJson)
-      if (parsed) {
-        console.log('[Groq] JSON repaired successfully')
-        return parsed
-      }
-    }
-    return null
-  }
-
-  let result: InsightResult | null = null
-
-  // 1. 직접 파싱 시도
-  result = tryParseJson(content)
-
-  // 2. 실패 시 - 잘린 JSON 복구 시도
-  if (!result && isTruncated) {
-    console.log('[Groq] Response truncated, attempting repair...')
-    result = tryRepairJson(content)
-  }
-
-  // 3. 여전히 실패 - 정규식으로 insights 추출
-  if (!result) {
-    console.log('[Groq] Direct parse failed, trying regex extraction...')
-
-    const insightsRegex = /"insights"\s*:\s*"((?:[^"\\]|\\["\\nrt])*)"/
-    const match = content.match(insightsRegex)
-
-    if (match) {
-      const extractedInsights = match[1]
-        .replace(/\\n/g, '\n')
-        .replace(/\\"/g, '"')
-        .replace(/\\\\/g, '\\')
-
-      const keywordsMatch = content.match(/"keywords"\s*:\s*\[([\s\S]*?)\]/)
-      let keywords: string[] = []
-      if (keywordsMatch) {
-        const keywordsStr = keywordsMatch[1]
-        keywords = keywordsStr.match(/"([^"]+)"/g)?.map((k: string) => k.replace(/"/g, '')) || []
-      }
-
-      result = { insights: extractedInsights, keywords }
-      console.log('[Groq] Extracted via regex, insights length:', extractedInsights.length)
-    }
-  }
-
-  // 4. 최종 실패
-  if (!result) {
-    throw new Error(`JSON parse failed. finishReason: ${finishReason}, Content preview: "${content.slice(0, 200)}..."`)
-  }
-
-  if (!result.insights || !Array.isArray(result.keywords)) {
-    throw new Error('Invalid response format')
-  }
-  result.keywords = result.keywords.slice(0, 5)
-
-  return result
-}
-
-// Gemini API 호출 함수 (2nd 폴백)
-async function generateWithGemini(prompt: string, systemPrompt: string): Promise<InsightResult> {
-  const baseUrl = 'https://generativelanguage.googleapis.com/v1beta'
-  const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash'
-
-  const response = await fetch(
-    `${baseUrl}/models/${model}:generateContent`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': process.env.GEMINI_API_KEY || '',
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                text: `${systemPrompt}\n\n${prompt}`,
-              },
-            ],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.4,
-          maxOutputTokens: 8000,  // 4000 → 8000 (응답 잘림 방지를 위해 2배 증가)
-          responseMimeType: 'application/json',
-          responseJsonSchema: {
-            type: 'object',
-            properties: {
-              insights: {
-                type: 'string',
-                description: '뉴스 분석 인사이트 텍스트 (마크다운 형식)',
-              },
-              keywords: {
-                type: 'array',
-                items: { type: 'string' },
-                description: '핵심 키워드 5개',
-              },
-            },
-            required: ['insights', 'keywords'],
-          },
-        },
-      }),
-    }
-  )
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}))
-    throw new Error(`Gemini API error: ${response.status} - ${JSON.stringify(errorData)}`)
-  }
-
-  const data = await response.json()
-
-  // 응답에서 텍스트 및 메타데이터 추출
-  const content = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
-  const finishReason = data.candidates?.[0]?.finishReason
-  const safetyRatings = data.candidates?.[0]?.safetyRatings
-  const blockReason = data.promptFeedback?.blockReason
-
-  // 디버깅
-  console.log('[Gemini] finishReason:', finishReason)
-  console.log('[Gemini] Content length:', content.length)
-  console.log('[Gemini] Content end (last 50 chars):', JSON.stringify(content.slice(-50)))
-
-  // 응답이 비어있는 경우 상세 에러
-  if (!content) {
-    let errorDetail = 'Empty response from Gemini'
-    if (blockReason) errorDetail += ` (blockReason: ${blockReason})`
-    if (finishReason) errorDetail += ` (finishReason: ${finishReason})`
-    if (safetyRatings) errorDetail += ` (safety: ${JSON.stringify(safetyRatings)})`
-    throw new Error(errorDetail)
-  }
-
-  // finishReason이 MAX_TOKENS면 응답이 잘렸을 가능성
-  const isTruncated = finishReason === 'MAX_TOKENS' || finishReason === 'LENGTH'
-
-  // JSON 파싱 헬퍼 함수
-  function tryParseJson(jsonStr: string): InsightResult | null {
-    try {
-      return JSON.parse(jsonStr) as InsightResult
-    } catch {
-      return null
-    }
-  }
-
-  // 잘린 JSON 복구 시도 함수
-  function tryRepairJson(jsonStr: string): InsightResult | null {
-    const insightsMatch = jsonStr.match(/"insights"\s*:\s*"((?:[^"\\]|\\.)*)/)
-    if (insightsMatch) {
-      const insightsContent = insightsMatch[1]
-      const repairedJson = `{"insights": "${insightsContent}", "keywords": []}`
-      const parsed = tryParseJson(repairedJson)
-      if (parsed) {
-        console.log('[Gemini] JSON repaired successfully')
-        return parsed
-      }
-    }
-    return null
-  }
-
-  let result: InsightResult | null = null
-
-  // 1. 직접 파싱 시도
-  result = tryParseJson(content)
-
-  // 2. 실패 시 - 잘린 JSON 복구 시도
-  if (!result && isTruncated) {
-    console.log('[Gemini] Response truncated, attempting repair...')
-    result = tryRepairJson(content)
-  }
-
-  // 3. 여전히 실패 - 정규식으로 insights 추출
-  if (!result) {
-    console.log('[Gemini] Direct parse failed, trying regex extraction...')
-
-    const insightsRegex = /"insights"\s*:\s*"((?:[^"\\]|\\["\\nrt])*)"/
-    const match = content.match(insightsRegex)
-
-    if (match) {
-      const extractedInsights = match[1]
-        .replace(/\\n/g, '\n')
-        .replace(/\\"/g, '"')
-        .replace(/\\\\/g, '\\')
-
-      const keywordsMatch = content.match(/"keywords"\s*:\s*\[([\s\S]*?)\]/)
-      let keywords: string[] = []
-      if (keywordsMatch) {
-        const keywordsStr = keywordsMatch[1]
-        keywords = keywordsStr.match(/"([^"]+)"/g)?.map((k: string) => k.replace(/"/g, '')) || []
-      }
-
-      result = { insights: extractedInsights, keywords }
-      console.log('[Gemini] Extracted via regex, insights length:', extractedInsights.length)
-    }
-  }
-
-  // 4. 최종 실패
-  if (!result) {
-    throw new Error(`JSON parse failed. finishReason: ${finishReason}, Content preview: "${content.slice(0, 200)}...", Content end: "${content.slice(-100)}"`)
-  }
-  if (!result.insights || !Array.isArray(result.keywords)) {
-    throw new Error('Invalid response format')
-  }
-  result.keywords = result.keywords.slice(0, 5)
-
-  return result
-}
-
-// OpenRouter API 호출 함수 (3rd 폴백)
-async function generateWithOpenRouter(prompt: string, systemPrompt: string): Promise<InsightResult> {
-  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-      'Content-Type': 'application/json',
-      'HTTP-Referer': process.env.VERCEL_APP_URL || 'http://localhost:3000',
-      'X-Title': 'KeyWordsNews',
-    },
-    body: JSON.stringify({
-      model: process.env.OPENROUTER_MODEL || 'meta-llama/llama-3.1-70b-instruct:free',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: prompt },
-      ],
-      temperature: 0.4,
-      max_tokens: 8000,  // 4000 → 8000 (응답 잘림 방지를 위해 2배 증가)
-    }),
-  })
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}))
-    throw new Error(`OpenRouter API error: ${response.status} - ${JSON.stringify(errorData)}`)
-  }
-
-  const data = await response.json()
-  const content = data.choices?.[0]?.message?.content || ''
-  const finishReason = data.choices?.[0]?.finish_reason
-
-  // 디버깅
-  console.log('[OpenRouter] finishReason:', finishReason)
-  console.log('[OpenRouter] Content length:', content.length)
-
-  // finishReason이 length면 응답이 잘렸을 가능성
-  const isTruncated = finishReason === 'length'
-
-  // JSON 파싱 헬퍼 함수
-  function tryParseJson(jsonStr: string): InsightResult | null {
-    try {
-      return JSON.parse(jsonStr) as InsightResult
-    } catch {
-      return null
-    }
-  }
-
-  // 잘린 JSON 복구 시도 함수
-  function tryRepairJson(jsonStr: string): InsightResult | null {
-    const insightsMatch = jsonStr.match(/"insights"\s*:\s*"((?:[^"\\]|\\.)*)/)
-    if (insightsMatch) {
-      const insightsContent = insightsMatch[1]
-      const repairedJson = `{"insights": "${insightsContent}", "keywords": []}`
-      const parsed = tryParseJson(repairedJson)
-      if (parsed) {
-        console.log('[OpenRouter] JSON repaired successfully')
-        return parsed
-      }
-    }
-    return null
-  }
-
-  let result: InsightResult | null = null
-
-  // 1. JSON 추출 (마크다운 코드 블록 처리)
-  const jsonMatch = content.match(/\{[\s\S]*\}/)
-  if (jsonMatch) {
-    result = tryParseJson(jsonMatch[0])
-  }
-
-  // 2. 실패 시 - 잘린 JSON 복구 시도
-  if (!result && isTruncated) {
-    console.log('[OpenRouter] Response truncated, attempting repair...')
-    result = tryRepairJson(content)
-  }
-
-  // 3. 여전히 실패 - 정규식으로 insights 추출
-  if (!result) {
-    console.log('[OpenRouter] Direct parse failed, trying regex extraction...')
-
-    const insightsRegex = /"insights"\s*:\s*"((?:[^"\\]|\\["\\nrt])*)"/
-    const match = content.match(insightsRegex)
-
-    if (match) {
-      const extractedInsights = match[1]
-        .replace(/\\n/g, '\n')
-        .replace(/\\"/g, '"')
-        .replace(/\\\\/g, '\\')
-
-      const keywordsMatch = content.match(/"keywords"\s*:\s*\[([\s\S]*?)\]/)
-      let keywords: string[] = []
-      if (keywordsMatch) {
-        const keywordsStr = keywordsMatch[1]
-        keywords = keywordsStr.match(/"([^"]+)"/g)?.map((k: string) => k.replace(/"/g, '')) || []
-      }
-
-      result = { insights: extractedInsights, keywords }
-      console.log('[OpenRouter] Extracted via regex, insights length:', extractedInsights.length)
-    }
-  }
-
-  // 4. 최종 실패
-  if (!result) {
-    throw new Error(`JSON parse failed. finishReason: ${finishReason}, Content preview: "${content.slice(0, 200)}..."`)
-  }
-
-  if (!result.insights || !Array.isArray(result.keywords)) {
-    throw new Error('Invalid response format')
-  }
-  result.keywords = result.keywords.slice(0, 5)
-
-  return result
-}
-
 /**
  * POST /api/insight/daily
  *
@@ -585,7 +190,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const newsList: NewsItem[] = body.newsList
-    const category: string | null = body.category || null  // 카테고리 (종합 탭은 null)
+    const category: string | null = body.category || null
 
     // 유효성 검사
     if (!Array.isArray(newsList) || newsList.length < 5) {
@@ -595,8 +200,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 카테고리별 시스템 프롬프트 및 사용자 프롬프트 생성
-    const systemPrompt = getSystemPrompt(category)
     const categoryName = category ? (CATEGORY_NAMES[category] || category) : '종합'
     console.log(`[InsightNow] Category: ${categoryName}, News count: ${newsList.length}`)
 
@@ -608,94 +211,54 @@ export async function POST(request: NextRequest) {
       )
       .join('\n\n')
 
-    const prompt = createPrompt(newsText, newsList.length, category)
+    const systemPrompt = getSystemPrompt(category)
+    const userPrompt = createPrompt(newsText, newsList.length, category)
 
-    let result: InsightResult
-    let provider: string = 'groq'
-
-    // 각 프로바이더의 시도 결과 및 에러 수집
-    const providerAttempts: { provider: string; error: string }[] = []
-
-    // 1차 시도: Groq
-    if (process.env.GROQ_API_KEY) {
-      try {
-        console.log('[InsightNow] Trying Groq...')
-        result = await generateWithGroq(prompt, systemPrompt)
-        return NextResponse.json({
-          success: true,
-          data: result,
-          provider,
-          category: categoryName,
-        })
-      } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : 'Unknown error'
-        console.error('[InsightNow] Groq failed:', errorMsg)
-        providerAttempts.push({ provider: 'Groq', error: errorMsg })
-        // 폴백으로 진행
-      }
-    } else {
-      providerAttempts.push({ provider: 'Groq', error: 'API 키 미설정' })
+    const baseOptions = {
+      systemPrompt,
+      userPrompt,
+      temperature: 0.4,
+      maxTokens: 8000,
+      primaryField: 'insights',
+      logPrefix: '[InsightNow]',
     }
 
-    // 2차 시도: Gemini (2nd 폴백)
-    if (process.env.GEMINI_API_KEY) {
-      try {
-        console.log('[InsightNow] Falling back to Gemini...')
-        provider = 'gemini'
-        result = await generateWithGemini(prompt, systemPrompt)
-        return NextResponse.json({
-          success: true,
-          data: result,
-          provider,
-          category: categoryName,
-        })
-      } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : 'Unknown error'
-        console.error('[InsightNow] Gemini failed:', errorMsg)
-        providerAttempts.push({ provider: 'Gemini', error: errorMsg })
-        // 다음 폴백으로 진행
-      }
-    } else {
-      providerAttempts.push({ provider: 'Gemini', error: 'API 키 미설정' })
-    }
-
-    // 3차 시도: OpenRouter (3rd 폴백)
-    if (process.env.OPENROUTER_API_KEY) {
-      try {
-        console.log('[InsightNow] Falling back to OpenRouter...')
-        provider = 'openrouter'
-        result = await generateWithOpenRouter(prompt, systemPrompt)
-        return NextResponse.json({
-          success: true,
-          data: result,
-          provider,
-          category: categoryName,
-        })
-      } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : 'Unknown error'
-        console.error('[InsightNow] OpenRouter failed:', errorMsg)
-        providerAttempts.push({ provider: 'OpenRouter', error: errorMsg })
-      }
-    } else {
-      providerAttempts.push({ provider: 'OpenRouter', error: 'API 키 미설정' })
-    }
-
-    // 모든 프로바이더 실패 - 상세 에러 메시지 생성
-    const errorDetails = providerAttempts
-      .map((attempt) => `[${attempt.provider}] ${attempt.error}`)
-      .join(' → ')
-
-    console.error('[InsightNow] All providers failed:', errorDetails)
-
-    return NextResponse.json(
-      {
-        error: `모든 AI 프로바이더 실패`,
-        details: errorDetails,
-        attempts: providerAttempts
-      },
-      { status: 500 }
+    const { result, provider } = await runWithFallback<InsightResult>(
+      [
+        {
+          provider: 'groq',
+          fn: () => callGroqJSON<InsightResult>(baseOptions),
+        },
+        {
+          provider: 'gemini',
+          fn: () => callGeminiJSON<InsightResult>({ ...baseOptions, geminiSchema: GEMINI_SCHEMA }),
+        },
+        {
+          provider: 'openrouter',
+          fn: () => callOpenRouterJSON<InsightResult>(baseOptions),
+        },
+      ],
+      '[InsightNow]'
     )
+
+    return NextResponse.json({
+      success: true,
+      data: result,
+      provider,
+      category: categoryName,
+    })
   } catch (error) {
+    if (error instanceof AllProvidersFailedError) {
+      return NextResponse.json(
+        {
+          error: '모든 AI 프로바이더 실패',
+          details: error.details,
+          attempts: error.attempts,
+        },
+        { status: 500 }
+      )
+    }
+
     console.error('[Daily Insight API Error]', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Unknown error' },

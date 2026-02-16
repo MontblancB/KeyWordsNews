@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import Groq from 'groq-sdk'
 import { prisma } from '@/lib/prisma'
 import { scrapeNewsContent } from '@/lib/scraper/newsContent'
+import { getExpert, type CategoryExpert } from '@/lib/ai/experts'
+import {
+  callGroqJSON,
+  callGeminiJSON,
+  callOpenRouterJSON,
+  runWithFallback,
+  AllProvidersFailedError,
+} from '@/lib/ai/generate'
 
 interface InsightResult {
   insight: string
@@ -9,62 +16,255 @@ interface InsightResult {
   keywords?: string[]
 }
 
-// 카테고리별 전문가 설정
-const CATEGORY_EXPERTS: Record<string, { name: string; expertise: string; perspective: string }> = {
+// AI 응답에서 파싱되는 JSON 구조 (expert 필드 없음)
+interface AIInsightResponse {
+  insight: string
+  keywords?: string[]
+}
+
+// Gemini 응답 스키마
+const GEMINI_SCHEMA = {
+  type: 'object',
+  properties: {
+    insight: {
+      type: 'string',
+      description: '전문가 분석 텍스트 (마크다운 형식)',
+    },
+    keywords: {
+      type: 'array',
+      items: { type: 'string' },
+      description: '핵심 키워드 3-5개',
+    },
+  },
+  required: ['insight', 'keywords'],
+}
+
+// ── 카테고리별 분석 프레임워크 ──
+
+const CATEGORY_ANALYSIS_FRAMES: Record<string, {
+  systemAddendum: string  // 시스템 프롬프트에 추가할 분석 프레임워크
+  sections: string        // 유저 프롬프트의 분석 요청 섹션
+}> = {
   politics: {
-    name: '정치 전문 애널리스트',
-    expertise: '정치학 박사, 20년 경력의 정치 기자 출신으로 국내외 정치 동향, 정책 분석, 선거 전략에 정통합니다.',
-    perspective: '정치적 역학관계, 정책의 실효성, 여론의 흐름, 향후 정치 지형 변화를 중심으로 분석합니다.',
+    systemAddendum: `**당신의 분석 프레임워크:**
+- 정책의 수혜자와 피해자를 구분하고, 정치적 의도와 실제 효과의 차이를 분석합니다
+- 여야 역학, 국민 여론, 헌법적 함의를 고려한 다층적 분석을 제공합니다
+- 찬반 양측의 논리를 균형 있게 소개하되, 사실관계를 기반으로 평가합니다`,
+    sections: `1. **📌 이해관계 구도** (2-3줄)
+   - 이 뉴스의 배경과 맥락
+   - 주요 이해관계자(여당/야당/시민단체/관련 부처 등)의 입장
+
+2. **📊 정치적 의미 + 사회적 영향** (3-4줄)
+   - 이 뉴스가 정치 지형에 미치는 영향
+   - 일반인이 놓치기 쉬운 정치적 맥락 (선거, 당내 역학, 외교 등)
+   - 찬반 양측의 핵심 논리
+
+3. **⚡ 국민에게 미치는 영향** (2-3줄)
+   - 이 정책/사건이 시민 생활에 미치는 실질적 변화
+   - 구체적 수치와 대상 범위
+
+4. **🔮 다음 예상 수순** (1-2줄)
+   - 후속 입법/정책/정치적 행보 예측
+   - "이 뉴스를 보고 주목해야 할 후속 전개"`,
   },
+
   economy: {
-    name: '경제 전문 애널리스트',
-    expertise: '경제학 박사, 월가 투자은행 출신으로 거시경제, 금융시장, 기업 분석에 정통합니다.',
-    perspective: '시장에 미치는 영향, 투자 시사점, 산업 트렌드, 정책의 경제적 파급효과를 중심으로 분석합니다.',
+    systemAddendum: `**당신의 분석 프레임워크:**
+- 거시경제 지표와의 연관성, 산업 밸류체인 영향, 투자자 관점의 시사점을 분석합니다
+- 유사한 과거 사례와 비교하여 현재 상황의 의미를 해석합니다
+- 구체적인 수치를 근거로 분석하며, 낙관/비관 양면의 시나리오를 제시합니다`,
+    sections: `1. **📌 시장 맥락** (2-3줄)
+   - 관련 경제 지표/데이터와 연결
+   - 이 뉴스가 나온 거시경제적 배경
+
+2. **📊 산업/시장 영향 분석** (3-4줄)
+   - 관련 산업과 기업에 미치는 영향
+   - 과거 유사 사례와 비교
+   - 단기/중장기 파급 효과
+
+3. **⚡ 투자 시사점** (2-3줄)
+   - 투자자/소비자가 주목해야 할 핵심 포인트
+   - 관련 수혜/피해 업종이나 분야
+
+4. **🔮 시나리오별 전망** (1-2줄)
+   - 낙관적/비관적 시나리오의 핵심 포인트`,
   },
-  society: {
-    name: '사회 전문 애널리스트',
-    expertise: '사회학 박사, 시민단체 활동가 출신으로 사회 현상, 인구 변화, 사회 갈등에 정통합니다.',
-    perspective: '사회 구조적 원인, 시민 생활에 미치는 영향, 세대/계층 간 갈등을 중심으로 분석합니다.',
-  },
-  world: {
-    name: '국제 전문 애널리스트',
-    expertise: '국제관계학 박사, 외교부 출신으로 국제 정세, 지정학, 글로벌 이슈에 정통합니다.',
-    perspective: '국제 역학관계, 지정학적 의미, 한국에 미치는 영향을 중심으로 분석합니다.',
-  },
+
   tech: {
-    name: 'IT/과학 전문 애널리스트',
-    expertise: '컴퓨터공학 박사, 실리콘밸리 테크기업 출신으로 기술 혁신, AI, 스타트업 생태계에 정통합니다.',
-    perspective: '기술의 혁신성, 시장 파괴력, 사회적 영향, 미래 기술 트렌드를 중심으로 분석합니다.',
+    systemAddendum: `**당신의 분석 프레임워크:**
+- 기술 성숙도, 시장 파괴력, 기존 기술 대비 차별점을 분석합니다
+- 기술의 사회적 영향과 윤리적 쟁점까지 고려합니다
+- 업계 경쟁 구도와 생태계 변화를 함께 분석합니다`,
+    sections: `1. **📌 기술 배경** (2-3줄)
+   - 기존 기술과의 차이점, 기술 성숙도
+   - 이 기술/제품이 등장한 시장 맥락
+
+2. **📊 기술적 의미 + 시장 영향** (3-4줄)
+   - 혁신의 핵심과 기술적 의의
+   - 관련 기업/기관과 경쟁 구도
+   - 산업 생태계에 미치는 파급 효과
+
+3. **⚡ 실생활 변화** (2-3줄)
+   - 이 기술이 일반 사용자에게 미칠 변화
+   - 기대 효과와 우려되는 점 (윤리, 프라이버시 등)
+
+4. **🔮 기술 발전 로드맵** (1-2줄)
+   - 향후 기술 진화 방향과 상용화 시점 예측`,
   },
+
+  society: {
+    systemAddendum: `**당신의 분석 프레임워크:**
+- 사건의 구조적 원인과 시스템적 문제를 파악합니다
+- 영향받는 사람들의 관점에서 분석하며, 사회적 약자의 목소리를 고려합니다
+- 제도적 개선 방향과 시민 행동 가능성을 제시합니다`,
+    sections: `1. **📌 사건 배경과 구조적 원인** (2-3줄)
+   - 이 사건/이슈의 경위와 배경
+   - 근본적인 구조적/제도적 원인
+
+2. **📊 사회적 영향 분석** (3-4줄)
+   - 영향받는 사람들의 규모와 범위
+   - 세대/계층/지역별 차별적 영향
+   - 유사 사례와의 비교
+
+3. **⚡ 시민 생활에 미치는 영향** (2-3줄)
+   - 일반 시민이 체감할 변화
+   - 알아두면 유용한 제도/지원 정보
+
+4. **🔮 향후 전개 방향** (1-2줄)
+   - 제도적 개선 가능성과 사회적 논의 방향`,
+  },
+
+  world: {
+    systemAddendum: `**당신의 분석 프레임워크:**
+- 관련 국가/기관의 이해관계와 지정학적 맥락을 분석합니다
+- 국제 정세의 큰 그림 속에서 이 뉴스의 위치를 파악합니다
+- 한국에 미치는 직간접적 영향을 반드시 포함합니다`,
+    sections: `1. **📌 국제 정세 맥락** (2-3줄)
+   - 관련 국가/기관의 입장과 이해관계
+   - 지정학적 배경 (동맹, 갈등, 무역 등)
+
+2. **📊 국제 역학 분석** (3-4줄)
+   - 글로벌 파워 밸런스에 미치는 영향
+   - 주요국의 반응과 대응 전략
+   - 역사적 유사 사례와 비교
+
+3. **⚡ 한국에 미치는 영향** (2-3줄)
+   - 외교/안보/경제적 영향
+   - 한국 기업과 국민에게 미치는 실질적 변화
+
+4. **🔮 향후 전개 전망** (1-2줄)
+   - 국제 정세의 예상 전개 방향`,
+  },
+
+  crypto: {
+    systemAddendum: `**당신의 분석 프레임워크:**
+- 시장 심리와 기술적 분석을 결합하여 가격 동향을 해석합니다
+- 규제 환경 변화가 시장에 미치는 영향을 중점 분석합니다
+- 투기적 요소와 기술적 혁신을 구분하여 균형 잡힌 시각을 제공합니다`,
+    sections: `1. **📌 시장 맥락** (2-3줄)
+   - 가격/거래량/시가총액 등 핵심 수치
+   - 이 뉴스가 나온 시장 상황
+
+2. **📊 시장 영향 분석** (3-4줄)
+   - 가격 변동 요인과 시장 심리 분석
+   - 규제/정책 변화의 영향
+   - 관련 프로젝트/기업의 구체적 동향
+
+3. **⚡ 투자자 주목 포인트** (2-3줄)
+   - 리스크와 기회 요인
+   - 주의해야 할 점
+
+4. **🔮 시장 전망** (1-2줄)
+   - 단기/중장기 시장 방향성 예측`,
+  },
+
   sports: {
-    name: '스포츠 전문 애널리스트',
-    expertise: '체육학 박사, 전직 프로선수 출신으로 각종 스포츠, 선수 분석, 스포츠 산업에 정통합니다.',
-    perspective: '경기력 분석, 팀/선수의 전략, 스포츠 산업 동향을 중심으로 분석합니다.',
+    systemAddendum: `**당신의 분석 프레임워크:**
+- 경기력과 전술을 전문적으로 분석합니다
+- 선수/팀의 시즌 맥락에서 이 뉴스의 의미를 평가합니다
+- 스포츠 산업과 팬 문화의 관점도 함께 다룹니다`,
+    sections: `1. **📌 배경/맥락** (2-3줄)
+   - 경기/사건의 배경과 시즌 맥락
+   - 관련 선수/팀의 최근 성적과 상황
+
+2. **📊 전문가 분석** (3-4줄)
+   - 경기력/전술 분석 또는 사건의 핵심 의미
+   - 기록/데이터 기반의 객관적 평가
+   - 팀/선수/리그에 미치는 영향
+
+3. **⚡ 핵심 시사점** (1-2줄)
+   - 팬이나 관계자가 주목해야 할 포인트
+
+4. **🔮 향후 전망** (1-2줄)
+   - 시즌/대회/커리어 측면의 전개 예측`,
   },
+
   entertainment: {
-    name: '연예 전문 애널리스트',
-    expertise: '문화콘텐츠학 박사, 엔터테인먼트 업계 경력으로 K-POP, 드라마, 영화 산업에 정통합니다.',
-    perspective: '콘텐츠의 완성도, 시장 반응, 아티스트의 성장, 한류 트렌드를 중심으로 분석합니다.',
+    systemAddendum: `**당신의 분석 프레임워크:**
+- 콘텐츠의 완성도와 시장 반응을 전문적으로 분석합니다
+- 한류 트렌드와 글로벌 엔터테인먼트 시장에서의 의미를 파악합니다
+- 대중문화의 사회적 영향력도 함께 다룹니다`,
+    sections: `1. **📌 배경/맥락** (2-3줄)
+   - 작품/활동의 배경과 업계 맥락
+   - 관련 아티스트/기업의 최근 활동
+
+2. **📊 전문가 분석** (3-4줄)
+   - 콘텐츠/활동의 핵심 의미와 시장 반응
+   - 성과 데이터 (시청률, 흥행, 음원 차트 등)
+   - 업계 트렌드와의 연관성
+
+3. **⚡ 핵심 시사점** (1-2줄)
+   - 업계 관계자나 팬이 주목해야 할 포인트
+
+4. **🔮 향후 전망** (1-2줄)
+   - 후속 활동/프로젝트 전개 예측`,
   },
+
   culture: {
-    name: '문화 전문 애널리스트',
-    expertise: '문화인류학 박사, 문화재단 출신으로 예술, 전통문화, 문화정책에 정통합니다.',
-    perspective: '문화적 가치, 예술적 의미, 전통과 현대의 조화를 중심으로 분석합니다.',
-  },
-  general: {
-    name: '수석 뉴스 애널리스트',
-    expertise: '다양한 분야에 정통한 멀티 분야 전문가로, 복잡한 이슈를 쉽게 설명하는 능력이 뛰어납니다.',
-    perspective: '다양한 관점에서 이슈의 본질을 파악하고 독자에게 균형 잡힌 시각을 제공합니다.',
+    systemAddendum: `**당신의 분석 프레임워크:**
+- 문화적 가치와 예술적 의미를 심층 분석합니다
+- 전통과 현대의 조화, 문화 다양성의 관점에서 평가합니다
+- 문화가 사회에 미치는 영향과 보존의 중요성을 강조합니다`,
+    sections: `1. **📌 문화적 배경** (2-3줄)
+   - 행사/작품의 배경과 문화적 맥락
+   - 역사적 의미나 문화사적 위치
+
+2. **📊 전문가 분석** (3-4줄)
+   - 문화적/예술적 의의와 가치 평가
+   - 사회적 영향과 의미
+   - 관련 문화 트렌드와의 연관성
+
+3. **⚡ 참여/관람 정보** (1-2줄)
+   - 일반인이 알면 유용한 정보
+
+4. **🔮 향후 전망** (1-2줄)
+   - 문화 분야의 발전 방향`,
   },
 }
 
-// 전문가 선택 함수
-function getExpert(category: string): { name: string; expertise: string; perspective: string } {
-  return CATEGORY_EXPERTS[category] || CATEGORY_EXPERTS['general']
-}
+// 기본 분석 섹션 (카테고리 매칭 안 될 때)
+const DEFAULT_SECTIONS = `1. **📌 배경/맥락** (2-3줄)
+   - 이 뉴스가 나온 배경과 맥락
+   - 관련 이해관계자의 입장
 
-// 시스템 프롬프트 생성
-function getSystemPrompt(expert: { name: string; expertise: string; perspective: string }): string {
+2. **📊 전문가 분석** (3-4줄)
+   - 이 뉴스의 핵심 의미와 영향
+   - 일반인이 놓치기 쉬운 중요한 점
+   - 다양한 관점에서의 평가
+
+3. **⚡ 핵심 시사점** (2-3줄)
+   - 독자가 반드시 알아야 할 핵심 포인트
+   - 이 뉴스가 나에게 어떤 영향을 주는가
+
+4. **🔮 전망** (1-2줄)
+   - 향후 예상되는 전개 방향`
+
+// ── 프롬프트 생성 ──
+
+function buildInsightSystemPrompt(expert: CategoryExpert, category: string): string {
+  const frame = CATEGORY_ANALYSIS_FRAMES[category]
+  const frameworkText = frame?.systemAddendum || ''
+
   return `당신은 **${expert.name}**입니다.
 
 **당신의 전문성:**
@@ -72,21 +272,22 @@ ${expert.expertise}
 
 **당신의 분석 관점:**
 ${expert.perspective}
-
+${frameworkText ? `\n${frameworkText}` : ''}
 **분석 원칙:**
 - 해당 분야의 전문 지식을 바탕으로 깊이 있는 분석을 제공합니다
-- **오직 한국어로만 작성** (영어, 중국어, 일본어 등 외국어 단어 절대 사용 금지)
-- 외래어나 영어 약어는 반드시 한글로 풀어서 설명 (예: AI→인공지능, GDP→국내총생산)
-- 일반인도 이해할 수 있는 쉬운 순우리말로 설명합니다
-- 한자어 대신 일상 표현을 사용합니다
+- 한국어로 작성하며, 영어 약어는 한글로 풀어씁니다 (예: AI→인공지능, GDP→국내총생산)
+- 일상적으로 통용되는 한자어는 자연스럽게 사용합니다
+- 전문 용어는 괄호 안에 쉬운 설명을 덧붙입니다
 - 구체적인 수치와 사실을 근거로 분석합니다
-- 각 항목은 1-2줄로 핵심만 축약해서 작성합니다
+- 찬반 또는 다양한 시각이 존재한다면 균형 있게 소개합니다
 
 답변은 반드시 JSON 형식으로 작성합니다.`
 }
 
-// 사용자 프롬프트 생성
-function createPrompt(title: string, content: string, expert: { name: string }): string {
+function buildInsightUserPrompt(title: string, content: string, expert: CategoryExpert, category: string): string {
+  const frame = CATEGORY_ANALYSIS_FRAMES[category]
+  const sections = frame?.sections || DEFAULT_SECTIONS
+
   return `다음 뉴스에 대해 ${expert.name}로서 전문적인 의견을 제공해주세요.
 
 **뉴스 제목:** ${title}
@@ -98,279 +299,23 @@ ${content}
 
 **분석 요청:**
 
-1. **📌 배경/맥락** (1-2줄)
-   - 이 뉴스가 나온 배경과 맥락
+${sections}
 
-2. **📊 전문가 분석** (2-3줄)
-   - 이 뉴스의 핵심 의미와 영향
-   - 일반인이 놓치기 쉬운 중요한 점
+5. **💬 So What? - 독자를 위한 핵심 메시지** (1-2줄)
+   - "이 뉴스가 나에게 어떤 영향을 주는가?"
+   - "무엇을 주목하거나 준비해야 하는가?"
 
-3. **⚡ 핵심 시사점** (1-2줄)
-   - 독자가 반드시 알아야 할 핵심 포인트
-
-4. **🔮 전망** (1줄)
-   - 향후 예상되는 전개 방향
-
-**중요 지침:**
-- **오직 한국어로만 작성** (영어나 외국어 단어 절대 금지)
-- 외래어/영어 약어는 한글로 풀어쓰기 (예: CEO→최고경영자, AI→인공지능)
-- 쉬운 순우리말 사용 (한자어 대신 일상 표현)
-- 구체적인 수치와 사실을 근거로 분석
-- 각 항목은 지정된 줄 수로 핵심만 축약
+**키워드 선정 기준:**
+- 이 뉴스의 핵심 쟁점이나 개념을 나타내는 단어 3-5개
+- 관련 뉴스를 더 찾을 때 검색어로 유용한 단어
+- 너무 일반적인 단어(정부, 국회, 기업 등) 대신 구체적인 키워드 선택
+- 한글로만 작성
 
 **출력 형식 (반드시 JSON):**
 {
-  "insight": "📌 **배경/맥락**\\n• (1-2줄)\\n\\n📊 **전문가 분석**\\n• (2-3줄)\\n\\n⚡ **핵심 시사점**\\n• (1-2줄)\\n\\n🔮 **전망**\\n• (1줄)",
+  "insight": "📌 **[섹션 제목]**\\n• (분석 내용)\\n\\n📊 **[섹션 제목]**\\n• (분석 내용)\\n\\n⚡ **[섹션 제목]**\\n• (분석 내용)\\n\\n🔮 **[섹션 제목]**\\n• (분석 내용)\\n\\n💬 **So What?**\\n• (독자를 위한 핵심 메시지)",
   "keywords": ["핵심키워드1", "핵심키워드2", "핵심키워드3"]
-}
-
-**키워드 선정 기준:**
-- 이 뉴스의 핵심 개념이나 쟁점을 나타내는 단어 3-5개
-- 검색이나 분류에 유용한 단어
-- 한글로만 작성 (외국어 금지)`
-}
-
-// Groq API 호출
-async function generateWithGroq(prompt: string, systemPrompt: string): Promise<InsightResult> {
-  const groq = new Groq({
-    apiKey: process.env.GROQ_API_KEY,
-  })
-
-  const response = await groq.chat.completions.create({
-    model: 'llama-3.3-70b-versatile',
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: prompt },
-    ],
-    temperature: 0.4,
-    max_tokens: 2000,
-    response_format: { type: 'json_object' },
-  })
-
-  const content = response.choices[0]?.message?.content || ''
-
-  let result: { insight: string; keywords?: string[] } | null = null
-
-  try {
-    result = JSON.parse(content)
-  } catch {
-    // 정규식으로 insight 추출 시도
-    const insightMatch = content.match(/"insight"\s*:\s*"((?:[^"\\]|\\["\\nrt])*)"/)
-    if (insightMatch) {
-      const extractedInsight = insightMatch[1]
-        .replace(/\\n/g, '\n')
-        .replace(/\\"/g, '"')
-        .replace(/\\\\/g, '\\')
-      result = { insight: extractedInsight }
-    }
-  }
-
-  if (!result || !result.insight) {
-    throw new Error('Failed to parse insight from response')
-  }
-
-  return {
-    insight: result.insight,
-    expert: '',
-    keywords: result.keywords || []
-  }
-}
-
-// Gemini API 호출
-async function generateWithGemini(prompt: string, systemPrompt: string): Promise<InsightResult> {
-  const baseUrl = 'https://generativelanguage.googleapis.com/v1beta'
-  const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash'
-
-  const response = await fetch(
-    `${baseUrl}/models/${model}:generateContent`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': process.env.GEMINI_API_KEY || '',
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [{ text: `${systemPrompt}\n\n${prompt}` }],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.4,
-          maxOutputTokens: 2000,
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: 'object',
-            properties: {
-              insight: { type: 'string' },
-              keywords: {
-                type: 'array',
-                items: { type: 'string' },
-                description: '핵심 키워드 3-5개'
-              }
-            },
-            required: ['insight', 'keywords'],
-          },
-        },
-      }),
-    }
-  )
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}))
-    throw new Error(`Gemini API error: ${response.status} - ${JSON.stringify(errorData)}`)
-  }
-
-  const data = await response.json()
-  const content = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
-
-  // 디버깅: 실제 응답 로깅
-  console.log('[NewsInsight/Gemini] Response preview:', content.substring(0, 200))
-
-  // 강력한 JSON 파싱 로직
-  let result: { insight: string; keywords?: string[] } | null = null
-
-  // 1. 직접 파싱 시도
-  try {
-    result = JSON.parse(content)
-  } catch {
-    // 파싱 실패, 다음 단계로
-  }
-
-  // 2. 개행 문자 이스케이프 후 파싱
-  if (!result) {
-    try {
-      const cleanContent = content
-        .replace(/\n/g, '\\n')
-        .replace(/\r/g, '\\r')
-        .replace(/\t/g, '\\t')
-      result = JSON.parse(cleanContent)
-    } catch {
-      // 여전히 실패, 다음 단계로
-    }
-  }
-
-  // 3. 정규식으로 insight 추출 (더 강력한 패턴)
-  if (!result) {
-    console.log('[NewsInsight/Gemini] Trying regex extraction...')
-
-    // insight 추출 ([\s\S]는 .과 달리 개행 문자도 포함)
-    const insightMatch = content.match(/"insight"\s*:\s*"((?:[^"\\]|\\[\s\S])*)"/)
-
-    if (insightMatch) {
-      let extractedInsight = insightMatch[1]
-        .replace(/\\n/g, '\n')
-        .replace(/\\"/g, '"')
-        .replace(/\\t/g, '\t')
-        .replace(/\\r/g, '\r')
-        .replace(/\\\\/g, '\\')
-
-      // keywords 추출
-      const keywordsMatch = content.match(/"keywords"\s*:\s*\[([\s\S]*?)\]/)
-      let keywords: string[] = []
-      if (keywordsMatch) {
-        const keywordsStr = keywordsMatch[1]
-        const matches = keywordsStr.match(/"([^"]+)"/g)
-        if (matches) {
-          keywords = matches.map((k: string) => k.replace(/"/g, ''))
-        }
-      }
-
-      result = { insight: extractedInsight, keywords }
-      console.log('[NewsInsight/Gemini] Extracted via regex')
-    }
-  }
-
-  // 4. 더 공격적인 추출 시도 (JSON 구조 무시)
-  if (!result) {
-    console.log('[NewsInsight/Gemini] Trying aggressive extraction...')
-
-    // { 와 } 사이의 모든 내용을 찾아서 파싱 시도
-    const jsonMatch = content.match(/\{[\s\S]*\}/)
-    if (jsonMatch) {
-      try {
-        // 중첩된 이스케이프 제거
-        let jsonStr = jsonMatch[0]
-          .replace(/\\\\n/g, '\\n')  // \\n → \n
-          .replace(/\\\\"/g, '\\"')  // \\" → \"
-
-        result = JSON.parse(jsonStr)
-      } catch {
-        // 여전히 실패
-      }
-    }
-  }
-
-  if (!result || !result.insight) {
-    console.error('[NewsInsight/Gemini] Failed to parse. Content:', content)
-    throw new Error('Failed to parse insight from Gemini response')
-  }
-
-  return {
-    insight: result.insight,
-    expert: '',
-    keywords: result.keywords || []
-  }
-}
-
-// OpenRouter API 호출
-async function generateWithOpenRouter(prompt: string, systemPrompt: string): Promise<InsightResult> {
-  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-      'Content-Type': 'application/json',
-      'HTTP-Referer': process.env.VERCEL_APP_URL || 'http://localhost:3000',
-      'X-Title': 'KeyWordsNews',
-    },
-    body: JSON.stringify({
-      model: process.env.OPENROUTER_MODEL || 'meta-llama/llama-3.1-70b-instruct:free',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: prompt },
-      ],
-      temperature: 0.4,
-      max_tokens: 2000,
-    }),
-  })
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}))
-    throw new Error(`OpenRouter API error: ${response.status} - ${JSON.stringify(errorData)}`)
-  }
-
-  const data = await response.json()
-  const content = data.choices?.[0]?.message?.content || ''
-
-  let result: { insight: string; keywords?: string[] } | null = null
-
-  // JSON 추출 (마크다운 코드 블록 처리)
-  const jsonMatch = content.match(/\{[\s\S]*\}/)
-  if (jsonMatch) {
-    try {
-      result = JSON.parse(jsonMatch[0])
-    } catch {
-      // 정규식으로 추출
-      const insightMatch = content.match(/"insight"\s*:\s*"((?:[^"\\]|\\["\\nrt])*)"/)
-      if (insightMatch) {
-        const extractedInsight = insightMatch[1]
-          .replace(/\\n/g, '\n')
-          .replace(/\\"/g, '"')
-          .replace(/\\\\/g, '\\')
-        result = { insight: extractedInsight }
-      }
-    }
-  }
-
-  if (!result || !result.insight) {
-    throw new Error('Failed to parse insight from OpenRouter response')
-  }
-
-  return {
-    insight: result.insight,
-    expert: '',
-    keywords: result.keywords || []
-  }
+}`
 }
 
 /**
@@ -448,137 +393,75 @@ export async function POST(request: NextRequest) {
 
     // 전문가 선택 및 프롬프트 생성
     const expert = getExpert(newsCategory)
-    const systemPrompt = getSystemPrompt(expert)
-    const prompt = createPrompt(newsTitle, newsContent, expert)
+    const systemPrompt = buildInsightSystemPrompt(expert, newsCategory)
+    const userPrompt = buildInsightUserPrompt(newsTitle, newsContent, expert, newsCategory)
 
-    let result: InsightResult
-    let provider: string = 'groq'
-    const providerAttempts: { provider: string; error: string }[] = []
-
-    // 1차 시도: Groq
-    if (process.env.GROQ_API_KEY) {
-      try {
-        console.log('[NewsInsight] Trying Groq...')
-        result = await generateWithGroq(prompt, systemPrompt)
-        result.expert = expert.name
-
-        // DB에 저장 (newsId가 있는 경우)
-        if (newsId && news) {
-          await prisma.news.update({
-            where: { id: newsId },
-            data: {
-              aiInsight: result.insight,
-              aiInsightExpert: expert.name,
-              aiInsightKeywords: result.keywords || [],
-              aiInsightAt: new Date(),
-              aiInsightProvider: 'groq',
-            },
-          }).catch((err: unknown) => console.error('[NewsInsight] DB save failed:', err))
-        }
-
-        return NextResponse.json({
-          success: true,
-          data: result,
-          provider,
-          cached: false,
-        })
-      } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : 'Unknown error'
-        console.error('[NewsInsight] Groq failed:', errorMsg)
-        providerAttempts.push({ provider: 'Groq', error: errorMsg })
-      }
-    } else {
-      providerAttempts.push({ provider: 'Groq', error: 'API 키 미설정' })
+    const baseOptions = {
+      systemPrompt,
+      userPrompt,
+      temperature: 0.4,
+      maxTokens: 3000,
+      primaryField: 'insight',
+      logPrefix: '[NewsInsight]',
     }
 
-    // 2차 시도: Gemini
-    if (process.env.GEMINI_API_KEY) {
-      try {
-        console.log('[NewsInsight] Falling back to Gemini...')
-        provider = 'gemini'
-        result = await generateWithGemini(prompt, systemPrompt)
-        result.expert = expert.name
-
-        if (newsId && news) {
-          await prisma.news.update({
-            where: { id: newsId },
-            data: {
-              aiInsight: result.insight,
-              aiInsightExpert: expert.name,
-              aiInsightKeywords: result.keywords || [],
-              aiInsightAt: new Date(),
-              aiInsightProvider: 'gemini',
-            },
-          }).catch((err: unknown) => console.error('[NewsInsight] DB save failed:', err))
-        }
-
-        return NextResponse.json({
-          success: true,
-          data: result,
-          provider,
-          cached: false,
-        })
-      } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : 'Unknown error'
-        console.error('[NewsInsight] Gemini failed:', errorMsg)
-        providerAttempts.push({ provider: 'Gemini', error: errorMsg })
-      }
-    } else {
-      providerAttempts.push({ provider: 'Gemini', error: 'API 키 미설정' })
-    }
-
-    // 3차 시도: OpenRouter
-    if (process.env.OPENROUTER_API_KEY) {
-      try {
-        console.log('[NewsInsight] Falling back to OpenRouter...')
-        provider = 'openrouter'
-        result = await generateWithOpenRouter(prompt, systemPrompt)
-        result.expert = expert.name
-
-        if (newsId && news) {
-          await prisma.news.update({
-            where: { id: newsId },
-            data: {
-              aiInsight: result.insight,
-              aiInsightExpert: expert.name,
-              aiInsightKeywords: result.keywords || [],
-              aiInsightAt: new Date(),
-              aiInsightProvider: 'openrouter',
-            },
-          }).catch((err: unknown) => console.error('[NewsInsight] DB save failed:', err))
-        }
-
-        return NextResponse.json({
-          success: true,
-          data: result,
-          provider,
-          cached: false,
-        })
-      } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : 'Unknown error'
-        console.error('[NewsInsight] OpenRouter failed:', errorMsg)
-        providerAttempts.push({ provider: 'OpenRouter', error: errorMsg })
-      }
-    } else {
-      providerAttempts.push({ provider: 'OpenRouter', error: 'API 키 미설정' })
-    }
-
-    // 모든 프로바이더 실패
-    const errorDetails = providerAttempts
-      .map((attempt) => `[${attempt.provider}] ${attempt.error}`)
-      .join(' → ')
-
-    console.error('[NewsInsight] All providers failed:', errorDetails)
-
-    return NextResponse.json(
-      {
-        error: '모든 AI 프로바이더 실패',
-        details: errorDetails,
-        attempts: providerAttempts,
-      },
-      { status: 500 }
+    // Groq → Gemini → OpenRouter 폴백 실행
+    const { result: aiResult, provider } = await runWithFallback<AIInsightResponse>(
+      [
+        {
+          provider: 'groq',
+          fn: () => callGroqJSON<AIInsightResponse>(baseOptions),
+        },
+        {
+          provider: 'gemini',
+          fn: () => callGeminiJSON<AIInsightResponse>({ ...baseOptions, geminiSchema: GEMINI_SCHEMA }),
+        },
+        {
+          provider: 'openrouter',
+          fn: () => callOpenRouterJSON<AIInsightResponse>(baseOptions),
+        },
+      ],
+      '[NewsInsight]'
     )
+
+    const result: InsightResult = {
+      insight: aiResult.insight,
+      expert: expert.name,
+      keywords: aiResult.keywords || [],
+    }
+
+    // DB에 저장 (newsId가 있는 경우)
+    if (newsId && news) {
+      await prisma.news.update({
+        where: { id: newsId },
+        data: {
+          aiInsight: result.insight,
+          aiInsightExpert: expert.name,
+          aiInsightKeywords: result.keywords || [],
+          aiInsightAt: new Date(),
+          aiInsightProvider: provider,
+        },
+      }).catch((err: unknown) => console.error('[NewsInsight] DB save failed:', err))
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: result,
+      provider,
+      cached: false,
+    })
   } catch (error) {
+    if (error instanceof AllProvidersFailedError) {
+      return NextResponse.json(
+        {
+          error: '모든 AI 프로바이더 실패',
+          details: error.details,
+          attempts: error.attempts,
+        },
+        { status: 500 }
+      )
+    }
+
     console.error('[NewsInsight API Error]', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Unknown error' },

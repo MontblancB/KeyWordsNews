@@ -18,7 +18,7 @@
 ### 배포 정보
 - **URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
-- **현재 버전**: 2.42.0
+- **현재 버전**: 2.43.0
 - **마지막 업데이트**: 2026-02-16
 
 ---
@@ -320,6 +320,16 @@ rm -rf node_modules && npm install
 ---
 
 ## 최근 업데이트
+
+### v2.43.0 (2026-02-16) - AI 코드 리팩토링 & 전문가 의견 프롬프트 개선
+- 🏗️ **AI 호출 로직 통합**: 3개 API 라우트(news/insight, insight/daily, summarize/now)에 중복된 Groq/Gemini/OpenRouter 호출 함수를 `lib/ai/generate.ts`로 통합
+- 📦 **전문가 상수 공유**: CATEGORY_EXPERTS, CATEGORY_NAMES를 `lib/ai/experts.ts`로 추출하여 단일 소스 관리
+- 🧠 **전문가 의견 카테고리별 분석 프레임**: 정치(정책영향), 경제(시장영향), IT(혁신분석) 등 8개 카테고리별 특화 분석 구조 적용
+- 💡 **"So What?" 프레임 추가**: 모든 전문가 의견에 "왜 중요한가" 실용적 영향 섹션 추가
+- 🇰🇷 **전문가 의견 한국어 규칙 현실화**: 순우리말 강제 제거, 통용 한자어 자연스럽게 허용
+- 🔑 **키워드 추출 기준 강화**: 구체적 선정 기준 명시 (이슈 키워드 우선, 검색 유용성 고려)
+- 📈 **토큰 한도 확대**: max_tokens 2000 → 3000으로 증가 (더 풍부한 분석)
+- 🔧 **JSON 파싱/복구 통합**: 5단계 파싱 복구 로직을 공유 유틸리티로 통합 (tryParseJson → tryRepairJson → tryRegexExtract → tryAggressiveExtract)
 
 ### v2.42.0 (2026-02-16) - AI 요약 프롬프트 품질 개선
 - 🧠 **카테고리별 요약 초점**: 정치/경제/IT/사회/국제/암호화폐/스포츠/연예/문화 등 9개 카테고리별 특화 요약 지침 적용
