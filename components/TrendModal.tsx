@@ -103,7 +103,7 @@ export default function TrendModal({ isOpen, onClose }: TrendModalProps) {
                 <div className="px-6 pb-6">
                   {isLoading ? (
                     <div className="space-y-1 max-h-[60vh] overflow-y-auto">
-                      {Array.from({ length: 10 }).map((_, index) => (
+                      {Array.from({ length: 20 }).map((_, index) => (
                         <div
                           key={index}
                           className="w-full flex items-center gap-3 p-3 rounded-lg"
@@ -117,6 +117,18 @@ export default function TrendModal({ isOpen, onClose }: TrendModalProps) {
                     <div className="py-12 text-center">
                       <p className="text-sm text-red-600 dark:text-red-400">
                         트렌드를 불러오는데 실패했습니다.
+                      </p>
+                      <button
+                        onClick={() => refetch()}
+                        className="mt-4 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                      >
+                        다시 시도
+                      </button>
+                    </div>
+                  ) : !data?.data?.length ? (
+                    <div className="py-12 text-center">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        현재 트렌드 데이터가 없습니다.
                       </p>
                       <button
                         onClick={() => refetch()}

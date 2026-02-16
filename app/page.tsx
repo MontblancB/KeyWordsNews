@@ -275,27 +275,13 @@ export default function HomePage() {
       // 뉴스 데이터가 로드되면 즉시 프리페칭 시작
       if (!isLoading && data) {
         queryClient.prefetchQuery({
-          queryKey: ['trends', 'pytrends'],
+          queryKey: ['trends', 'google'],
           queryFn: async () => {
-            // Pytrends API 먼저 시도
-            try {
-              const res = await fetch('/api/trends/pytrends')
-              if (res.ok) {
-                const data = await res.json()
-                if (data.success) {
-                  return data
-                }
-              }
-            } catch (error) {
-              console.warn('Pytrends prefetch failed, will use fallback')
-            }
-
-            // Fallback
             const res = await fetch('/api/trends/google')
             if (!res.ok) throw new Error('Failed to fetch trends')
             return res.json()
           },
-          staleTime: 60 * 60 * 1000, // 1시간
+          staleTime: 10 * 60 * 1000, // 10분 (useTrends와 동일)
         })
       }
     }

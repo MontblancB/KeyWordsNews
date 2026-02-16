@@ -52,7 +52,7 @@ export default function SettingsPage() {
             </h3>
           </div>
           <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
-            <p>버전: 2.44.0</p>
+            <p>버전: 2.44.1</p>
             <p>마지막 업데이트: 2026-02-16</p>
           </div>
           <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 flex gap-4 text-xs">

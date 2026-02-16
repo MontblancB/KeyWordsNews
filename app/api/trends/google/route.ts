@@ -5,23 +5,11 @@ import { isDatabaseEnabled } from '@/lib/config/database'
 import { realtimeCollector } from '@/lib/rss/realtime-collector'
 import { fetchGoogleTrends } from '@/lib/api/google-trends'
 import { fetchSignalTrends } from '@/lib/api/signal-bz'
+import { STOPWORDS, calcTimeWeight } from '@/lib/trends/stopwords'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 export const maxDuration = 30
-
-// 한국어 불용어 리스트 (조사, 접속사, 일반 명사)
-const STOPWORDS = new Set([
-  '이', '가', '은', '는', '을', '를', '의', '에', '에서', '으로', '로', '과', '와', '도', '만', '까지', '부터', '조차', '마저',
-  '그리고', '하지만', '그러나', '또한', '또', '및', '등', '이런', '저런', '그런',
-  '것', '수', '때', '등', '중', '내', '위', '통해', '대해', '관련', '있다', '없다', '하다',
-  '있는', '없는', '하는', '된', '되는', '한', '할', '위한', '대한', '관한',
-  '뉴스', '기사', '보도', '발표', '공개', '전달', '알려', '밝혀', '속보', '긴급',
-  '오늘', '어제', '내일', '올해', '작년', '내년', '이번', '지난', '다음', '월', '일', '년',
-  'com', 'co', 'kr', 'net', 'org', 'www', 'http', 'https',
-  '네이트', '네이버', '다음', 'daum', 'naver', 'google', '구글',
-  '글로벌', '스포츠', '연예', '문화', '사회', '정치', '경제', 'IT',
-])
 
 /**
  * GET /api/trends/google
@@ -195,7 +183,7 @@ async function analyzeLocalNews() {
   recentNews.forEach((news) => {
     const hoursSincePublished =
       (now - new Date(news.publishedAt).getTime()) / (1000 * 60 * 60)
-    const timeWeight = Math.max(0, 1 - hoursSincePublished / 24)
+    const timeWeight = calcTimeWeight(hoursSincePublished)
 
     news.aiKeywords.forEach((keyword) => {
       const cleaned = keyword.trim()
@@ -255,7 +243,7 @@ async function analyzeNewsTitles(now: number) {
   allNews.forEach((news) => {
     const hoursSincePublished =
       (now - new Date(news.publishedAt).getTime()) / (1000 * 60 * 60)
-    const timeWeight = Math.max(0.1, 1 - hoursSincePublished / 24)
+    const timeWeight = calcTimeWeight(hoursSincePublished)
 
     let title = news.title.split(/[-|]/).shift() || ''
     title = title

@@ -4,34 +4,16 @@ import { newsService } from '@/lib/db/news'
 import { isDatabaseEnabled } from '@/lib/config/database'
 import { realtimeCollector } from '@/lib/rss/realtime-collector'
 import { fetchGoogleTrends } from '@/lib/api/google-trends'
+import { fetchSignalTrends } from '@/lib/api/signal-bz'
+import { STOPWORDS, calcTimeWeight } from '@/lib/trends/stopwords'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30 // 30초 타임아웃
 
-// 한국어 불용어 리스트
-const STOPWORDS = new Set([
-  // 조사
-  '이', '가', '은', '는', '을', '를', '의', '에', '에서', '으로', '로', '과', '와', '도', '만', '까지', '부터', '조차', '마저',
-  // 접속사/부사
-  '그리고', '하지만', '그러나', '또한', '또', '및', '등', '이런', '저런', '그런',
-  // 일반적인 단어
-  '것', '수', '때', '등', '중', '내', '위', '통해', '대해', '관련', '있다', '없다', '하다',
-  '있는', '없는', '하는', '된', '되는', '한', '할', '위한', '대한', '관한',
-  '뉴스', '기사', '보도', '발표', '공개', '전달', '알려', '밝혀', '속보', '긴급',
-  // 날짜/시간
-  '오늘', '어제', '내일', '올해', '작년', '내년', '이번', '지난', '다음', '월', '일', '년',
-  // 도메인/기술 용어
-  'com', 'co', 'kr', 'net', 'org', 'www', 'http', 'https',
-  // 뉴스 출처/플랫폼
-  '네이트', '네이버', '다음', 'daum', 'naver', 'google', '구글',
-  // 카테고리
-  '글로벌', '스포츠', '연예', '문화', '사회', '정치', '경제', 'IT',
-])
-
 /**
  * POST /api/trends/collect
  * GitHub Actions Cron용 트렌드 수집 엔드포인트
- * 1차: Google Trends RSS, 폴백: 자체 뉴스 분석
+ * 3단계 폴백: Signal.bz → Google Trends RSS → 자체 뉴스 분석
  */
 export async function POST(request: NextRequest) {
   try {
@@ -41,26 +23,44 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    let keywords: { keyword: string; rank: number; country: string }[] = []
+    let keywords: { keyword: string; rank: number; country: string; traffic?: string; state?: string }[] = []
     let source = 'local_analysis'
 
-    // 1차 시도: Google Trends RSS
-    console.log('[Trends Collect] Trying Google Trends RSS...')
-    const googleTrends = await fetchGoogleTrends()
+    // 1차: Signal.bz 실시간 검색어
+    console.log('[Trends Collect] 1st: Trying Signal.bz...')
+    const signalTrends = await fetchSignalTrends()
 
-    if (googleTrends && googleTrends.length > 0) {
-      console.log(`[Trends Collect] Google Trends RSS: ${googleTrends.length} trends`)
-      keywords = googleTrends.map((t) => ({
+    if (signalTrends && signalTrends.length > 0) {
+      console.log(`[Trends Collect] Signal.bz: ${signalTrends.length} trends`)
+      keywords = signalTrends.map((t) => ({
         keyword: t.keyword,
         rank: t.rank,
         country: 'south_korea',
+        state: t.state,
       }))
-      source = 'google_trends_rss'
+      source = 'signal_bz'
     }
 
-    // 2차 폴백: 자체 뉴스 키워드 분석
+    // 2차: Google Trends RSS
     if (keywords.length === 0) {
-      console.log('[Trends Collect] Google Trends RSS failed, falling back to local analysis...')
+      console.log('[Trends Collect] 2nd: Trying Google Trends RSS...')
+      const googleTrends = await fetchGoogleTrends()
+
+      if (googleTrends && googleTrends.length > 0) {
+        console.log(`[Trends Collect] Google Trends RSS: ${googleTrends.length} trends`)
+        keywords = googleTrends.map((t) => ({
+          keyword: t.keyword,
+          rank: t.rank,
+          country: 'south_korea',
+          traffic: t.traffic,
+        }))
+        source = 'google_trends_rss'
+      }
+    }
+
+    // 3차: 자체 뉴스 키워드 분석
+    if (keywords.length === 0) {
+      console.log('[Trends Collect] 3rd: Falling back to local analysis...')
 
       const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
 
@@ -79,14 +79,14 @@ export async function POST(request: NextRequest) {
 
       console.log(`[Trends Collect] Found ${recentNews.length} news with AI keywords`)
 
-      // 키워드 빈도 계산 (시간 가중치)
+      // 키워드 빈도 계산 (지수 감소 시간 가중치)
       const keywordFrequency = new Map<string, number>()
       const now = Date.now()
 
       recentNews.forEach((news) => {
         const hoursSincePublished =
           (now - new Date(news.publishedAt).getTime()) / (1000 * 60 * 60)
-        const timeWeight = Math.max(0, 1 - hoursSincePublished / 24)
+        const timeWeight = calcTimeWeight(hoursSincePublished)
 
         news.aiKeywords.forEach((keyword) => {
           const cleaned = keyword.trim()
@@ -134,22 +134,14 @@ export async function POST(request: NextRequest) {
           })
         }
 
-        const newsWithTitles = allNews.map((news) => ({
-          title: news.title,
-          publishedAt: new Date(news.publishedAt),
-        }))
-
         const titleKeywords = new Map<string, number>()
 
-        newsWithTitles.forEach((news) => {
+        allNews.forEach((news: any) => {
           const hoursSincePublished =
             (now - new Date(news.publishedAt).getTime()) / (1000 * 60 * 60)
-          const timeWeight = Math.max(0.1, 1 - hoursSincePublished / 24)
+          const timeWeight = calcTimeWeight(hoursSincePublished)
 
-          let title = news.title
-            .split(/[-|]/)
-            .shift() || ''
-
+          let title = news.title.split(/[-|]/).shift() || ''
           title = title
             .replace(/\[.*?\]/g, ' ')
             .replace(/[→←↑↓…·""''""「」『』【】〈〉《》]/g, ' ')
@@ -199,7 +191,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // DB 저장
+    // DB 저장 (source, traffic, state 필드 포함)
     const collectedAt = new Date()
 
     await prisma.$transaction(
@@ -209,6 +201,9 @@ export async function POST(request: NextRequest) {
             keyword: trend.keyword,
             rank: trend.rank,
             country: trend.country,
+            traffic: trend.traffic || null,
+            state: trend.state || null,
+            source,
             collectedAt,
           },
         })
