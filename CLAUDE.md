@@ -18,7 +18,7 @@
 ### 배포 정보
 - **URL**: https://key-words-news.vercel.app
 - **GitHub**: https://github.com/MontblancB/KeyWordsNews
-- **현재 버전**: 2.43.0
+- **현재 버전**: 2.44.0
 - **마지막 업데이트**: 2026-02-16
 
 ---
@@ -320,6 +320,16 @@ rm -rf node_modules && npm install
 ---
 
 ## 최근 업데이트
+
+### v2.44.0 (2026-02-16) - InsightNow & SummarizeNow 프롬프트 개선
+- 🔍 **"오늘의 한 줄" 추가**: InsightNow 최상단에 한 문장 핵심 메시지 제공
+- 🔗 **뉴스 간 연결 분석 강화**: 10개 카테고리별 분석 렌즈(CATEGORY_ANALYSIS_LENS) 적용, 개별 요약 나열 → 연결고리 분석
+- 📏 **인사이트 깊이 증가**: 분석 항목 1-2줄 → 2-3줄 (수치/사실 근거 포함)
+- 📰 **InsightNow/SummarizeNow 역할 분리**: InsightNow = "왜 중요한가" (분석+인사이트) / SummarizeNow = "무슨 일이 있었나" (팩트 브리핑)
+- ⚡ **"30초 팩트 브리핑" 컨셉**: SummarizeNow에서 의견/분석/전망 제외, 순수 사실만 중요도순 정리
+- 📊 **"숫자로 보는 오늘" 섹션**: SummarizeNow에 뉴스 핵심 수치 3-5개 정리 섹션 추가
+- 🎯 **temperature 최적화**: SummarizeNow 0.3 → 0.2 (팩트 정확성 우선)
+- 🇰🇷 **한국어 규칙 통일**: 모든 AI 프롬프트에 통용 한자어 허용 규칙 적용
 
 ### v2.43.0 (2026-02-16) - AI 코드 리팩토링 & 전문가 의견 프롬프트 개선
 - 🏗️ **AI 호출 로직 통합**: 3개 API 라우트(news/insight, insight/daily, summarize/now)에 중복된 Groq/Gemini/OpenRouter 호출 함수를 `lib/ai/generate.ts`로 통합
