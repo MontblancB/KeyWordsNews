@@ -1,5 +1,5 @@
 import { AIProviderFactory } from './factory'
-import { SummaryResult } from './types'
+import { SummaryResult, SummarizeOptions } from './types'
 
 /**
  * 뉴스 요약 에러 타입
@@ -31,12 +31,16 @@ export class NewsSummarizer {
    * 뉴스 요약 (자동 Fallback 포함)
    * @param title 뉴스 제목
    * @param content 뉴스 본문
+   * @param category 뉴스 카테고리 (카테고리별 요약 초점 적용)
    * @returns 요약 결과 (프로바이더 정보 포함)
    */
   static async summarize(
     title: string,
-    content: string
+    content: string,
+    category?: string
   ): Promise<SummaryResultWithProvider> {
+    const options: SummarizeOptions = { category }
+
     // 1차 시도: Primary Provider
     const primaryProvider = AIProviderFactory.createPrimaryProvider()
 
@@ -45,7 +49,7 @@ export class NewsSummarizer {
         const isAvailable = await primaryProvider.isAvailable()
 
         if (isAvailable) {
-          const result = await primaryProvider.summarize(title, content)
+          const result = await primaryProvider.summarize(title, content, options)
           return {
             ...result,
             provider: primaryProvider.name,
@@ -67,7 +71,7 @@ export class NewsSummarizer {
         const isAvailable = await fallbackProvider.isAvailable()
         if (isAvailable) {
           console.log(`Using fallback provider: ${fallbackProvider.name}`)
-          const result = await fallbackProvider.summarize(title, content)
+          const result = await fallbackProvider.summarize(title, content, options)
           return {
             ...result,
             provider: fallbackProvider.name,
@@ -96,7 +100,7 @@ export class NewsSummarizer {
         const isAvailable = await provider.isAvailable()
         if (isAvailable) {
           console.log(`Trying alternative provider: ${provider.name}`)
-          const result = await provider.summarize(title, content)
+          const result = await provider.summarize(title, content, options)
           return {
             ...result,
             provider: provider.name,
@@ -120,12 +124,14 @@ export class NewsSummarizer {
    * @param title 뉴스 제목
    * @param content 뉴스 본문
    * @param providerName 프로바이더 이름
+   * @param category 뉴스 카테고리
    * @returns 요약 결과
    */
   static async summarizeWithProvider(
     title: string,
     content: string,
-    providerName: string
+    providerName: string,
+    category?: string
   ): Promise<SummaryResultWithProvider> {
     const providers = AIProviderFactory.getAvailableProviders()
     const provider = providers.find((p) => p.name === providerName)
@@ -138,7 +144,7 @@ export class NewsSummarizer {
     }
 
     try {
-      const result = await provider.summarize(title, content)
+      const result = await provider.summarize(title, content, { category })
       return {
         ...result,
         provider: provider.name,

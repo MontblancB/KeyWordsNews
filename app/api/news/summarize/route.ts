@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
           )
         }
 
-        const result = await NewsSummarizer.summarize(title, content)
+        const result = await NewsSummarizer.summarize(title, content, 'general')
 
         return NextResponse.json({
           success: true,
@@ -136,8 +136,8 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // 5. AI 요약 생성 (자동 Fallback 포함)
-    const result = await NewsSummarizer.summarize(news.title, content)
+    // 5. AI 요약 생성 (자동 Fallback 포함, 카테고리별 요약 초점 적용)
+    const result = await NewsSummarizer.summarize(news.title, content, news.category)
 
     // 6. DB에 저장
     await prisma.news.update({

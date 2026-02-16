@@ -91,10 +91,11 @@ export async function POST(req: NextRequest) {
 
           let finalResult: any = null
 
-          // 스트림에서 토큰을 받아서 클라이언트로 전송
+          // 스트림에서 토큰을 받아서 클라이언트로 전송 (카테고리별 요약 초점 적용)
           for await (const chunk of provider.summarizeStream(
             news?.title || title || '',
-            content
+            content,
+            { category: news?.category || 'general' }
           )) {
             if (chunk.type === 'token') {
               // SSE 형식으로 전송

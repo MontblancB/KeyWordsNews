@@ -1,4 +1,5 @@
-import { AIProvider, AIProviderConfig, SummaryResult } from '../types'
+import { AIProvider, AIProviderConfig, SummaryResult, SummarizeOptions } from '../types'
+import { buildSummarizeSystemPrompt, buildSummarizePrompt } from '../prompts/summarize'
 
 /**
  * Google Gemini AI Provider
@@ -26,8 +27,8 @@ export class GeminiProvider implements AIProvider {
     this.maxTokens = config.maxTokens ?? 4000  // 2400 → 4000 (응답 잘림 방지)
   }
 
-  async summarize(title: string, content: string): Promise<SummaryResult> {
-    const prompt = this.createPrompt(title, content)
+  async summarize(title: string, content: string, options?: SummarizeOptions): Promise<SummaryResult> {
+    const prompt = buildSummarizePrompt(title, content, options?.category)
 
     let lastError: Error | null = null
     let currentMaxTokens = this.maxTokens
@@ -61,39 +62,6 @@ export class GeminiProvider implements AIProvider {
     throw lastError || new Error('All retry attempts failed')
   }
 
-  private createPrompt(title: string, content: string): string {
-    return `다음 뉴스 기사를 읽고 핵심 내용을 **3-4개의 간결한 불릿**으로 정리하고, 주요 키워드 3-5개를 추출해주세요.
-
-**중요한 요약 규칙:**
-1. **오직 한국어로만 작성** - 영어나 외국어 단어 절대 금지
-2. **외래어/영어 약어는 한글로 풀어쓰기** - 예: AI→인공지능, GDP→국내총생산, CEO→최고경영자
-3. **각 불릿은 15-25단어 내외** - 핵심만 간결하게
-4. **5W1H 중심 작성** - 누가, 언제, 어디서, 무엇을, 왜, 어떻게
-5. **구체적 정보 필수 포함** - 숫자, 날짜, 금액, 비율, 인명, 기관명
-6. **인과관계 명시** - 원인과 결과를 간략히
-7. **객관적 사실 중심** - 주장이나 의견은 출처 명시
-8. 제목 내용 반복 금지, 새로운 정보 위주
-9. **3-4개로 간결하게** - 본문이 짧으면 3개, 길면 4개
-10. **쉬운 순우리말 사용** - 한자어 대신 일상 표현
-
-제목: ${title}
-
-본문:
-${content}
-
-**좋은 간결한 요약 예시:**
-"• 고용부, 2026년 최저임금 시간당 1만2천원 확정 (7.3%↑)
-• 노동계 '물가 대비 부족' 반발, 경영계 '중소기업 부담' 우려
-• 적용 대상 300만명, 2026.1.1 시행
-• 전문가 '소득주도성장 정책, 고용 양극화 가능성' 지적"
-
-반드시 JSON 형식으로만 응답해주세요:
-{
-  "summary": "• 간결한포인트1\\n• 간결한포인트2\\n• 간결한포인트3\\n• 간결한포인트4",
-  "keywords": ["키워드1", "키워드2", "키워드3"]
-}`
-  }
-
   private async callGeminiAPI(prompt: string, maxTokens: number): Promise<SummaryResult> {
     // AbortController로 타임아웃 구현
     const controller = new AbortController()
@@ -113,7 +81,7 @@ ${content}
               {
                 parts: [
                   {
-                    text: `당신은 뉴스를 간결하고 명확하게 요약하는 전문 AI입니다. **절대적으로 중요**: 오직 한국어로만 작성하며, 영어나 다른 외국어 단어는 절대 사용하지 않습니다. 외래어나 영어 약어는 반드시 한글로 풀어씁니다 (예: AI→인공지능, GDP→국내총생산, CEO→최고경영자). 각 불릿은 15-25단어 내외로 핵심만 작성하며, 5W1H(누가, 언제, 어디서, 무엇을, 왜, 어떻게)를 포함합니다. 쉬운 순우리말로 작성하고 한자어는 피합니다. JSON 형식으로 응답합니다.\n\n${prompt}`,
+                    text: `${buildSummarizeSystemPrompt()}\n\n${prompt}`,
                   },
                 ],
               },
@@ -293,13 +261,12 @@ ${content}
         .join('\n')
     }
 
-    // 불릿 포인트 개수 확인 (3-4개)
+    // 불릿 포인트 개수 확인 (3-5개)
     const bulletPoints = result.summary.split('\n').filter((line) => line.includes('•'))
     if (bulletPoints.length < 3) {
       console.warn(`[Gemini] Warning: Too few bullet points (${bulletPoints.length})`)
-    } else if (bulletPoints.length > 4) {
-      // 4개로 제한
-      result.summary = bulletPoints.slice(0, 4).join('\n')
+    } else if (bulletPoints.length > 5) {
+      result.summary = bulletPoints.slice(0, 5).join('\n')
     }
 
     // 키워드 개수 제한 (3-5개)

@@ -8,6 +8,13 @@ export interface SummaryResult {
 }
 
 /**
+ * AI 요약 옵션
+ */
+export interface SummarizeOptions {
+  category?: string  // 뉴스 카테고리 (politics, economy, tech 등)
+}
+
+/**
  * AI Provider 설정
  */
 export interface AIProviderConfig {
@@ -40,17 +47,19 @@ export interface AIProvider {
    * @param content 뉴스 본문
    * @returns 요약 결과
    */
-  summarize(title: string, content: string): Promise<SummaryResult>
+  summarize(title: string, content: string, options?: SummarizeOptions): Promise<SummaryResult>
 
   /**
    * 뉴스 요약 생성 (스트리밍)
    * @param title 뉴스 제목
    * @param content 뉴스 본문
+   * @param options 요약 옵션 (카테고리 등)
    * @returns 스트리밍 청크 제너레이터
    */
   summarizeStream?(
     title: string,
-    content: string
+    content: string,
+    options?: SummarizeOptions
   ): AsyncGenerator<StreamChunk>
 
   /**
